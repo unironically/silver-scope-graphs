@@ -74,6 +74,14 @@ concrete production exp_c_let
 top::Exp_c ::= 'let' bl::BindList_c 'in' e::Exp_c
 {}
 
+concrete production exp_c_letrec
+top::Exp_c ::= 'letrec' bl::BindList_c 'in' e::Exp_c
+{}
+
+concrete production exp_c_letpar
+top::Exp_c ::= 'letpar' bl::BindList_c 'in' e::Exp_c
+{}
+
 concrete production exp_c_int
 top::Exp_c ::= i::Int_t
 {}
