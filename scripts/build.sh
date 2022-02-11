@@ -4,7 +4,7 @@
 
 mkdir -p ../bin
 
-silver -I ../grammars --onejar $@ oldstlc
+silver -I ../grammars --onejar $@ lmlang
 
 rm build.xml
 
