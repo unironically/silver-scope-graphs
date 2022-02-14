@@ -9,4 +9,4 @@ silver -I ../grammars --onejar $@ lmlang
 rm build.xml > /dev/null 2>&1
 rm Parser_lmlang_parse.copperdump.html > /dev/null 2>&1
 
-mv *.jar ../bin
+mv *.jar ../bin > /dev/null 2>&1
