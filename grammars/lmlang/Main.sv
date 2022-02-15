@@ -17,10 +17,10 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute r_cst::Program_c;
   r_cst = result.parseTree;
 
-  --local attribute r::Program = r_cst.ast;
+  local attribute r::Program = r_cst.ast;
     
   local attribute print_success :: IOToken;
-  print_success = printT("Success!", ioin);
+  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n", ioin);
 
   local attribute print_failure :: IOToken;
   print_failure = printT("Failure!", ioin);

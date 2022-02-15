@@ -22,3 +22,5 @@ terminal Comma_t ',';
 
 terminal LCurly_t '{';
 terminal RCurly_t '}';
+
+ignore terminal Whitespace_t /[\n\r\t ]+/;
