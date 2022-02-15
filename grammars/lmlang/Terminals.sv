@@ -1,7 +1,7 @@
 grammar lmlang;
 
 terminal ID_t /[a-z][a-zA-Z]*/;
-terminal Int_t /(0 | [1-9][0-9]*)/;
+terminal Int_t /(0|[1-9][0-9]*)/;
 
 terminal Mod_t 'mod' dominates {ID_t};
 terminal Imp_t 'imp' dominates {ID_t};
