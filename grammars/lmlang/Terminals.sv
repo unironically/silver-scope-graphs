@@ -8,10 +8,10 @@ terminal Imp_t 'imp' dominates {ID_t};
 terminal Def_t 'def' dominates {ID_t};
 terminal Fun_t 'fun' dominates {ID_t};
 
-terminal Let_t 'let' precedence = 7, dominates {ID_t};
-terminal LetRec_t 'letrec' precedence = 7, dominates {ID_t};
-terminal LetPar_t 'letpar' precedence = 7, dominates {ID_t};
-terminal In_t 'in' precedence = 7, dominates {ID_t};
+terminal Let_t 'let' precedence = 1, dominates {ID_t};
+terminal LetRec_t 'letrec' precedence = 1, dominates {ID_t};
+terminal LetPar_t 'letpar' precedence = 1, dominates {ID_t};
+terminal In_t 'in' precedence = 4, dominates {ID_t};
 
 terminal Plus_t '+' precedence = 5, association = left;
 terminal App_t '' precedence = 6, association = left;
