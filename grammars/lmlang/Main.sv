@@ -18,10 +18,9 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   r_cst = result.parseTree;
 
   local attribute r::Program = r_cst.ast;
-  local attribute scope_print::String = case r.result_scope of
-    | just(x) -> print_scope(x)
-    | nothing() -> ""
-  end;
+
+  local attribute top_scope::Scope = r.final_scope;
+  local attribute scope_print::String = top_scope.graphpp;
 
   local attribute print_success :: IOToken;
   print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n" ++ scope_print ++ "\n", ioin);

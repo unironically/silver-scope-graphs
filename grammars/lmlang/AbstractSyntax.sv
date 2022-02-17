@@ -19,7 +19,6 @@ top::Program ::= list::DeclList
   local attribute first_scope::Scope = gen_scope(nothing());
   list.current_scope = first_scope;
   top.final_scope = first_scope;
-  top.result_scope = just(first_scope);
 }
 
 abstract production decllist_single
@@ -152,7 +151,7 @@ top::Exp ::= val::Int_t
 -- Scope graph things
 
 inherited attribute current_scope :: Scope occurs on DeclList, Decl, Qid, Exp, BindList;
-synthesized attribute result_scope :: Maybe<Scope> occurs on Program, BindList;
+synthesized attribute result_scope :: Maybe<Scope> occurs on BindList;
 
 synthesized attribute id :: Integer;
 synthesized attribute parent :: Maybe<Scope>;
@@ -171,14 +170,8 @@ top::Scope ::= par::Maybe<Scope>
   top.graphpp = "Scope(" ++ 
     print_decls(top.declarations) ++ ", " ++
     print_refs(top.references) ++ ", " ++
-    "{" ++ print_children(top.children) ++ "}"
+    "{" ++ print_children(top.children) ++ "})"
   ;
-}
-
-function print_scope
-String ::= scope::Scope
-{
-  return "Scope(" ++ print_decls(scope.declarations) ++ ", " ++ print_refs(scope.references) ++ ", " ++ "{" ++ print_children(scope.children) ++ "})";
 }
 
 -- How to fix the below code smell(s) in Silver?
@@ -208,7 +201,7 @@ String ::= list::[Scope]
 {
   local attribute prints::String = case list of
     | [] -> ""
-    | h::t -> print_scope(h) ++ ", " ++ print_children(t)
+    | h::t -> h.graphpp ++ ", " ++ print_children(t)
   end;
   return prints;
 }
