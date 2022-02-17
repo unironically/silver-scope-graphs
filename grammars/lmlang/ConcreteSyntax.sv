@@ -84,6 +84,12 @@ top::Bind_c ::= id::ID_t '=' exp::Exp_c
   top.ast = bnd(id, exp.ast);
 }
 
+concrete production bind_c_decl
+top::Bind_c ::= id::ID_t
+{
+  top.ast = bnd_decl(id);
+}
+
 -- expressions
 
 concrete production exp_c_plus
