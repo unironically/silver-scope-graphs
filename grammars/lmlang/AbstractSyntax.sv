@@ -10,14 +10,16 @@ nonterminal Bind;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
 
+synthesized attribute final_scope::Scope occurs on Program;
+
 abstract production prog 
 top::Program ::= list::DeclList
 {
   top.pp = "prog(" ++ list.pp ++ ")";
-  local attribute new_scope::Scope = construct_scope(nothing(), []);
-  new_scope.references = [];
-  list.current_scope = new_scope;
-  top.scope_list = appendList([new_scope], list.scope_list);
+  local attribute first_scope::Scope = gen_scope(nothing());
+  list.current_scope = first_scope;
+  top.final_scope = first_scope;
+  top.result_scope = just(first_scope);
 }
 
 abstract production decllist_single
@@ -25,7 +27,6 @@ top::DeclList ::= decl::Decl
 {
   top.pp = "decllist_single(" ++ decl.pp ++ ")";
   decl.current_scope = top.current_scope;
-  top.scope_list = decl.scope_list;
 }
 
 abstract production decllist_list
@@ -47,9 +48,9 @@ top::Decl ::= qid::Qid
 }
 
 abstract production decl_define
-top::Decl ::= bnd::Bind
+top::Decl ::= id::ID_t exp::Exp
 {
-  top.pp = "define(" ++ bnd.pp ++ ")";
+  top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
 }
 
 -- Not included in the grammar given in the publication - but seems necessary for the examples given.
@@ -58,16 +59,14 @@ top::Decl ::= exp::Exp
 {
   top.pp = "decl_exp(" ++ exp.pp ++ ")";
   exp.current_scope = top.current_scope;
-  top.scope_list = exp.scope_list;
 }
 
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
   top.pp = "qid_single(" ++ id.lexeme ++ ")";
-  local attribute curr::Scope = top.current_scope;
-  curr.references = top::curr.references;  
-  top.scope_list = [];
+  local attribute current::Scope = top.current_scope;
+  current.references = top::current.references;
 }
 
 abstract production qid_list
@@ -76,39 +75,24 @@ top::Qid ::= id::ID_t qid::Qid
   top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
 }
 
-abstract production bindlist_single
-top::BindList ::= bnd::Bind
+abstract production bindlist_nothing
+top::BindList ::=
 {
-  top.pp = "bndlist_single(" ++ bnd.pp ++ ")";
-  bnd.current_scope = top.current_scope;
-  top.scope_list = bnd.scope_list;
-  top.result_scope = bnd.result_scope;
+  top.pp = ".";
+  top.result_scope = nothing();
 }
 
 abstract production bindlist_list
-top::BindList ::= bnd::Bind list::BindList
+top::BindList ::= id::ID_t exp::Exp list::BindList
 {
-  top.pp = "bindlist_list(" ++ bnd.pp ++ ", " ++ list.pp ++ ")";
-  bnd.current_scope = top.current_scope;
-  list.current_scope = bnd.result_scope;
-  top.scope_list = appendList(bnd.scope_list, list.scope_list);
-}
-
-abstract production bnd
-top::Bind ::= id::ID_t exp::Exp
-{
-  top.pp = "bind(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
+  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
   exp.current_scope = top.current_scope;
-  local attribute new_scope::Scope = construct_scope(just(top.current_scope), [top]);
-  new_scope.references = [];
-  top.scope_list = [new_scope];
-  top.result_scope = new_scope;
-}
-
-abstract production bnd_decl
-top::Bind ::= id::ID_t
-{
-  top.pp = "decl(" ++ id.lexeme ++ ")";
+  local attribute current::Scope = top.current_scope;
+  local attribute new_scope::Scope = gen_scope(just(top.current_scope));
+  new_scope.declarations = [top];
+  current.children = new_scope::current.children;
+  list.current_scope = new_scope;
+  top.result_scope = just(new_scope);
 }
 
 abstract production exp_plus
@@ -128,7 +112,6 @@ top::Exp ::= qid::Qid
 {
   top.pp = "exp_qid(" ++ qid.pp ++ ")";
   qid.current_scope = top.current_scope;
-  top.scope_list = qid.scope_list;
 }
 
 abstract production exp_fun
@@ -141,10 +124,11 @@ abstract production exp_let
 top::Exp ::= list::BindList exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  list.current_scope = top.current_scope;
-  local attribute ret_scope::Scope = list.result_scope;
-  exp.current_scope = ret_scope;
-  top.scope_list = appendList(list.scope_list, exp.scope_list);
+  local attribute new_scope::Scope = case list.result_scope of 
+    | just(x) -> x 
+    | nothing() -> error("Problem!")
+  end;
+  exp.current_scope = new_scope;
 }
 
 abstract production exp_letrec
@@ -167,34 +151,34 @@ top::Exp ::= val::Int_t
 
 -- Scope graph things
 
-inherited attribute current_scope :: Scope occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
-synthesized attribute result_scope :: Scope occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
-synthesized attribute scope_list :: [Decorated Scope] occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
+inherited attribute current_scope :: Scope occurs on DeclList, Decl, Qid, Exp, BindList;
+synthesized attribute result_scope :: Maybe<Scope> occurs on Program, BindList;
 
-synthesized attribute id :: Integer occurs on Scope;
+synthesized attribute id :: Integer;
 synthesized attribute parent :: Maybe<Scope>;
-inherited attribute references :: [Decorated Qid];
-synthesized attribute declarations :: [Decorated Bind];
-synthesized attribute graphpp :: String occurs on Scope;
+synthesized attribute graphpp::String occurs on Scope;
 
-nonterminal Scope with parent, references, declarations;
+inherited attribute children :: [Scope];
+inherited attribute references :: [Decorated Qid];
+inherited attribute declarations :: [Decorated BindList];
+
+nonterminal Scope with id, parent, children, references, declarations;
+
 abstract production construct_scope
-top::Scope ::= par::Maybe<Scope> decls::[Decorated Bind]
+top::Scope ::= par::Maybe<Scope>
 {
-  top.id = genInt();
   top.parent = par;
-  top.declarations = decls;
-  top.graphpp = "Scope(" ++ toString(top.id) ++ ", " ++ (case top.parent of just(x) -> toString(x.id) | nothing() -> "-" end) ++ ", " ++ print_refs(top.references) ++ ", " ++ print_decls(top.declarations) ++ ")";
+  top.graphpp = "Scope(" ++ 
+    print_decls(top.declarations) ++ ", " ++
+    print_refs(top.references) ++ ", " ++
+    "{" ++ print_children(top.children) ++ "}"
+  ;
 }
 
-function print_scopes
-String ::= scope_list::[Decorated Scope]
+function print_scope
+String ::= scope::Scope
 {
-  local attribute prints::String = case scope_list of
-    | [] -> ""
-    | h::t -> h.graphpp ++ ", " ++ print_scopes(t)
-  end;
-  return prints;
+  return "Scope(" ++ print_decls(scope.declarations) ++ ", " ++ print_refs(scope.references) ++ ", " ++ "{" ++ print_children(scope.children) ++ "})";
 }
 
 -- How to fix the below code smell(s) in Silver?
@@ -206,15 +190,35 @@ String ::= list::[Decorated Qid]
     | [] -> ""
     | h::t -> h.pp ++ ", " ++ print_refs(t)
   end;
-  return "{" ++ prints ++ "}";
+  return "references{" ++ prints ++ "}";
 }
 
 function print_decls
-String ::= list::[Decorated Bind]
+String ::= list::[Decorated BindList]
 {
   local attribute prints::String = case list of
     | [] -> ""
     | h::t -> h.pp ++ ", " ++ print_decls(t)
   end;
-  return "{" ++ prints ++ "}";
+  return "declarations{" ++ prints ++ "}";
+}
+
+function print_children
+String ::= list::[Scope]
+{
+  local attribute prints::String = case list of
+    | [] -> ""
+    | h::t -> print_scope(h) ++ ", " ++ print_children(t)
+  end;
+  return prints;
+}
+
+function gen_scope
+Scope ::= parent::Maybe<Scope>
+{
+  local attribute new_scope::Scope = construct_scope(parent);
+  new_scope.children = [];
+  new_scope.references = [];
+  new_scope.declarations = [];
+  return new_scope;
 }

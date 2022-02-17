@@ -41,9 +41,9 @@ top::Decl_c ::= 'imp' qid::Qid_c
 }
 
 concrete production decl_c_define
-top::Decl_c ::= 'def' bnd::Bind_c
+top::Decl_c ::= 'def' id::ID_t '=' exp::Exp_c
 {
-  top.ast = decl_define(bnd.ast);
+  top.ast = decl_define(id, exp.ast);
 }
 
 
@@ -66,28 +66,16 @@ top::Qid_c ::= id::ID_t ',' qid::Qid_c
   top.ast = qid_list(id, qid.ast);
 }
 
-concrete production bindlist_c_single
-top::BindList_c ::= bnd::Bind_c
+concrete production bindlist_c_nothing
+top::BindList_c ::=
 {
-  top.ast = bindlist_single(bnd.ast);
+  top.ast = bindlist_nothing();
 }
 
 concrete production bindlist_c_list
-top::BindList_c ::= bnd::Bind_c list::BindList_c
+top::BindList_c ::= id::ID_t '=' exp::Exp_c list::BindList_c
 {
-  top.ast = bindlist_list(bnd.ast, list.ast);
-}
-
-concrete production bind_c
-top::Bind_c ::= id::ID_t '=' exp::Exp_c
-{
-  top.ast = bnd(id, exp.ast);
-}
-
-concrete production bind_c_decl
-top::Bind_c ::= id::ID_t
-{
-  top.ast = bnd_decl(id);
+  top.ast = bindlist_list(id, exp.ast, list.ast);
 }
 
 -- expressions
