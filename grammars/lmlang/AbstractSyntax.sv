@@ -10,13 +10,16 @@ nonterminal Bind;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
 
-synthesized attribute final_scope::Scope occurs on Program;
+synthesized attribute final_scope::Decorated Scope occurs on Program;
 
 abstract production prog 
 top::Program ::= list::DeclList
 {
   top.pp = "prog(" ++ list.pp ++ ")";
-  local attribute first_scope::Scope = gen_scope(nothing());
+  local attribute first_scope::Scope = construct_scope(nothing());
+  first_scope.declarations = [];
+  first_scope.references = [];
+  first_scope.children = [];
   list.current_scope = first_scope;
   top.final_scope = first_scope;
 }
@@ -87,7 +90,9 @@ top::BindList ::= id::ID_t exp::Exp list::BindList
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
   exp.current_scope = top.current_scope;
   local attribute current::Scope = top.current_scope;
-  local attribute new_scope::Scope = gen_scope(just(top.current_scope));
+  local attribute new_scope::Scope = construct_scope(just(top.current_scope));
+  new_scope.references = [];
+  new_scope.children = [];
   new_scope.declarations = [top];
   current.children = new_scope::current.children;
   list.current_scope = new_scope;
@@ -155,9 +160,9 @@ synthesized attribute result_scope :: Maybe<Scope> occurs on BindList;
 
 synthesized attribute id :: Integer;
 synthesized attribute parent :: Maybe<Scope>;
-synthesized attribute graphpp::String occurs on Scope;
+--synthesized attribute graphpp::String occurs on Scope;
 
-inherited attribute children :: [Scope];
+inherited attribute children :: [Decorated Scope];
 inherited attribute references :: [Decorated Qid];
 inherited attribute declarations :: [Decorated BindList];
 
@@ -167,11 +172,22 @@ abstract production construct_scope
 top::Scope ::= par::Maybe<Scope>
 {
   top.parent = par;
-  top.graphpp = "Scope(" ++ 
-    print_decls(top.declarations) ++ ", " ++
-    print_refs(top.references) ++ ", " ++
-    "{" ++ print_children(top.children) ++ "})"
-  ;
+  --top.graphpp = "Scope(" ++ 
+  --  print_decls(top.declarations) ++ ", " ++
+  --  print_refs(top.references) ++ ", " ++
+  --  "children{" ++ print_children(top.children) ++ "})"
+  --;
+}
+
+function print_scope 
+String ::= top::Decorated Scope
+{
+  return 
+    "Scope(" ++ 
+      print_decls(top.declarations) ++ ", " ++ 
+      print_refs(top.references) ++ ", " ++ 
+      "children{" ++ print_children(top.children) ++ "})"
+    ;
 }
 
 -- How to fix the below code smell(s) in Silver?
@@ -197,21 +213,11 @@ String ::= list::[Decorated BindList]
 }
 
 function print_children
-String ::= list::[Scope]
+String ::= list::[Decorated Scope]
 {
   local attribute prints::String = case list of
     | [] -> ""
-    | h::t -> h.graphpp ++ ", " ++ print_children(t)
+    | h::t -> print_scope(h) ++ ", " ++ print_children(t)
   end;
   return prints;
-}
-
-function gen_scope
-Scope ::= parent::Maybe<Scope>
-{
-  local attribute new_scope::Scope = construct_scope(parent);
-  new_scope.children = [];
-  new_scope.references = [];
-  new_scope.declarations = [];
-  return new_scope;
 }
