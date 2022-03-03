@@ -100,9 +100,9 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
   -- for recursive let ?
-  exp.env = appendList(list.defs, top.env);
+  exp.env = appendList([id.lexeme, exp], appendList(list.defs, top.env);
   list.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
-  top.defs = appendList([(id.lexeme, exp)], list.defs);
+  top.defs = appendList([(id.lexeme, exp)], list.defs); -- check if id appears in list.defs - add error message if so.
 }
 
 -- Defines the binding pattern for the parallel let feature
@@ -113,7 +113,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListRec
   -- for parallel let?
   exp.env = top.env;
   list.env = top.env;
-  top.defs = appendList([(id.lexeme, exp)], list.defs);
+  top.defs = appendList([(id.lexeme, exp)], list.defs); -- check if if appears in list.defs - add error message if so.
 }
 
 abstract production bindlist_nothing_seq
