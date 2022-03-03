@@ -7,8 +7,7 @@ nonterminal DeclList_c with ast<DeclList>;
 nonterminal Decl_c with ast<Decl>;
 nonterminal Qid_c with ast<Qid>;
 nonterminal Exp_c with ast<Exp>;
-nonterminal BindList_c with ast<BindList>;
-nonterminal Bind_c with ast<Bind>;
+nonterminal BindList_c with ast<BindListSeq>;
 
 concrete production program_c
 top::Program_c ::= list::DeclList_c
@@ -69,13 +68,13 @@ top::Qid_c ::= id::ID_t ',' qid::Qid_c
 concrete production bindlist_c_nothing
 top::BindList_c ::=
 {
-  top.ast = bindlist_nothing();
+  top.ast = bindlist_nothing_seq();
 }
 
 concrete production bindlist_c_list
 top::BindList_c ::= id::ID_t '=' exp::Exp_c list::BindList_c
 {
-  top.ast = bindlist_list(id, exp.ast, list.ast);
+  top.ast = bindlist_list_seq(id, exp.ast, list.ast);
 }
 
 -- expressions
@@ -110,17 +109,17 @@ top::Exp_c ::= 'let' list::BindList_c 'in' exp::Exp_c
   top.ast = exp_let(list.ast, exp.ast);
 }
 
-concrete production exp_c_letrec
-top::Exp_c ::= 'letrec' list::BindList_c 'in' exp::Exp_c
-{
-  top.ast = exp_letrec(list.ast, exp.ast);
-}
+--concrete production exp_c_letrec
+--top::Exp_c ::= 'letrec' list::BindList_c 'in' exp::Exp_c
+--{
+--  top.ast = exp_letrec(list.ast, exp.ast);
+--}
 
-concrete production exp_c_letpar
-top::Exp_c ::= 'letpar' list::BindList_c 'in' exp::Exp_c
-{
-  top.ast = exp_letpar(list.ast, exp.ast);
-}
+--concrete production exp_c_letpar
+--top::Exp_c ::= 'letpar' list::BindList_c 'in' exp::Exp_c
+--{
+--  top.ast = exp_letpar(list.ast, exp.ast);
+--}
 
 concrete production exp_c_int
 top::Exp_c ::= val::Int_t

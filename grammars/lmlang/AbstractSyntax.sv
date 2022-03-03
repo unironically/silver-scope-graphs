@@ -5,13 +5,15 @@ nonterminal DeclList;
 nonterminal Decl;
 nonterminal Qid;
 nonterminal Exp;
-nonterminal BindList;
-nonterminal Bind;
+nonterminal BindListSeq;
+nonterminal BindListRec;
 
-inherited attribute env::[(String, Decorated Exp)] occurs on DeclList, Decl, Qid, Exp, BindList, Bind;
-synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
+inherited attribute env::[(String, Decorated Exp)] occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
+synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
 
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindList, Bind;
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
+
+inherited attribute bindlist_mode::Integer occurs on BindListSeq, BindListRec;
 
 abstract production prog 
 top::Program ::= list::DeclList
@@ -82,19 +84,36 @@ top::Qid ::= id::ID_t qid::Qid
   top.defs = [];
 }
 
-abstract production bindlist_nothing
-top::BindList ::=
+abstract production bindlist_nothing_seq
+top::BindListSeq ::=
 {
   top.pp = ".";
   top.defs = [];
 }
 
-abstract production bindlist_list
-top::BindList ::= id::ID_t exp::Exp list::BindList
+abstract production bindlist_list_seq
+top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  -- for sequential let ?
   exp.env = top.env;
-  list.env = appendList(exp.defs, top.env); -- for sequential let expressions
+  list.env = appendList([(id.lexeme, exp)], top.env);
+  top.defs = appendList([(id.lexeme, exp)], list.defs);
+}
+abstract production bindlist_nothing_rec
+top::BindListSeq ::=
+{
+  top.pp = ".";
+  top.defs = [];
+}
+
+abstract production bindlist_list_rec
+top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
+{
+  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  -- for recursive let ?
+  exp.env = appendList(list.defs, top.env);
+  list.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
   top.defs = appendList([(id.lexeme, exp)], list.defs);
 }
 
@@ -133,27 +152,32 @@ top::Exp ::= id::ID_t exp::Exp
 }
 
 abstract production exp_let
-top::Exp ::= list::BindList exp::Exp
+top::Exp ::= list::BindListSeq exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  list.bindlist_mode = 1;
   list.env = top.env;
   exp.env = appendList(list.defs, top.env);
   top.defs = appendList(list.defs, exp.defs);
 }
 
 abstract production exp_letrec
-top::Exp ::= list::BindList exp::Exp
+top::Exp ::= list::BindListRec exp::Exp
 {
   top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  list.bindlist_mode = 2;
+  list.env = top.env;
+  exp.env = top.env;
   top.defs = [];
 }
 
-abstract production exp_letpar
-top::Exp ::= list::BindList exp::Exp
-{
-  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  top.defs = [];
-}
+--abstract production exp_letpar
+--top::Exp ::= list::BindList exp::Exp
+--{
+--  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+--  list.bindlist_mode = 3;
+--  top.defs = [];
+--}
 
 abstract production exp_int
 top::Exp ::= val::Int_t
