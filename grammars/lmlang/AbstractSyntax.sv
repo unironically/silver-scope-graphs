@@ -82,13 +82,7 @@ top::Qid ::= id::ID_t qid::Qid
   top.defs = [];
 }
 
-abstract production bindlist_nothing_seq
-top::BindListSeq ::=
-{
-  top.pp = ".";
-  top.defs = [];
-}
-
+-- Defines the binding pattern for the sequential let feature
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
@@ -98,13 +92,8 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   list.env = appendList([(id.lexeme, exp)], top.env);
   top.defs = appendList([(id.lexeme, exp)], list.defs);
 }
-abstract production bindlist_nothing_rec
-top::BindListSeq ::=
-{
-  top.pp = ".";
-  top.defs = [];
-}
 
+-- Defines the binding pattern for the recursive let feature
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
@@ -113,6 +102,20 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   exp.env = appendList(list.defs, top.env);
   list.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
   top.defs = appendList([(id.lexeme, exp)], list.defs);
+}
+
+abstract production bindlist_nothing_seq
+top::BindListSeq ::=
+{
+  top.pp = ".";
+  top.defs = [];
+}
+
+abstract production bindlist_nothing_rec
+top::BindListSeq ::=
+{
+  top.pp = ".";
+  top.defs = [];
 }
 
 abstract production exp_plus
