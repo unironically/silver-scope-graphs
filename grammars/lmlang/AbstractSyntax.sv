@@ -13,8 +13,6 @@ synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclLis
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
 
-inherited attribute bindlist_mode::Integer occurs on BindListSeq, BindListRec;
-
 abstract production prog 
 top::Program ::= list::DeclList
 {
@@ -155,7 +153,6 @@ abstract production exp_let
 top::Exp ::= list::BindListSeq exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  list.bindlist_mode = 1;
   list.env = top.env;
   exp.env = appendList(list.defs, top.env);
   top.defs = appendList(list.defs, exp.defs);
@@ -165,7 +162,6 @@ abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
   top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  list.bindlist_mode = 2;
   list.env = top.env;
   exp.env = top.env;
   top.defs = [];
