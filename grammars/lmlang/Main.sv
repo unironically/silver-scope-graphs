@@ -19,11 +19,8 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute top_scope::Decorated Scope = r.final_scope;
-  local attribute scope_print::String = print_scope(top_scope);
-
   local attribute print_success :: IOToken;
-  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n" ++ scope_print ++ "\n", ioin);
+  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n", ioin);
 
   local attribute print_failure :: IOToken;
   print_failure = printT("Failure!", ioin);
