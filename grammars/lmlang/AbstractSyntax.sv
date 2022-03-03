@@ -17,6 +17,7 @@ abstract production prog
 top::Program ::= list::DeclList
 {
   top.pp = "prog(" ++ list.pp ++ ")";
+  list.env = [];
   top.defs = list.defs;
 }
 
@@ -24,6 +25,7 @@ abstract production decllist_single
 top::DeclList ::= decl::Decl
 {
   top.pp = "decllist_single(" ++ decl.pp ++ ")";
+  decl.env = top.env;
   top.defs = decl.defs;
 }
 
@@ -31,6 +33,8 @@ abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
   top.pp = "decl_list(" ++ decl.pp ++ ", " ++ list.pp ++ ")";
+  decl.env = top.env; -- declarations from decl not visible within list - check intended semantics
+  list.env = top.env;
   top.defs = appendList(decl.defs, list.defs);
 }
 
@@ -50,6 +54,7 @@ abstract production decl_define
 top::Decl ::= id::ID_t exp::Exp
 {
   top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
+  exp.env = top.env;
   top.defs = [(id.lexeme, exp)];
 }
 
@@ -58,6 +63,7 @@ abstract production decl_exp
 top::Decl ::= exp::Exp
 {
   top.pp = "decl_exp(" ++ exp.pp ++ ")";
+  exp.env = top.env;
   top.defs = exp.defs;
 }
 
@@ -72,6 +78,7 @@ abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
   top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
+  qid.env = top.env;
   top.defs = [];
 }
 
@@ -86,6 +93,8 @@ abstract production bindlist_list
 top::BindList ::= id::ID_t exp::Exp list::BindList
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  exp.env = top.env;
+  list.env = appendList(exp.defs, top.env); -- for sequential let expressions
   top.defs = appendList([(id.lexeme, exp)], list.defs);
 }
 
@@ -93,6 +102,8 @@ abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
   top.pp = "plus(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  expLeft.env = top.env;
+  expRight.env = top.env;
   top.defs = appendList(expLeft.defs, expRight.defs);
 }
 
@@ -100,6 +111,8 @@ abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
   top.pp = "apply(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  expLeft.env = top.env;
+  expRight.env = top.env;
   top.defs = appendList(expLeft.defs, expRight.defs);
 }
 
@@ -107,6 +120,7 @@ abstract production exp_qid
 top::Exp ::= qid::Qid
 {
   top.pp = "exp_qid(" ++ qid.pp ++ ")";
+  qid.env = top.env;
   top.defs = [];
 }
 
@@ -114,6 +128,7 @@ abstract production exp_fun
 top::Exp ::= id::ID_t exp::Exp
 {
   top.pp = "fun(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
+  exp.env = top.env;
   top.defs = [(id.lexeme, exp)];
 }
 
@@ -121,6 +136,8 @@ abstract production exp_let
 top::Exp ::= list::BindList exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  list.env = top.env;
+  exp.env = appendList(list.defs, top.env);
   top.defs = appendList(list.defs, exp.defs);
 }
 
