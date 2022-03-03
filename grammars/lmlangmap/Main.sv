@@ -1,7 +1,7 @@
-grammar lmlang;
+grammar lmlangmap;
 
 parser parse :: Program_c {
-    lmlang;
+    lmlangmap;
 }
 
 function main

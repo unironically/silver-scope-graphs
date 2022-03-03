@@ -100,7 +100,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
   -- for recursive let ?
-  exp.env = appendList([id.lexeme, exp], appendList(list.defs, top.env);
+  exp.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
   list.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
   top.defs = appendList([(id.lexeme, exp)], list.defs); -- check if id appears in list.defs - add error message if so.
 }

@@ -1,0 +1,60 @@
+<project name='lmlang' default='dist' basedir='.'>
+  <description>Generated build script for the grammar lmlang</description>
+
+  <property environment='env'/>
+  <property name='jg' location='/home/luke/academia/melt/silver/generated/'/>
+  <property name='sh' location='/home/luke/academia/melt/silver/'/>
+  <property name='bin' location='${jg}/bin'/>
+  <property name='src' location='${jg}/src'/>
+
+  <path id='lib.classpath'>
+    <pathelement location='${sh}/jars/commonmark-0.17.1.jar' />
+    <pathelement location='${sh}/jars/SilverRuntime.jar' />
+    <pathelement location='${sh}/jars/CopperCompiler.jar' />
+  </path>
+
+  <path id='compile.classpath'>
+    <pathelement location='${src}' />
+    <path refid='lib.classpath'/>
+    <pathelement location='${sh}/jars/commonmark-0.17.1.jar' />
+    <pathelement location='/home/luke/academia/melt/silver/generated/bin/' />
+  </path>
+
+
+
+  <target name='init'>
+    <tstamp>
+      <format property='TIME' pattern='yyyy.MM.dd.HH.mm.ss'/>
+    </tstamp>
+    <mkdir dir='${bin}'/>
+  </target>
+
+  <target name='dist' depends='jars'>
+  </target>
+
+  <target name='jars' depends='grammars'>
+    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>
+      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>
+    </pathconvert>
+    <jar destfile='lmlang.jar' zip64Mode='as-needed'>
+      <fileset dir='/home/luke/academia/melt/silver/generated/bin/' includes='lmlang/*.class' />
+      <fileset dir='/home/luke/academia/melt/silver/generated/bin/' includes='silver/core/*.class' />
+      <manifest>
+        <attribute name='Built-By' value='${user.name}' />
+        <attribute name='Implementation-Version' value='${TIME}' />
+        <attribute name='Main-Class' value='lmlang.Main' />
+      </manifest>
+      <zipfileset src='${sh}/jars/commonmark-0.17.1.jar' excludes='META-INF/*' />
+      <zipfileset src='${sh}/jars/SilverRuntime.jar' excludes='META-INF/*' />
+      <zipfileset src='${sh}/jars/CopperCompiler.jar' excludes='META-INF/*' />
+    </jar>
+  </target>
+
+  <target name='grammars' depends='init'>
+    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>
+      <compilerarg value="-Xlint:unchecked" />
+      <include name='silver/core/*.java' />
+      <include name='lmlang/*.java' />
+    </javac>
+  </target>
+</project>

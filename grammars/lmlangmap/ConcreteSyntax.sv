@@ -1,4 +1,4 @@
-grammar lmlang;
+grammar lmlangmap;
 
 synthesized attribute ast<a>::a;
 
