@@ -7,11 +7,12 @@ nonterminal Qid;
 nonterminal Exp;
 nonterminal BindListSeq;
 nonterminal BindListRec;
+nonterminal BindListPar;
 
-inherited attribute env::[(String, Decorated Exp)] occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
-synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
+inherited attribute env::[(String, Decorated Exp)] occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec;
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
 abstract production prog 
 top::Program ::= list::DeclList
@@ -104,6 +105,17 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   top.defs = appendList([(id.lexeme, exp)], list.defs);
 }
 
+-- Defines the binding pattern for the parallel let feature
+abstract production bindlist_list_par
+top::BindListPar ::= id::ID_t exp::Exp list::BindListRec
+{
+  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  -- for parallel let?
+  exp.env = top.env;
+  list.env = top.env;
+  top.defs = appendList([(id.lexeme, exp)], list.defs);
+}
+
 abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 {
@@ -113,6 +125,13 @@ top::BindListSeq ::=
 
 abstract production bindlist_nothing_rec
 top::BindListSeq ::=
+{
+  top.pp = ".";
+  top.defs = [];
+}
+
+abstract production bindlist_nothing_par
+top::BindListPar ::=
 {
   top.pp = ".";
   top.defs = [];
