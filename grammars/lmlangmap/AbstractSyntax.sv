@@ -11,22 +11,30 @@ nonterminal BindListPar;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
+inherited attribute inh_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute cur_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+
 abstract production prog 
 top::Program ::= list::DeclList
 {
   top.pp = "prog(" ++ list.pp ++ ")";
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], []);
+  list.inh_scope = init_scope;
 }
 
 abstract production decllist_single
 top::DeclList ::= decl::Decl
 {
   top.pp = "decllist_single(" ++ decl.pp ++ ")";
+  decl.inh_scope = top.inh_scope;
 }
 
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
   top.pp = "decl_list(" ++ decl.pp ++ ", " ++ list.pp ++ ")";
+  decl.inh_scope = top.inh_scope;
+  list.inh_scope = top.inh_scope;
 }
 
 abstract production decl_module
@@ -47,11 +55,11 @@ top::Decl ::= id::ID_t exp::Exp
   top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
 }
 
--- Not included in the grammar given in the publication - but seems necessary for the examples given.
 abstract production decl_exp
 top::Decl ::= exp::Exp
 {
   top.pp = "decl_exp(" ++ exp.pp ++ ")";
+  exp.inh_scope = top.inh_scope;
 }
 
 abstract production qid_single
@@ -71,6 +79,10 @@ abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  exp.inh_scope = top.inh_scope;
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, exp)], []);
+  list.inh_scope = new_scope;
+  top.cur_scope = list.cur_scope;
 }
 
 -- Defines the binding pattern for the recursive let feature
@@ -109,6 +121,8 @@ abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
   top.pp = "plus(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  expLeft.inh_scope = top.inh_scope;
+  expRight.inh_scope = top.inh_scope;
 }
 
 abstract production exp_app
@@ -121,6 +135,7 @@ abstract production exp_qid
 top::Exp ::= qid::Qid
 {
   top.pp = "exp_qid(" ++ qid.pp ++ ")";
+  qid.inh_scope = top.inh_scope;
 }
 
 abstract production exp_fun
@@ -133,6 +148,8 @@ abstract production exp_let
 top::Exp ::= list::BindListSeq exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  local attribute ret_scope::Scope<Decorated Exp> = list.cur_scope;
+  exp.inh_scope = ret_scope;
 }
 
 abstract production exp_letrec
@@ -142,7 +159,7 @@ top::Exp ::= list::BindListRec exp::Exp
 }
 
 abstract production exp_letpar
-top::Exp ::= list::BindList exp::Exp
+top::Exp ::= list::BindListPar exp::Exp
 {
   top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
