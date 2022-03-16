@@ -59,16 +59,16 @@ top::Qid_c ::= id::ID_t
   top.ast = qid_single(id);
 }
 
-concrete production qid_c_list
-top::Qid_c ::= id::ID_t ',' qid::Qid_c
-{
-  top.ast = qid_list(id, qid.ast);
-}
+--concrete production qid_c_list
+--top::Qid_c ::= id::ID_t ',' qid::Qid_c
+--{
+--  top.ast = qid_list(id, qid.ast);
+--}
 
-concrete production bindlist_c_nothing
-top::BindList_c ::=
+concrete production bindlist_c_final
+top::BindList_c ::= id::ID_t '=' exp::Exp_c
 {
-  top.ast = bindlist_nothing_seq();
+  top.ast = bindlist_final_seq(id, exp.ast);
 }
 
 concrete production bindlist_c_list
