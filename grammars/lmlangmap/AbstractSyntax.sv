@@ -99,11 +99,11 @@ top::Exp ::= list::BindListSeq exp::Exp
   list.inh_scope = top.cur_scope;
   list.free_vars_inh = exp.free_vars_syn;
 
-  top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
+
+  top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
 
 -- Defines the binding pattern for the sequential let feature
@@ -119,7 +119,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   list.free_vars_inh = top.free_vars_inh;
 
   -- Free variables found in the expr that id is being bound to - these are attached to the parent scope of this let expr
-  top.free_vars_syn = exp.free_vars_syn;
+  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
 }
 
@@ -144,17 +144,18 @@ top::BindListSeq ::= id::ID_t exp::Exp
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     list.declarations_syn, 
     union(list.free_vars_syn, exp.free_vars_syn)
   );
+
   exp.inh_scope = new_scope;
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   top.cur_scope = top.inh_scope; 
+  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
 
 -- Defines the binding pattern for the recursive let feature
@@ -183,14 +184,15 @@ top::BindListRec ::= id::ID_t exp::Exp
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
-  top.cur_scope = new_scope;
   exp.inh_scope = new_scope;
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
+
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
+  top.cur_scope = new_scope;
+  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
 
 -- Defines the binding pattern for the parallel let feature
