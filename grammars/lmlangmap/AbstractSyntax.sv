@@ -11,7 +11,7 @@ nonterminal BindListPar;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
-synthesized attribute free_vars_syn::[String] occurs on Exp, Qid, BindListSeq, BindListRec;
+synthesized attribute free_vars_syn::[String] occurs on Exp, Qid, BindListSeq, BindListRec, BindListPar;
 
 inherited attribute free_vars_inh::[String] occurs on BindListSeq, BindListRec, BindListPar;
 
@@ -84,17 +84,6 @@ top::Qid ::= id::ID_t
 --  top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
 --}
 
-
--- Defines the binding pattern for the parallel let feature
-abstract production bindlist_list_par
-top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  top.declarations_syn = (id.lexeme, exp)::list.declarations_syn;
-  exp.inh_scope = top.inh_scope;
-  list.inh_scope = top.inh_scope;
-  list.inh_scope_second = top.inh_scope_second;
-}
 
 ------------------------------------------------------------
 ---- Handling sequential let expressions
@@ -188,15 +177,45 @@ top::BindListRec ::= id::ID_t exp::Exp
 }
 
 ------------------------------------------------------------
+---- Handling parallel let expressions
 ------------------------------------------------------------
-------------------------------------------------------------
+
+abstract production exp_letpar
+top::Exp ::= list::BindListPar exp::Exp
+{
+  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
+  top.cur_scope = new_scope;
+  exp.inh_scope = new_scope;
+
+  -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
+  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
+  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
+}
+
+-- Defines the binding pattern for the parallel let feature
+abstract production bindlist_list_par
+top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
+{
+  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.declarations_syn = (id.lexeme, exp)::list.declarations_syn;
+  exp.inh_scope = top.inh_scope;
+  list.inh_scope = top.inh_scope;
+  list.inh_scope_second = top.inh_scope_second;
+  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
+}
 
 abstract production bindlist_final_par
 top::BindListPar ::= id::ID_t exp::Exp
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
   top.declarations_syn = [(id.lexeme, exp)];
+  top.free_vars_syn = exp.free_vars_syn;
 }
+
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
 
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
@@ -250,15 +269,6 @@ top::Exp ::= id::ID_t exp::Exp
   top.pp = "fun(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
 }
 
-
-abstract production exp_letpar
-top::Exp ::= list::BindListPar exp::Exp
-{
-  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
-  exp.inh_scope = new_scope;
-  top.cur_scope = new_scope;
-}
 
 abstract production exp_int
 top::Exp ::= val::Int_t
