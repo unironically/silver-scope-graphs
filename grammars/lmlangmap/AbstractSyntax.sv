@@ -172,6 +172,7 @@ top::Exp ::= list::BindListSeq exp::Exp
 {
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
   local attribute ret_scope::Scope<Decorated Exp> = list.cur_scope;
+  list.inh_scope = top.inh_scope;
   exp.inh_scope = ret_scope;
   top.cur_scope = ret_scope;
   list.free_vars_inh = exp.free_vars_syn;
