@@ -11,7 +11,7 @@ nonterminal BindListPar;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
-synthesized attribute free_vars_syn::[String] occurs on Exp, Qid, BindListSeq;
+synthesized attribute free_vars_syn::[String] occurs on Exp, Qid, BindListSeq, BindListRec;
 
 inherited attribute free_vars_inh::[String] occurs on BindListSeq, BindListRec, BindListPar;
 
@@ -85,16 +85,6 @@ top::Qid ::= id::ID_t
 --}
 
 
--- Defines the binding pattern for the recursive let feature
-abstract production bindlist_list_rec
-top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  top.declarations_syn = (id.lexeme, exp)::list.declarations_syn;
-  exp.inh_scope = top.inh_scope;
-  list.inh_scope = top.inh_scope;
-}
-
 -- Defines the binding pattern for the parallel let feature
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
@@ -117,14 +107,14 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   exp.inh_scope = ret_scope;
 
-  list.inh_scope = top.inh_scope;
+  list.inh_scope = top.cur_scope;
   list.free_vars_inh = exp.free_vars_syn;
 
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, list.free_vars_syn); 
+  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
 }
 
 -- Defines the binding pattern for the sequential let feature
@@ -159,15 +149,47 @@ top::BindListSeq ::= id::ID_t exp::Exp
 }
 
 ------------------------------------------------------------
+---- Handling recursive let expressions
 ------------------------------------------------------------
-------------------------------------------------------------
+
+abstract production exp_letrec
+top::Exp ::= list::BindListRec exp::Exp
+{
+  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
+    just(top.inh_scope), 
+    list.declarations_syn, 
+    union(list.free_vars_syn, exp.free_vars_syn)
+  );
+  exp.inh_scope = new_scope;
+
+  -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
+  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
+  top.cur_scope = top.inh_scope; 
+}
+
+-- Defines the binding pattern for the recursive let feature
+abstract production bindlist_list_rec
+top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
+{
+  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.declarations_syn = (id.lexeme, exp)::list.declarations_syn;
+  exp.inh_scope = top.inh_scope;
+  list.inh_scope = top.inh_scope;
+  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
+}
 
 abstract production bindlist_final_rec
 top::BindListRec ::= id::ID_t exp::Exp
 {
   top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
   top.declarations_syn = [(id.lexeme, exp)];
+  top.free_vars_syn = exp.free_vars_syn;
 }
+
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
 
 abstract production bindlist_final_par
 top::BindListPar ::= id::ID_t exp::Exp
@@ -228,15 +250,6 @@ top::Exp ::= id::ID_t exp::Exp
   top.pp = "fun(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
 }
 
-
-abstract production exp_letrec
-top::Exp ::= list::BindListRec exp::Exp
-{
-  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
-  exp.inh_scope = new_scope;
-  top.cur_scope = new_scope;
-}
 
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
