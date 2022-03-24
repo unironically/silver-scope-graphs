@@ -3,18 +3,56 @@ grammar lmlangmap;
 type Declaration<a> = (String, a);
 type Reference = String;
 
+synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
 synthesized attribute declarations<a>::[Declaration<a>];
 synthesized attribute references::[Reference];
 
-nonterminal Scope<a> with parent<a>, declarations<a>, references;
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references;
 
 abstract production cons_scope
 top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference]
 {
+  top.id = genInt();
   top.parent = par;
   top.declarations = decls;
   top.references = refs;
+}
+
+function resolve
+[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a> reference::Reference
+{
+  return 
+    if containsBy ((\left::String right::String -> left == right), reference, current_scope.references)
+    then filter ((\s::Declaration<a> -> fst(s) == reference), env_v ([], current_scope))
+    else [];
+}
+
+function env_p
+[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+{
+  return 
+    case current_scope.parent of
+      | nothing() -> []
+      | just(p) -> if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+        then []
+        else env_v (current_scope::seen_scopes, p)
+    end;
+}
+
+function env_d
+[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+{
+  return 
+    if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+    then []
+    else current_scope.declarations;
+}
+
+function env_v
+[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+{
+  return merge_declarations_with_shadowing (env_p (seen_scopes, current_scope), env_d (seen_scopes, current_scope));
 }
 
 @{--
