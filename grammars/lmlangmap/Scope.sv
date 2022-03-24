@@ -52,7 +52,7 @@ function env_d
 function env_v
 [Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
 {
-  return merge_declarations_with_shadowing (env_p (seen_scopes, current_scope), env_d (seen_scopes, current_scope));
+  return merge_declarations_with_shadowing (env_d (seen_scopes, current_scope), env_p (seen_scopes, current_scope));
 }
 
 @{--
