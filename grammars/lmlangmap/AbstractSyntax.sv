@@ -63,13 +63,18 @@ top::Decl ::= id::ID_t exp::Exp
   top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
 }
 
-abstract production decl_exp
-top::Decl ::= exp::Exp
-{
-  top.pp = "decl_exp(" ++ exp.pp ++ ")";
-  exp.inh_scope = top.inh_scope;
-  top.cur_scope = exp.cur_scope;
-}
+
+--------------------------------------------------------------------------------
+--- removing this for now to comply with the grammar in a theory of name resolution
+--------------------------------------------------------------------------------
+
+--abstract production decl_exp
+--top::Decl ::= exp::Exp
+--{
+--  top.pp = "decl_exp(" ++ exp.pp ++ ")";
+--  exp.inh_scope = top.inh_scope;
+--  top.cur_scope = exp.cur_scope;
+--}
 
 abstract production qid_single
 top::Qid ::= id::ID_t

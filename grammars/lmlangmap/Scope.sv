@@ -19,6 +19,14 @@ top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference]
   top.references = refs;
 }
 
+
+
+
+
+--------------------------------------------------------------------
+--- Functions corresponding to the scope graphs resolution algorithm
+--------------------------------------------------------------------
+
 function resolve
 [Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a> reference::Reference
 {
