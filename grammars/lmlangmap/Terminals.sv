@@ -19,6 +19,7 @@ terminal Eq_t '=';
 
 terminal Semi_t ';';
 terminal Comma_t ',';
+terminal Dot_t '.';
 
 terminal LCurly_t '{';
 terminal RCurly_t '}';

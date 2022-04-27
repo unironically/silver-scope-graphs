@@ -50,11 +50,11 @@ top::Decl_c ::= 'def' id::ID_t '=' exp::Exp_c
 -- Not included in the grammar given in the publication - but seems necessary for the examples given.
 -- Removing for now to comply with grammar in theory of name resolution
 --------------------------------------------------------------------
--- concrete production decl_c_exp
--- top::Decl_c ::= exp::Exp_c
--- {
---   top.ast = decl_exp(exp.ast);
--- }
+--concrete production decl_c_exp
+--top::Decl_c ::= exp::Exp_c
+--{
+--  top.ast = decl_exp(exp.ast);
+--}
 
 concrete production qid_c_single
 top::Qid_c ::= id::ID_t
@@ -62,11 +62,11 @@ top::Qid_c ::= id::ID_t
   top.ast = qid_single(id);
 }
 
---concrete production qid_c_list
---top::Qid_c ::= id::ID_t ',' qid::Qid_c
---{
---  top.ast = qid_list(id, qid.ast);
---}
+concrete production qid_c_list
+top::Qid_c ::= id::ID_t '.' qid::Qid_c
+{
+  top.ast = qid_list(id, qid.ast);
+}
 
 concrete production bindlist_c_final
 top::BindList_c ::= id::ID_t '=' exp::Exp_c
