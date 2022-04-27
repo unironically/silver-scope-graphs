@@ -26,7 +26,7 @@ abstract production prog
 top::Program ::= list::DeclList
 {
   top.pp = "prog(" ++ list.pp ++ ")";
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], []);
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
   list.inh_scope = init_scope;
   top.cur_scope = list.cur_scope;
 }
@@ -55,9 +55,9 @@ top::Decl ::= id::ID_t list::DeclList
   
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   -- Creating the scope for this module:
-  list.inh_scope = cons_scope(just(par_scope), [], []);
+  list.inh_scope = cons_scope(just(par_scope), [], [], []);
   -- Updating the current scope with the module name reference (including its associated scope):
-  top.cur_scope = cons_scope(par_scope.parent, (id.lexeme, just(list.cur_scope))::par_scope.declarations, par_scope.references);
+  top.cur_scope = cons_scope(par_scope.parent, (id.lexeme, just(list.cur_scope))::par_scope.declarations, par_scope.references, par_scope.imports);
 }
 
 abstract production decl_import
@@ -71,7 +71,7 @@ top::Decl ::= id::ID_t exp::Exp
 {
   top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  local attribute upd_scope::Scope<Decorated Exp> = cons_scope(par_scope.parent, (id.lexeme, nothing())::par_scope.declarations, par_scope.references);
+  local attribute upd_scope::Scope<Decorated Exp> = cons_scope(par_scope.parent, (id.lexeme, nothing())::par_scope.declarations, par_scope.references, par_scope.imports);
   exp.inh_scope = upd_scope;
   top.cur_scope = exp.cur_scope;
 }
@@ -99,6 +99,9 @@ abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
   top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
+  top.free_vars_syn = id.lexeme::qid.free_vars_syn;
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
+
 }
 
 ------------------------------------------------------------
@@ -117,7 +120,7 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
+  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
 
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
@@ -127,7 +130,7 @@ abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
   -- References are those free vars found in the next binding's expr
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], list.free_vars_syn);
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], list.free_vars_syn, []);
 
   exp.inh_scope = top.inh_scope;
 
@@ -143,7 +146,7 @@ abstract production bindlist_final_seq
 top::BindListSeq ::= id::ID_t exp::Exp
 {
   -- References are all those free vars in the RHS of the lexically-enclosing let expr
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], top.free_vars_inh);
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], top.free_vars_inh, []);
 
   exp.inh_scope = top.inh_scope;
 
@@ -163,7 +166,8 @@ top::Exp ::= list::BindListRec exp::Exp
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     list.declarations_syn, 
-    union(list.free_vars_syn, exp.free_vars_syn)
+    union(list.free_vars_syn, exp.free_vars_syn),
+    []
   );
 
   exp.inh_scope = new_scope;
@@ -204,9 +208,9 @@ top::Exp ::= list::BindListPar exp::Exp
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn)); 
+  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
 
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn);
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn, []);
   top.cur_scope = new_scope;
   top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
@@ -248,7 +252,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.cur_scope = cons_scope(
     par_scope.parent, 
     left_scope.declarations ++ right_scope.declarations, 
-    left_scope.references ++ right_scope.references
+    left_scope.references ++ right_scope.references,
+    left_scope.imports ++ right_scope.imports
   );
 
   top.pp = "plus(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
@@ -267,7 +272,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.cur_scope = cons_scope(
     par_scope.parent, 
     left_scope.declarations ++ right_scope.declarations, 
-    left_scope.references ++ right_scope.references
+    left_scope.references ++ right_scope.references,
+    left_scope.imports ++ right_scope.imports
   );
 
   top.pp = "apply(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";

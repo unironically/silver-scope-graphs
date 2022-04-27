@@ -8,21 +8,19 @@ synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
 synthesized attribute declarations<a>::[Declaration<a>];
 synthesized attribute references::[Reference];
+synthesized attribute imports::[Reference];
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references;
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references, imports;
 
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference]
+top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference] imps::[Reference]
 {
   top.id = genInt();
   top.parent = par;
   top.declarations = decls;
   top.references = refs;
+  top.imports = imps;
 }
-
-
-
-
 
 --------------------------------------------------------------------
 --- Functions corresponding to the scope graphs resolution algorithm
