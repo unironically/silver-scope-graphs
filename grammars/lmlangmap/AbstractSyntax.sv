@@ -120,7 +120,8 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
+  top.cur_scope = 
+    cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
 
   top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
 }
@@ -130,7 +131,8 @@ abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
   -- References are those free vars found in the next binding's expr
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], list.free_vars_syn, []);
+  local attribute new_scope::Scope<Decorated Exp> = 
+    cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], list.free_vars_syn, []);
 
   exp.inh_scope = top.inh_scope;
 
@@ -146,7 +148,8 @@ abstract production bindlist_final_seq
 top::BindListSeq ::= id::ID_t exp::Exp
 {
   -- References are all those free vars in the RHS of the lexically-enclosing let expr
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], top.free_vars_inh, []);
+  local attribute new_scope::Scope<Decorated Exp> = 
+    cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], top.free_vars_inh, []);
 
   exp.inh_scope = top.inh_scope;
 
