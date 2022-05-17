@@ -9,23 +9,28 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar;
+inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar;
+global tab_spacing :: String = "\t";
+
 inherited attribute inh_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 inherited attribute inh_scope_two::Scope<Decorated Exp> occurs on BindListPar;
 
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
-  BindListSeq, BindListRec, BindListPar;
 synthesized attribute syn_scope::Scope<Decorated Exp> occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 synthesized attribute syn_scope_two::Scope<Decorated Exp> occurs on BindListPar;
 synthesized attribute ret_scope::Scope<Decorated Exp> occurs on BindListSeq;
 
 
-
 abstract production prog 
 top::Program ::= list::DeclList
 {
-  top.pp = "prog(" ++ list.pp ++ ")";
+  top.pp = "program(\n" ++ list.pp ++ "\n)";
+  list.tab_level = tab_spacing;
+
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
   list.inh_scope = init_scope;
   top.syn_scope = list.syn_scope;
@@ -36,7 +41,10 @@ top::Program ::= list::DeclList
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
-  top.pp = "decl_list(" ++ decl.pp ++ ", " ++ list.pp ++ ")";
+  top.pp = top.tab_level ++ "decl_list(\n" ++ decl.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  decl.tab_level = tab_spacing ++ top.tab_level;
+  list.tab_level = tab_spacing ++ top.tab_level;
+
   decl.inh_scope = top.inh_scope;
   list.inh_scope = decl.syn_scope;
   top.syn_scope = list.syn_scope;
@@ -45,7 +53,7 @@ top::DeclList ::= decl::Decl list::DeclList
 abstract production decllist_nothing
 top::DeclList ::=
 {
-  top.pp = "decl_list()";
+  top.pp = top.tab_level ++ "decl_list()";
   top.syn_scope = top.inh_scope;
 }
 
@@ -58,7 +66,9 @@ top::DeclList ::=
 abstract production decl_exp
 top::Decl ::= exp::Exp
 {
-  top.pp = "decl_exp(" ++ exp.pp ++ ")";
+  top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+
   exp.inh_scope = top.inh_scope;
   top.syn_scope = exp.syn_scope;
 }
@@ -72,7 +82,10 @@ top::Decl ::= exp::Exp
 abstract production exp_let
 top::Exp ::= list::BindListSeq exp::Exp
 {
-  top.pp = "let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  top.pp = top.tab_level ++ "let(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  list.tab_level = tab_spacing ++ top.tab_level;
+  exp.tab_level = tab_spacing ++ top.tab_level;
+
   list.inh_scope = top.inh_scope;
   top.syn_scope = list.syn_scope;
   exp.inh_scope = list.ret_scope;
@@ -84,7 +97,10 @@ top::Exp ::= list::BindListSeq exp::Exp
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  top.pp = "bind_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.pp = top.tab_level ++ "bind_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+  list.tab_level = tab_spacing ++ top.tab_level;
+
   exp.inh_scope = top.inh_scope; -- Passing S to e in the grammar
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(exp.syn_scope), 
@@ -100,7 +116,8 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 {
-  top.pp = "bind_list()";
+  top.pp = top.tab_level ++ "bind_list()";
+
   top.syn_scope = top.inh_scope; -- Simply returning the unchanged parent scope, this won't be used as binding list cannot change parent scope unless has an exp
   top.ret_scope = top.inh_scope; -- No new scope was created, to the binding list above should synthesize its own new scope
 }
@@ -114,7 +131,10 @@ top::BindListSeq ::=
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  top.pp = top.tab_level ++ "exp_letrec(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  list.tab_level = tab_spacing ++ top.tab_level;
+  exp.tab_level = tab_spacing ++ top.tab_level;
+
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     top.inh_scope.declarations, 
@@ -130,7 +150,10 @@ top::Exp ::= list::BindListRec exp::Exp
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+  list.tab_level = tab_spacing ++ top.tab_level;
+
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     (id.lexeme, nothing())::top.inh_scope.declarations, 
@@ -145,7 +168,8 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 abstract production bindlist_nothing_rec
 top::BindListRec ::=
 {
-  top.pp = "bindlist_list()";
+  top.pp = top.tab_level ++ "bindlist_list()";
+
   top.syn_scope = top.inh_scope; -- inherited (parent) scope unchanged
 }
 
@@ -158,7 +182,10 @@ top::BindListRec ::=
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  top.pp = top.tab_level ++ "exp_letpar(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  list.tab_level = tab_spacing ++ top.tab_level;
+  exp.tab_level = tab_spacing ++ top.tab_level;
+
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     top.inh_scope.declarations, 
@@ -175,7 +202,10 @@ top::Exp ::= list::BindListPar exp::Exp
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 {
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+  list.tab_level = tab_spacing ++ top.tab_level;
+
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope_two), 
     (id.lexeme, nothing())::top.inh_scope_two.declarations, 
@@ -191,9 +221,12 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 abstract production bindlist_nothing_par
 top::BindListPar ::=
 {
+  top.pp = top.tab_level ++ "bindlist_nothing()";
+
   top.syn_scope = top.inh_scope;
   top.syn_scope_two = top.inh_scope_two;
 }
+
 
 
 ------------------------------------------------------------
@@ -205,7 +238,10 @@ top::BindListPar ::=
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = "add(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  top.pp = top.tab_level ++ "add(\n" ++ expLeft.pp ++ ",\n" ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  expLeft.tab_level = tab_spacing ++ top.tab_level;
+  expRight.tab_level = tab_spacing ++ top.tab_level;
+
   expLeft.inh_scope = top.inh_scope;
   expRight.inh_scope = expLeft.syn_scope;
   top.syn_scope = expRight.syn_scope;
@@ -216,7 +252,10 @@ top::Exp ::= expLeft::Exp expRight::Exp
 abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = "apply(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  top.pp = top.tab_level ++ "apply(\n" ++ expLeft.pp ++ ",\n" ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  expLeft.tab_level = tab_spacing ++ top.tab_level;
+  expRight.tab_level = tab_spacing ++ top.tab_level;
+
   expLeft.inh_scope = top.inh_scope;
   expRight.inh_scope = expLeft.syn_scope;
   top.syn_scope = expRight.syn_scope;
@@ -227,7 +266,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
-  top.pp = "exp_qid(" ++ qid.pp ++ ")";
+  top.pp = top.tab_level ++ "exp_qid(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  qid.tab_level = tab_spacing ++ top.tab_level;
+
   qid.inh_scope = top.inh_scope;
   top.syn_scope = qid.syn_scope;
 }
@@ -237,7 +278,7 @@ top::Exp ::= qid::Qid
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
-  top.pp = "exp_int(" ++ val.lexeme ++ ")";
+  top.pp = top.tab_level ++ "exp_int(\n" ++ top.tab_level ++ tab_spacing ++ val.lexeme ++ "\n" ++ top.tab_level ++ ")";
 }
 
 
@@ -245,7 +286,9 @@ top::Exp ::= val::Int_t
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  top.pp = "qid(" ++ id.lexeme ++ ")";
+  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" ++ top.tab_level ++ ")";
+
+
   -- Have to create a new scope at this point so that we can add the reference to id  
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
