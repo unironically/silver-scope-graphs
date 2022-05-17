@@ -1,6 +1,5 @@
 grammar lmlangmap;
 
--- type Declaration<a> = (String, a, Maybe<Scope>);
 type Declaration<a> = (String, Maybe<Scope<a>>);
 type Reference = String;
 

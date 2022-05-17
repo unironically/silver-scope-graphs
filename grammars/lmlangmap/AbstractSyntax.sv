@@ -9,18 +9,12 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq;
 
-synthesized attribute free_vars_syn::[String] occurs on Exp, Qid, BindListSeq, BindListRec, BindListPar;
+inherited attribute inh_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, BindListSeq;
 
-inherited attribute free_vars_inh::[String] occurs on BindListSeq, BindListRec, BindListPar;
-
-synthesized attribute declarations_syn::[(String, Maybe<Scope<Decorated Exp>>)] occurs on BindListRec, BindListPar;
-
-inherited attribute inh_scope_second::Scope<Decorated Exp> occurs on BindListPar;
-
-inherited attribute inh_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute cur_scope::Scope<Decorated Exp> occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute syn_scope::Scope<Decorated Exp> occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq;
+synthesized attribute ret_scope::Scope<Decorated Exp> occurs on BindListSeq;
 
 abstract production prog 
 top::Program ::= list::DeclList
@@ -28,81 +22,41 @@ top::Program ::= list::DeclList
   top.pp = "prog(" ++ list.pp ++ ")";
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
   list.inh_scope = init_scope;
-  top.cur_scope = list.cur_scope;
+  top.syn_scope = list.syn_scope;
 }
 
-abstract production decllist_single
-top::DeclList ::= decl::Decl
-{
-  top.pp = "decllist_single(" ++ decl.pp ++ ")";
-  decl.inh_scope = top.inh_scope;
-  top.cur_scope = decl.cur_scope;
-}
+
 
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
   top.pp = "decl_list(" ++ decl.pp ++ ", " ++ list.pp ++ ")";
   decl.inh_scope = top.inh_scope;
-  list.inh_scope = decl.cur_scope;
-  top.cur_scope = list.cur_scope;
+  list.inh_scope = decl.syn_scope;
+  top.syn_scope = list.syn_scope;
 }
 
-abstract production decl_module
-top::Decl ::= id::ID_t list::DeclList
+abstract production decllist_nothing
+top::DeclList ::=
 {
-  top.pp = "module(" ++ id.lexeme ++ ", " ++ list.pp ++ ")";
-  
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  -- Creating the scope for this module:
-  list.inh_scope = cons_scope(just(par_scope), [], [], []);
-  -- Updating the current scope with the module name reference (including its associated scope):
-  top.cur_scope = cons_scope(par_scope.parent, (id.lexeme, just(list.cur_scope))::par_scope.declarations, par_scope.references, par_scope.imports);
+  top.pp = "decl_list()";
+  top.syn_scope = top.inh_scope;
 }
 
-abstract production decl_import
-top::Decl ::= qid::Qid
-{
-  top.pp = "import(" ++ qid.pp ++ ")";
-}
-
-abstract production decl_define
-top::Decl ::= id::ID_t exp::Exp
-{
-  top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  local attribute upd_scope::Scope<Decorated Exp> = cons_scope(par_scope.parent, (id.lexeme, nothing())::par_scope.declarations, par_scope.references, par_scope.imports);
-  exp.inh_scope = upd_scope;
-  top.cur_scope = exp.cur_scope;
-}
 
 
 --------------------------------------------------------------------------------
---- removing this for now to comply with the grammar in a theory of name resolution
+--- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
 --------------------------------------------------------------------------------
---abstract production decl_exp
---top::Decl ::= exp::Exp
---{
---  top.pp = "decl_exp(" ++ exp.pp ++ ")";
---  exp.inh_scope = top.inh_scope;
---  top.cur_scope = exp.cur_scope;
---}
-
-abstract production qid_single
-top::Qid ::= id::ID_t
+abstract production decl_exp
+top::Decl ::= exp::Exp
 {
-  top.pp = "qid_single(" ++ id.lexeme ++ ")";
-  top.free_vars_syn = [id.lexeme];
+  top.pp = "decl_exp(" ++ exp.pp ++ ")";
+  exp.inh_scope = top.inh_scope;
+  top.syn_scope = exp.syn_scope;
 }
 
-abstract production qid_list
-top::Qid ::= id::ID_t qid::Qid
-{
-  top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
-  top.free_vars_syn = id.lexeme::qid.free_vars_syn;
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
 
-}
 
 ------------------------------------------------------------
 ---- Handling sequential let expressions
@@ -111,132 +65,35 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production exp_let
 top::Exp ::= list::BindListSeq exp::Exp
 {
-  local attribute ret_scope::Scope<Decorated Exp> = list.cur_scope;
-
-  exp.inh_scope = ret_scope;
-
-  list.inh_scope = top.cur_scope;
-  list.free_vars_inh = exp.free_vars_syn;
-
-  -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = 
-    cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
-
-  top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  top.pp = "let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
+  list.inh_scope = top.inh_scope;
+  top.syn_scope = list.syn_scope;
+  exp.inh_scope = list.ret_scope;
 }
+
+
 
 -- Defines the binding pattern for the sequential let feature
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  -- References are those free vars found in the next binding's expr
-  local attribute new_scope::Scope<Decorated Exp> = 
-    cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], list.free_vars_syn, []);
-
-  exp.inh_scope = top.inh_scope;
-
-  list.inh_scope = new_scope;
-  list.free_vars_inh = top.free_vars_inh;
-
-  -- Free variables found in the expr that id is being bound to - these are attached to the parent scope of this let expr
-  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  top.pp = "bind_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
+  exp.inh_scope = top.inh_scope; -- Passing S to e in the grammar
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(just(exp.syn_scope), exp.syn_scope.declarations, exp.syn_scope.references, exp.syn_scope.imports);
+  list.inh_scope = init_scope;
+  top.syn_scope = exp.syn_scope; -- Returning the parent scope passed to exp, can only change in exp
+  top.ret_scope = list.ret_scope; -- Returning the scope possibly created in sub binding list
 }
 
-abstract production bindlist_final_seq
-top::BindListSeq ::= id::ID_t exp::Exp
+abstract production bindlist_nothing
+top::BindListSeq ::=
 {
-  -- References are all those free vars in the RHS of the lexically-enclosing let expr
-  local attribute new_scope::Scope<Decorated Exp> = 
-    cons_scope(just(top.inh_scope), [(id.lexeme, nothing())], top.free_vars_inh, []);
-
-  exp.inh_scope = top.inh_scope;
-
-  -- Free variables found in the expr that id is being bound to - these will be attached to the parent scope of this let expr
-  top.free_vars_syn = exp.free_vars_syn;
-  top.cur_scope = new_scope;
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
+  top.pp = "bind_list()";
+  top.syn_scope = top.inh_scope; -- Simply returning the unchanged parent scope, this won't be used as binding list cannot change parent scope unless has an exp
+  top.ret_scope = top.inh_scope; -- No new scope was created, to the binding list above should synthesize its own new scope
 }
 
-------------------------------------------------------------
----- Handling recursive let expressions
-------------------------------------------------------------
 
-abstract production exp_letrec
-top::Exp ::= list::BindListRec exp::Exp
-{
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope), 
-    list.declarations_syn, 
-    union(list.free_vars_syn, exp.free_vars_syn),
-    []
-  );
-
-  exp.inh_scope = new_scope;
-
-  -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = top.inh_scope; 
-  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-}
-
--- Defines the binding pattern for the recursive let feature
-abstract production bindlist_list_rec
-top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  top.declarations_syn = (id.lexeme, nothing())::list.declarations_syn;
-  exp.inh_scope = top.inh_scope;
-  list.inh_scope = top.inh_scope;
-  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
-}
-
-abstract production bindlist_final_rec
-top::BindListRec ::= id::ID_t exp::Exp
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
-  top.declarations_syn = [(id.lexeme, nothing())];
-  top.free_vars_syn = exp.free_vars_syn;
-}
-
-------------------------------------------------------------
----- Handling parallel let expressions
-------------------------------------------------------------
-
-abstract production exp_letpar
-top::Exp ::= list::BindListPar exp::Exp
-{
-  exp.inh_scope = new_scope;
-
-  -- Remaking the "parent" scope of this let expr based on the free vars of the binding list
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  top.cur_scope = cons_scope(par_scope.parent, par_scope.declarations, union(par_scope.references, list.free_vars_syn), par_scope.imports); 
-
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(just(top.inh_scope), list.declarations_syn, exp.free_vars_syn, []);
-  top.cur_scope = new_scope;
-  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-}
-
--- Defines the binding pattern for the parallel let feature
-abstract production bindlist_list_par
-top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  top.declarations_syn = (id.lexeme, nothing())::list.declarations_syn;
-  exp.inh_scope = top.inh_scope;
-  list.inh_scope = top.inh_scope;
-  list.inh_scope_second = top.inh_scope_second;
-  top.free_vars_syn = union(exp.free_vars_syn, list.free_vars_syn);
-}
-
-abstract production bindlist_final_par
-top::BindListPar ::= id::ID_t exp::Exp
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
-  top.declarations_syn = [(id.lexeme, nothing())];
-  top.free_vars_syn = exp.free_vars_syn;
-}
 
 ------------------------------------------------------------
 ------------------------------------------------------------
@@ -245,60 +102,47 @@ top::BindListPar ::= id::ID_t exp::Exp
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
+  top.pp = "add(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
   expLeft.inh_scope = top.inh_scope;
-  expRight.inh_scope = top.inh_scope;
-
-  -- Merging the resulting "parent" scopes from both the left and right child
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  local attribute left_scope::Scope<Decorated Exp> = expLeft.cur_scope;
-  local attribute right_scope::Scope<Decorated Exp> = expRight.cur_scope;
-  top.cur_scope = cons_scope(
-    par_scope.parent, 
-    left_scope.declarations ++ right_scope.declarations, 
-    left_scope.references ++ right_scope.references,
-    left_scope.imports ++ right_scope.imports
-  );
-
-  top.pp = "plus(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  expRight.inh_scope = expLeft.syn_scope;
+  top.syn_scope = expRight.syn_scope;
 }
+
+
 
 abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  expLeft.inh_scope = top.inh_scope;
-  expRight.inh_scope = top.inh_scope;
-
-  -- Merging the resulting "parent" scopes from both the left and right child
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
-  local attribute left_scope::Scope<Decorated Exp> = expLeft.cur_scope;
-  local attribute right_scope::Scope<Decorated Exp> = expRight.cur_scope;
-  top.cur_scope = cons_scope(
-    par_scope.parent, 
-    left_scope.declarations ++ right_scope.declarations, 
-    left_scope.references ++ right_scope.references,
-    left_scope.imports ++ right_scope.imports
-  );
-
   top.pp = "apply(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
+  expLeft.inh_scope = top.inh_scope;
+  expRight.inh_scope = expLeft.syn_scope;
+  top.syn_scope = expRight.syn_scope;
 }
+
+
 
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
   top.pp = "exp_qid(" ++ qid.pp ++ ")";
   qid.inh_scope = top.inh_scope;
-  top.free_vars_syn = qid.free_vars_syn;
+  top.syn_scope = qid.syn_scope;
 }
 
-abstract production exp_fun
-top::Exp ::= id::ID_t exp::Exp
-{
-  top.pp = "fun(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
-}
 
 
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
   top.pp = "exp_int(" ++ val.lexeme ++ ")";
+}
+
+abstract production qid_single
+top::Qid ::= id::ID_t
+{
+  top.pp = "qid(" ++ id.lexeme ++ ")";
+  -- Have to create a new scope at this point so that we can add the reference to id  
+  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(par_scope.parent, par_scope.declarations, id.lexeme::par_scope.references, par_scope.imports);
+  top.syn_scope = init_scope;
 }
