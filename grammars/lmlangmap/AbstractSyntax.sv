@@ -41,7 +41,8 @@ top::Program ::= list::DeclList
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
-  top.pp = top.tab_level ++ "decl_list(\n" ++ decl.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decl_list(\n" ++ decl.pp ++ ",\n" 
+    ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
   decl.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -97,7 +98,8 @@ top::Exp ::= list::BindListSeq exp::Exp
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  top.pp = top.tab_level ++ "bind_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bind_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
+    ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -131,7 +133,8 @@ top::BindListSeq ::=
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_letrec(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_letrec(\n" ++ list.pp ++ ",\n" 
+    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -150,7 +153,8 @@ top::Exp ::= list::BindListRec exp::Exp
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
-  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing 
+    ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -182,7 +186,8 @@ top::BindListRec ::=
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_letpar(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_letpar(\n" ++ list.pp ++ ",\n" 
+    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -202,7 +207,8 @@ top::Exp ::= list::BindListPar exp::Exp
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 {
-  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list(\n" ++ top.tab_level ++ tab_spacing 
+    ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -238,7 +244,8 @@ top::BindListPar ::=
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = top.tab_level ++ "add(\n" ++ expLeft.pp ++ ",\n" ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "add(\n" ++ expLeft.pp ++ ",\n" 
+    ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
@@ -252,7 +259,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
 abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = top.tab_level ++ "apply(\n" ++ expLeft.pp ++ ",\n" ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "apply(\n" ++ expLeft.pp ++ ",\n" 
+    ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
@@ -278,7 +286,8 @@ top::Exp ::= qid::Qid
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
-  top.pp = top.tab_level ++ "exp_int(\n" ++ top.tab_level ++ tab_spacing ++ val.lexeme ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_int(\n" ++ top.tab_level ++ tab_spacing 
+    ++ val.lexeme ++ "\n" ++ top.tab_level ++ ")";
 }
 
 
@@ -286,7 +295,8 @@ top::Exp ::= val::Int_t
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
-  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
+    ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   -- Have to create a new scope at this point so that we can add the reference to id  
@@ -310,7 +320,8 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" 
+    ++ top.tab_level ++ ")";
 
   -- Have to create a new scope at this point so that we can add the reference to id  
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
