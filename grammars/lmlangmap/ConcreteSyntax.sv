@@ -123,10 +123,16 @@ top::Exp_c ::= expLeft::Exp_c App_t expRight::Exp_c
 
 
 
-concrete production exp_c_qid
+concrete production exp_c_qid_single
 top::Exp_c ::= qid::Qid_c 
 {
-  top.ast = exp_qid(qid.ast);
+  top.ast = exp_qid_single(qid.ast);
+}
+
+concrete production qid_c_list
+top::Qid_c ::= id::ID_t Dot_t qid::Qid_c
+{
+  top.ast = qid_list(id, qid.ast);
 }
 
 concrete production qid_c_single

@@ -263,7 +263,7 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
 
 
-abstract production exp_qid
+abstract production exp_qid_single
 top::Exp ::= qid::Qid
 {
   top.pp = top.tab_level ++ "exp_qid(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
@@ -283,11 +283,34 @@ top::Exp ::= val::Int_t
 
 
 
+abstract production qid_list
+top::Qid ::= id::ID_t qid::Qid
+{
+  top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  qid.tab_level = tab_spacing ++ top.tab_level;
+
+  -- Have to create a new scope at this point so that we can add the reference to id  
+  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
+    par_scope.parent, 
+    par_scope.declarations, 
+    id.lexeme::par_scope.references, 
+    par_scope.imports
+  );
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
+    nothing(),
+    [],
+    [],
+    [] -- come back to this - need to work out imports, should add (id, something) to imports for this scope
+  );
+  qid.inh_scope = new_scope;
+  top.syn_scope = init_scope;
+}
+
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
   top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" ++ top.tab_level ++ ")";
-
 
   -- Have to create a new scope at this point so that we can add the reference to id  
   local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
