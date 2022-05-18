@@ -84,6 +84,23 @@ top::Decl ::= exp::Exp
   top.syn_scope = exp.syn_scope;
 }
 
+abstract production decl_def
+top::Decl ::= id::ID_t exp::Exp
+{
+  top.pp = top.tab_level ++ "def(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ","
+    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
+    just(exp.syn_scope), 
+    (id.lexeme, nothing())::exp.syn_scope.declarations, 
+    exp.syn_scope.references, 
+    exp.syn_scope.imports
+  );
+  exp.inh_scope = init_scope;
+  top.syn_scope = exp.syn_scope;
+}
+
 
 
 ------------------------------------------------------------
@@ -246,6 +263,23 @@ top::BindListPar ::=
 ------------------------------------------------------------
 ---- Other expressions
 ------------------------------------------------------------
+
+abstract production exp_funfix
+top::Exp ::= id::ID_t exp::Exp
+{
+  top.pp = top.tab_level ++ "fun/fix(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme
+    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
+  
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
+    just(top.inh_scope), 
+    (id.lexeme, nothing())::top.inh_scope.declarations, 
+    top.inh_scope.references, 
+    top.inh_scope.imports
+  );
+  exp.inh_scope = init_scope;
+  top.syn_scope = top.inh_scope; -- inherited (parent) scope does not change
+}
 
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp

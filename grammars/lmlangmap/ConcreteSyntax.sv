@@ -43,7 +43,17 @@ top::Decl_c ::= exp::Exp_c
   top.ast = decl_exp(exp.ast);
 }
 
+concrete production decl_c_def
+top::Decl_c ::= Def_t id::ID_t Eq_t exp::Exp_c
+{
+  top.ast = decl_def(id, exp.ast);
+}
 
+concrete production exp_c_fun
+top::Exp_c ::= Fun_t id::ID_t LCurly_t exp::Exp_c RCurly_t
+{
+  top.ast = exp_funfix(id, exp.ast);
+}
 
 concrete production exp_c_let
 top::Exp_c ::= 'let' list::BindList_c_seq 'in' exp::Exp_c
