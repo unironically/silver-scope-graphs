@@ -307,14 +307,16 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_scope = expRight.syn_scope;
 }
 
-abstract production exp_qid_single
+abstract production exp_qid
 top::Exp ::= qid::Qid
 {
   top.pp = top.tab_level ++ "exp_qid(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   qid.inh_scope = top.inh_scope;
-  top.syn_scope = qid.syn_scope;
+  qid.inh_scope_iqid = qid.syn_scope;
+
+  top.syn_scope = qid.syn_apply_iqid;
 }
 
 abstract production exp_int
@@ -330,12 +332,17 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
+inherited attribute inh_scope_iqid::Scope<Decorated Exp> occurs on Qid;
+synthesized attribute syn_apply_iqid::Scope<Decorated Exp> occurs on Qid;
+
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
   top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
     ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
+
+  qid.inh_scope_iqid = top.inh_scope_iqid;
 
   -- Have to create a new scope at this point so that we can add the reference to id  
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
@@ -349,10 +356,11 @@ top::Qid ::= id::ID_t qid::Qid
     nothing(),
     [],
     [],
-    [] -- come back to this - need to work out imports, should add (id, something) to imports for this scope
+    [id.lexeme]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
   );
   qid.inh_scope = new_scope;
   top.syn_scope = init_scope;
+  top.syn_apply_iqid = qid.syn_apply_iqid;
 }
 
 abstract production qid_single
@@ -369,5 +377,14 @@ top::Qid ::= id::ID_t
     top.inh_scope.imports
   );
 
+  -- iqid
+  local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
+    top.inh_scope_iqid.parent, 
+    top.inh_scope_iqid.declarations, 
+    top.inh_scope_iqid.references, 
+    id.lexeme::top.inh_scope_iqid.imports
+  );
+
   top.syn_scope = init_scope;
+  top.syn_apply_iqid = iqid_scope;
 }
