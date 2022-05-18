@@ -25,6 +25,11 @@ synthesized attribute syn_scope_two::Scope<Decorated Exp> occurs on BindListPar;
 synthesized attribute ret_scope::Scope<Decorated Exp> occurs on BindListSeq;
 
 
+
+------------------------------------------------------------
+---- Program root
+------------------------------------------------------------
+
 abstract production prog 
 top::Program ::= list::DeclList
 {
@@ -37,6 +42,10 @@ top::Program ::= list::DeclList
 }
 
 
+
+------------------------------------------------------------
+---- Declaration lists
+------------------------------------------------------------
 
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
@@ -60,11 +69,12 @@ top::DeclList ::=
 
 
 
---------------------------------------------------------------------------------
---- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
---------------------------------------------------------------------------------
+------------------------------------------------------------
+---- Declarations
+------------------------------------------------------------
 
 abstract production decl_exp
+-- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
 top::Decl ::= exp::Exp
 {
   top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
@@ -77,7 +87,7 @@ top::Decl ::= exp::Exp
 
 
 ------------------------------------------------------------
----- Handling sequential let expressions
+---- Sequential let expressions
 ------------------------------------------------------------
 
 abstract production exp_let
@@ -91,8 +101,6 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.syn_scope = list.syn_scope;
   exp.inh_scope = list.ret_scope;
 }
-
-
 
 -- Defines the binding pattern for the sequential let feature
 abstract production bindlist_list_seq
@@ -127,7 +135,7 @@ top::BindListSeq ::=
 
 
 ------------------------------------------------------------
----- Handling recursive let expressions
+---- Recursive let expressions
 ------------------------------------------------------------
 
 abstract production exp_letrec
@@ -180,7 +188,7 @@ top::BindListRec ::=
 
 
 ------------------------------------------------------------
----- Handling parallel let expressions
+---- Parallel let expressions
 ------------------------------------------------------------
 
 abstract production exp_letpar
@@ -236,10 +244,8 @@ top::BindListPar ::=
 
 
 ------------------------------------------------------------
+---- Other expressions
 ------------------------------------------------------------
-------------------------------------------------------------
-
-
 
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
@@ -254,8 +260,6 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_scope = expRight.syn_scope;
 }
 
-
-
 abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
@@ -269,8 +273,6 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_scope = expRight.syn_scope;
 }
 
-
-
 abstract production exp_qid_single
 top::Exp ::= qid::Qid
 {
@@ -281,8 +283,6 @@ top::Exp ::= qid::Qid
   top.syn_scope = qid.syn_scope;
 }
 
-
-
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
@@ -291,6 +291,10 @@ top::Exp ::= val::Int_t
 }
 
 
+
+------------------------------------------------------------
+---- Qualified identifiers
+------------------------------------------------------------
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
