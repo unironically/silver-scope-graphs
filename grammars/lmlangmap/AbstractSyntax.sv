@@ -87,7 +87,7 @@ top::Decl ::= exp::Exp
 abstract production decl_def
 top::Decl ::= id::ID_t exp::Exp
 {
-  top.pp = top.tab_level ++ "def(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ","
+  top.pp = top.tab_level ++ "def(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n"
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -267,7 +267,7 @@ top::BindListPar ::=
 abstract production exp_funfix
 top::Exp ::= id::ID_t exp::Exp
 {
-  top.pp = top.tab_level ++ "fun/fix(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme
+  top.pp = top.tab_level ++ "fun/fix(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n"
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   
