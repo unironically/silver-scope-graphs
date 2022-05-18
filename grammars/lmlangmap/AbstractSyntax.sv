@@ -338,13 +338,13 @@ top::Qid ::= id::ID_t qid::Qid
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   -- Have to create a new scope at this point so that we can add the reference to id  
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    par_scope.parent, 
-    par_scope.declarations, 
-    id.lexeme::par_scope.references, 
-    par_scope.imports
+    top.inh_scope.parent, 
+    top.inh_scope.declarations, 
+    id.lexeme::top.inh_scope.references, 
+    top.inh_scope.imports
   );
+
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     nothing(),
     [],
@@ -361,13 +361,13 @@ top::Qid ::= id::ID_t
   top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" 
     ++ top.tab_level ++ ")";
 
-  -- Have to create a new scope at this point so that we can add the reference to id  
-  local attribute par_scope::Scope<Decorated Exp> = top.inh_scope;
+  -- Have to create a new scope at this point so that we can add the reference to id
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    par_scope.parent, 
-    par_scope.declarations, 
-    id.lexeme::par_scope.references, 
-    par_scope.imports
+    top.inh_scope.parent, 
+    top.inh_scope.declarations, 
+    id.lexeme::top.inh_scope.references, 
+    top.inh_scope.imports
   );
+
   top.syn_scope = init_scope;
 }
