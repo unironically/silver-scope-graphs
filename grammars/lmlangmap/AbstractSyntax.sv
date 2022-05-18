@@ -101,6 +101,37 @@ top::Decl ::= id::ID_t exp::Exp
   top.syn_scope = exp.syn_scope;
 }
 
+abstract production decl_import
+top::Decl ::= qid::Qid
+{
+  qid.inh_scope = top.inh_scope;
+  top.syn_scope = qid.syn_scope;
+}
+
+abstract production decl_module
+top::Decl ::= id::ID_t list::DeclList
+{
+
+  -- Remaking parent scope with new declaration
+  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
+    top.inh_scope.parent, 
+    (id.lexeme, just(new_scope))::top.inh_scope.declarations, 
+    top.inh_scope.references, 
+    top.inh_scope.imports
+  );
+
+  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
+    just(init_scope), 
+    [], 
+    [], 
+    []
+  );
+
+  list.inh_scope = new_scope;
+  top.syn_scope = init_scope; 
+
+}
+
 
 
 ------------------------------------------------------------
@@ -164,7 +195,7 @@ top::Exp ::= list::BindListRec exp::Exp
   exp.tab_level = tab_spacing ++ top.tab_level;
 
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope), 
+    top.inh_scope.parent, 
     top.inh_scope.declarations, 
     top.inh_scope.references, 
     top.inh_scope.imports
@@ -217,7 +248,7 @@ top::Exp ::= list::BindListPar exp::Exp
   exp.tab_level = tab_spacing ++ top.tab_level;
 
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope), 
+    top.inh_scope.parent, 
     top.inh_scope.declarations, 
     top.inh_scope.references, 
     top.inh_scope.imports

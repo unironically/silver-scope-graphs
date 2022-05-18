@@ -43,6 +43,18 @@ top::Decl_c ::= exp::Exp_c
   top.ast = decl_exp(exp.ast);
 }
 
+concrete production decl_c_import
+top::Decl_c ::= Import_t qid::Qid_c
+{
+  top.ast = decl_import(qid.ast);
+}
+
+concrete production decl_c_module
+top::Decl_c ::= Module_t id::ID_t LCurly_t list::DeclList_c RCurly_t
+{
+  top.ast = decl_module(id, list.ast);
+} 
+
 concrete production decl_c_def
 top::Decl_c ::= Def_t id::ID_t Eq_t exp::Exp_c
 {

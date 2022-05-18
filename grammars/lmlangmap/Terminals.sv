@@ -3,6 +3,8 @@ grammar lmlangmap;
 terminal ID_t /[a-z][a-zA-Z]*/;
 terminal Int_t /(0|-?[1-9][0-9]*)/;
 
+terminal Import_t 'import' dominates {ID_t};
+terminal Module_t 'module' dominates {ID_t};
 terminal Mod_t 'mod' dominates {ID_t};
 terminal Imp_t 'imp' dominates {ID_t};
 terminal Def_t 'def' dominates {ID_t};
