@@ -111,7 +111,6 @@ top::Decl ::= qid::Qid
 abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
 {
-
   -- Remaking parent scope with new declaration
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent, 
@@ -119,17 +118,14 @@ top::Decl ::= id::ID_t list::DeclList
     top.inh_scope.references, 
     top.inh_scope.imports
   );
-
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     just(init_scope), 
     [], 
     [], 
     []
   );
-
   list.inh_scope = new_scope;
   top.syn_scope = init_scope; 
-
 }
 
 
