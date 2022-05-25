@@ -96,7 +96,7 @@ top::Decl ::= id::ID_t exp::Exp
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(exp.syn_scope),     
-    (id.lexeme, init_decl)::exp.syn_scope.declarations, -- AFTER
+    (id.lexeme, init_decl)::exp.syn_scope.declarations,
     exp.syn_scope.references, 
     exp.syn_scope.imports
   );
@@ -119,7 +119,7 @@ top::Decl ::= id::ID_t list::DeclList
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, just(assoc_scope));
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent,     
-    (id.lexeme, init_decl)::top.inh_scope.declarations, -- AFTER (need to add back associated scope at some point)
+    (id.lexeme, init_decl)::top.inh_scope.declarations,
     top.inh_scope.references, 
     top.inh_scope.imports
   );
@@ -164,7 +164,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(exp.syn_scope),     
-    (id.lexeme, init_decl)::exp.syn_scope.declarations, -- AFTER
+    (id.lexeme, init_decl)::exp.syn_scope.declarations,
     exp.syn_scope.references, 
     exp.syn_scope.imports
   );
@@ -219,7 +219,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope),     
-    (id.lexeme, init_decl)::top.inh_scope.declarations, -- AFTER
+    (id.lexeme, init_decl)::top.inh_scope.declarations,
     top.inh_scope.references, 
     top.inh_scope.imports
   ); -- change made to parent scope, must become syn_scope (after possible changes in exp and sub bind list)
@@ -274,7 +274,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope_two),     
-    (id.lexeme, init_decl)::top.inh_scope_two.declarations, -- AFTER
+    (id.lexeme, init_decl)::top.inh_scope_two.declarations,
     top.inh_scope_two.references, 
     top.inh_scope_two.imports
   );
@@ -311,7 +311,7 @@ top::Exp ::= id::ID_t exp::Exp
     just(top.inh_scope), 
     
     -- (id.lexeme, nothing())::top.inh_scope.declarations, -- BEFORE
-    (id.lexeme, init_decl)::top.inh_scope.declarations, -- AFTER
+    (id.lexeme, init_decl)::top.inh_scope.declarations,
 
     top.inh_scope.references, 
     top.inh_scope.imports
@@ -383,15 +383,16 @@ top::Qid ::= id::ID_t qid::Qid
 
   qid.inh_scope_iqid = top.inh_scope_iqid;
 
-  -- Have to create a new scope at this point so that we can add the reference to id  
+  -- Have to create a new scope at this point so that we can add the reference to id
+  local attribute init_ref::Usage<Decorated Exp> = cons_usage(id.lexeme, init_scope);  
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent, 
     top.inh_scope.declarations, 
-    id.lexeme::top.inh_scope.references, 
+    (id.lexeme, init_ref)::top.inh_scope.references, 
     top.inh_scope.imports
   );
 
-  local attribute init_import::Import<Decorated Exp> = cons_import(id.lexeme, new_scope); -- come back to this
+  local attribute init_import::Usage<Decorated Exp> = cons_usage(id.lexeme, new_scope); -- come back to this
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     nothing(),
     [],
@@ -410,15 +411,16 @@ top::Qid ::= id::ID_t
     ++ top.tab_level ++ ")";
 
   -- Have to create a new scope at this point so that we can add the reference to id
+  local attribute init_ref::Usage<Decorated Exp> = cons_usage(id.lexeme, init_scope);
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent, 
     top.inh_scope.declarations, 
-    id.lexeme::top.inh_scope.references, 
+    (id.lexeme, init_ref)::top.inh_scope.references, 
     top.inh_scope.imports
   );
 
   -- iqid
-  local attribute init_import::Import<Decorated Exp> = cons_import(id.lexeme, iqid_scope);
+  local attribute init_import::Usage<Decorated Exp> = cons_usage(id.lexeme, iqid_scope);
   local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope_iqid.parent, 
     top.inh_scope_iqid.declarations, 

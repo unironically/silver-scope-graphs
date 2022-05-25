@@ -5,13 +5,13 @@ type Reference = String;
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
 synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
-synthesized attribute references::[Reference];
-synthesized attribute imports<a>::[(String, Decorated Import<a>)];
+synthesized attribute references<a>::[(String, Decorated Usage<a>)];
+synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references, imports<a>;
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>;
 
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[Reference] imps::[(String, Decorated Import<a>)]
+top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[(String, Decorated Usage<a>)] imps::[(String, Decorated Usage<a>)]
 {
   top.id = genInt();
   top.parent = par;
@@ -38,15 +38,14 @@ top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a> assoc_scope_
 }
 
 -----------
--- Imports:
+-- Imports/References (called "Usage" for now until something better comes along):
 
-inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that this import points to with an invisible line
--- inherited attribute, as this is added to after resolution
+inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Import<a> with identifier, in_scope<a>, linked_node<a>;
+nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>;
 
-abstract production cons_import
-top::Import<a> ::= id::String in_scope_arg::Decorated Scope<a>
+abstract production cons_usage
+top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
 {
   top.identifier = id;
   top.in_scope = in_scope_arg;
