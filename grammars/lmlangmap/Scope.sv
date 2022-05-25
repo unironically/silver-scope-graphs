@@ -38,7 +38,7 @@ top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a>
 -----------
 -- Imports:
 
-inherited attribute linked_node<a>::Decorated Import<a>; -- The node that this import points to with an invisible line
+inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that this import points to with an invisible line
 -- inherited attriubte, as this is added to after resolution
 
 nonterminal Import<a> with identifier, in_scope<a>, linked_node<a>;
