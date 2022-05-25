@@ -51,10 +51,9 @@ top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
   top.in_scope = in_scope_arg;
 }
 
+
+
 {-
-
-
-
 --------------------------------------------------------------------
 --- Functions corresponding to the scope graphs resolution algorithm
 --------------------------------------------------------------------

@@ -108,6 +108,13 @@ abstract production decl_import
 top::Decl ::= qid::Qid
 {
   qid.inh_scope = top.inh_scope;
+
+  local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
+    qid.syn_scope.parent,
+    qid.syn_scope.declarations,
+    qid.syn_scope.references,
+    (qid.syn_last_ref.identifier, qid.syn_last_ref)::qid.syn_scope.imports
+  );
   top.syn_scope = qid.syn_scope;
 }
 
@@ -353,9 +360,8 @@ top::Exp ::= qid::Qid
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   qid.inh_scope = top.inh_scope;
-  qid.inh_scope_iqid = qid.syn_scope;
 
-  top.syn_scope = qid.syn_apply_iqid;
+  top.syn_scope = qid.syn_scope;
 }
 
 abstract production exp_int
@@ -371,8 +377,7 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-inherited attribute inh_scope_iqid::Scope<Decorated Exp> occurs on Qid;
-synthesized attribute syn_apply_iqid::Scope<Decorated Exp> occurs on Qid;
+synthesized attribute syn_last_ref::Decorated Usage<Decorated Exp> occurs on Qid;
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
@@ -380,8 +385,6 @@ top::Qid ::= id::ID_t qid::Qid
   top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
     ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
-
-  qid.inh_scope_iqid = top.inh_scope_iqid;
 
   -- Have to create a new scope at this point so that we can add the reference to id
   local attribute init_ref::Usage<Decorated Exp> = cons_usage(id.lexeme, init_scope);  
@@ -392,16 +395,15 @@ top::Qid ::= id::ID_t qid::Qid
     top.inh_scope.imports
   );
 
-  local attribute init_import::Usage<Decorated Exp> = cons_usage(id.lexeme, new_scope); -- come back to this
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     nothing(),
     [],
     [],
-    [(id.lexeme, init_import)]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
+    [(id.lexeme, init_ref)]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
   );
   qid.inh_scope = new_scope;
   top.syn_scope = init_scope;
-  top.syn_apply_iqid = qid.syn_apply_iqid;
+  top.syn_last_ref = qid.syn_last_ref;
 }
 
 abstract production qid_single
@@ -420,14 +422,6 @@ top::Qid ::= id::ID_t
   );
 
   -- iqid
-  local attribute init_import::Usage<Decorated Exp> = cons_usage(id.lexeme, iqid_scope);
-  local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope_iqid.parent, 
-    top.inh_scope_iqid.declarations, 
-    top.inh_scope_iqid.references, 
-    (id.lexeme, init_import)::top.inh_scope_iqid.imports -- come back to this
-  );
-
   top.syn_scope = init_scope;
-  top.syn_apply_iqid = iqid_scope;
+  top.syn_last_ref = init_ref;
 }
