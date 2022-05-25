@@ -95,11 +95,8 @@ top::Decl ::= id::ID_t exp::Exp
 
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(exp.syn_scope), 
-    
-    -- (id.lexeme, nothing())::exp.syn_scope.declarations, -- BEFORE
+    just(exp.syn_scope),     
     (id.lexeme, init_decl)::exp.syn_scope.declarations, -- AFTER
-
     exp.syn_scope.references, 
     exp.syn_scope.imports
   );
@@ -121,11 +118,8 @@ top::Decl ::= id::ID_t list::DeclList
   local attribute assoc_scope::Scope<Decorated Exp> = list.syn_scope;
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, just(assoc_scope));
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent, 
-    
-    --(id.lexeme, nothing())::top.inh_scope.declarations, -- use list.syn_scope as new_scope may change in list -- BEFORE
+    top.inh_scope.parent,     
     (id.lexeme, init_decl)::top.inh_scope.declarations, -- AFTER (need to add back associated scope at some point)
-
     top.inh_scope.references, 
     top.inh_scope.imports
   );
@@ -169,11 +163,8 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   exp.inh_scope = top.inh_scope; -- Passing S to e in the grammar
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(exp.syn_scope), 
-    
-    -- (id.lexeme, nothing())::exp.syn_scope.declarations, -- BEFORE
+    just(exp.syn_scope),     
     (id.lexeme, init_decl)::exp.syn_scope.declarations, -- AFTER
-
     exp.syn_scope.references, 
     exp.syn_scope.imports
   );
@@ -227,11 +218,8 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope), 
-    
-    -- (id.lexeme, nothing())::top.inh_scope.declarations, -- BEFORE
+    just(top.inh_scope),     
     (id.lexeme, init_decl)::top.inh_scope.declarations, -- AFTER
-
     top.inh_scope.references, 
     top.inh_scope.imports
   ); -- change made to parent scope, must become syn_scope (after possible changes in exp and sub bind list)
@@ -285,11 +273,8 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 
   local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope_two), 
-    
-    -- (id.lexeme, nothing())::top.inh_scope_two.declarations, -- BEFORE
+    just(top.inh_scope_two),     
     (id.lexeme, init_decl)::top.inh_scope_two.declarations, -- AFTER
-
     top.inh_scope_two.references, 
     top.inh_scope_two.imports
   );
