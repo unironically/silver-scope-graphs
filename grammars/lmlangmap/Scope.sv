@@ -24,12 +24,14 @@ top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>
 
 
 synthesized attribute identifier::String;
-nonterminal Declaration<a> with identifier;
+synthesized attribute in_scope<a>::Decorated Scope<a>;
+nonterminal Declaration<a> with identifier, in_scope<a>;
 
 abstract production cons_decl
-top::Declaration<a> ::= id::String
+top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a>
 {
   top.identifier = id;
+  top.in_scope = in_scope_arg;
 }
 
 
