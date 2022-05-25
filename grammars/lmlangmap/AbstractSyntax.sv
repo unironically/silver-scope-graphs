@@ -93,7 +93,7 @@ top::Decl ::= id::ID_t exp::Exp
 
 
 
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(exp.syn_scope), 
     
@@ -118,7 +118,8 @@ abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
 {
   -- Remaking parent scope with new declaration
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute assoc_scope::Scope<Decorated Exp> = list.syn_scope;
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, just(assoc_scope));
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent, 
     
@@ -166,7 +167,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   list.tab_level = tab_spacing ++ top.tab_level;
 
   exp.inh_scope = top.inh_scope; -- Passing S to e in the grammar
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(exp.syn_scope), 
     
@@ -224,7 +225,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     
@@ -282,7 +283,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope_two), 
     
@@ -320,7 +321,7 @@ top::Exp ::= id::ID_t exp::Exp
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope);
+  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     just(top.inh_scope), 
     
