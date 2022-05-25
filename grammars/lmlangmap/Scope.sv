@@ -1,19 +1,18 @@
 grammar lmlangmap;
 
-type Declaration<a> = (String, Maybe<Scope<a>>);
+-- type Declaration<a> = (String, Maybe<Scope<a>>);
 
 type Reference = String;
 
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
-synthesized attribute declarations<a>::[Declaration<a>];
+synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
 synthesized attribute references::[Reference];
 synthesized attribute imports::[Reference];
-
 nonterminal Scope<a> with id, parent<a>, declarations<a>, references, imports;
 
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference] imps::[Reference]
+top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[Reference] imps::[Reference]
 {
   top.id = genInt();
   top.parent = par;
@@ -22,6 +21,19 @@ top::Scope<a> ::= par::Maybe<Scope<a>> decls::[Declaration<a>] refs::[Reference]
   top.imports = imps;
 }
 
+
+
+synthesized attribute identifier::String;
+nonterminal Declaration<a> with identifier;
+
+abstract production cons_decl
+top::Declaration<a> ::= id::String
+{
+  top.identifier = id;
+}
+
+
+{-
 --------------------------------------------------------------------
 --- Functions corresponding to the scope graphs resolution algorithm
 --------------------------------------------------------------------
@@ -74,3 +86,4 @@ function merge_declarations_with_shadowing
   return unionBy (\mem_r::Declaration<a> mem_l::Declaration<a> -> fst(mem_r) == fst(mem_l), 
       right , left);
 }
+-}
