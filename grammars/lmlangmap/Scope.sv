@@ -38,16 +38,16 @@ top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a>
 -----------
 -- Imports:
 
---synthesized attribute linked_node<a>::Decorated Import<a>; -- The node that this import points to with an invisible line
+inherited attribute linked_node<a>::Decorated Import<a>; -- The node that this import points to with an invisible line
+-- inherited attriubte, as this is added to after resolution
 
-nonterminal Import<a> with identifier, in_scope<a>; --, linked_node<a>;
+nonterminal Import<a> with identifier, in_scope<a>, linked_node<a>;
 
 abstract production cons_import
-top::Import<a> ::= id::String in_scope_arg::Decorated Scope<a> -- linked_node_arg::Decorated Import<a>
+top::Import<a> ::= id::String in_scope_arg::Decorated Scope<a>
 {
   top.identifier = id;
   top.in_scope = in_scope_arg;
-  -- top.linked_node = linked_node_arg;
 }
 
 {-
