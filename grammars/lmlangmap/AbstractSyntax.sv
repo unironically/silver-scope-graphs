@@ -405,11 +405,12 @@ top::Qid ::= id::ID_t qid::Qid
     top.inh_scope.imports
   );
 
+  local attribute init_import::Import<Decorated Exp> = cons_import(id.lexeme, new_scope); -- come back to this
   local attribute new_scope::Scope<Decorated Exp> = cons_scope(
     nothing(),
     [],
     [],
-    [id.lexeme]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
+    [(id.lexeme, init_import)]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
   );
   qid.inh_scope = new_scope;
   top.syn_scope = init_scope;
@@ -431,11 +432,12 @@ top::Qid ::= id::ID_t
   );
 
   -- iqid
+  local attribute init_import::Import<Decorated Exp> = cons_import(id.lexeme, iqid_scope);
   local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope_iqid.parent, 
     top.inh_scope_iqid.declarations, 
     top.inh_scope_iqid.references, 
-    id.lexeme::top.inh_scope_iqid.imports
+    (id.lexeme, init_import)::top.inh_scope_iqid.imports -- come back to this
   );
 
   top.syn_scope = init_scope;

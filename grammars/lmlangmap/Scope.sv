@@ -1,18 +1,17 @@
 grammar lmlangmap;
 
--- type Declaration<a> = (String, Maybe<Scope<a>>);
-
 type Reference = String;
 
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
 synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
 synthesized attribute references::[Reference];
-synthesized attribute imports::[Reference];
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references, imports;
+synthesized attribute imports<a>::[(String, Decorated Import<a>)];
+
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references, imports<a>;
 
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[Reference] imps::[Reference]
+top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[Reference] imps::[(String, Decorated Import<a>)]
 {
   top.id = genInt();
   top.parent = par;
@@ -21,10 +20,12 @@ top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>
   top.imports = imps;
 }
 
+----------------
+-- Declarations:
 
+synthesized attribute identifier::String; -- Name of the declaration
+synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the declaration resides
 
-synthesized attribute identifier::String;
-synthesized attribute in_scope<a>::Decorated Scope<a>;
 nonterminal Declaration<a> with identifier, in_scope<a>;
 
 abstract production cons_decl
@@ -34,8 +35,25 @@ top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a>
   top.in_scope = in_scope_arg;
 }
 
+-----------
+-- Imports:
+
+--synthesized attribute linked_node<a>::Decorated Import<a>; -- The node that this import points to with an invisible line
+
+nonterminal Import<a> with identifier, in_scope<a>; --, linked_node<a>;
+
+abstract production cons_import
+top::Import<a> ::= id::String in_scope_arg::Decorated Scope<a> -- linked_node_arg::Decorated Import<a>
+{
+  top.identifier = id;
+  top.in_scope = in_scope_arg;
+  -- top.linked_node = linked_node_arg;
+}
 
 {-
+
+
+
 --------------------------------------------------------------------
 --- Functions corresponding to the scope graphs resolution algorithm
 --------------------------------------------------------------------
