@@ -114,7 +114,7 @@ top::Decl ::= id::ID_t list::DeclList
   -- Remaking parent scope with new declaration
   local attribute init_scope::Scope<Decorated Exp> = cons_scope(
     top.inh_scope.parent, 
-    (id.lexeme, just(new_scope))::top.inh_scope.declarations, 
+    (id.lexeme, just(list.syn_scope))::top.inh_scope.declarations, -- use list.syn_scope as new_scope may change in list
     top.inh_scope.references, 
     top.inh_scope.imports
   );

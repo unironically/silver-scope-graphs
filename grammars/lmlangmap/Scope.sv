@@ -1,6 +1,7 @@
 grammar lmlangmap;
 
 type Declaration<a> = (String, Maybe<Scope<a>>);
+
 type Reference = String;
 
 synthesized attribute id::Integer;
