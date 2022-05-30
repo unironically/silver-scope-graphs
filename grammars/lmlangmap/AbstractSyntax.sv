@@ -94,6 +94,8 @@ top::DeclList ::=
   top.syn_imports = [];
 }
 
+
+
 ------------------------------------------------------------
 ---- Declarations
 ------------------------------------------------------------
@@ -449,16 +451,13 @@ top::Qid ::= id::ID_t qid::Qid
     id.lexeme,
     par_scope
   );
-
   local attribute init_scope::Scope_type = cons_scope (
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
     qid.syn_imports ++ [(id.lexeme, init_usage)]
   );
-
   qid.inh_scope = init_scope;
-
   top.syn_decls = [];
   top.syn_refs = [(id.lexeme, init_usage)];
   top.syn_imports = [];
