@@ -29,18 +29,17 @@ synthesized attribute syn_scope::Scope_type occurs on Program, DeclList, Decl, Q
 
 synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_refs::[(String, Decorated Usage<Target_type>)] occurs on DeclList, 
+synthesized attribute syn_refs::[(String, Decorated Usage_type)] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_imports::[(String, Decorated Usage<Target_type>)] occurs on DeclList, 
+synthesized attribute syn_imports::[(String, Decorated Usage_type)] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 
 synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on BindListPar;
-synthesized attribute syn_refs_two::[(String, Decorated Usage<Target_type>)] occurs on BindListPar;
-synthesized attribute syn_imports_two::[(String, Decorated Usage<Target_type>)] occurs on BindListPar;
+synthesized attribute syn_refs_two::[(String, Decorated Usage_type)] occurs on BindListPar;
+synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 
-synthesized attribute syn_iqid_import::(String, Decorated Usage<Target_type>) occurs on Qid;
+synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
 
-synthesized attribute syn_scope_two::Scope_type occurs on BindListPar;
 synthesized attribute ret_scope::Scope_type occurs on BindListSeq;
 
 
@@ -431,7 +430,7 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-synthesized attribute syn_last_ref::Decorated Usage<Target_type> occurs on Qid;
+synthesized attribute syn_last_ref::Decorated Usage_type occurs on Qid;
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
