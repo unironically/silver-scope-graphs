@@ -1,7 +1,5 @@
 grammar lmlangmap;
 
-type Reference = String;
-
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Scope<a>>;
 synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
@@ -59,28 +57,28 @@ top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
 --------------------------------------------------------------------
 
 function resolve
-[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a> reference::Reference
+[Declaration<a>] ::= seen_imports::[Usage<a>] reference::Usage<a>
 {
-  return 
-    if containsBy ((\left::String right::String -> left == right), reference, current_scope.references)
-    then filter ((\s::Declaration<a> -> fst(s) == reference), env_v ([], current_scope))
-    else [];
+  return filter ((\s::Declaration<a> -> s.identifier == reference.identifier), 
+    env_v ([reference] ++ seen_imports, [], reference.in_scope));
 }
 
-function env_p
-[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+function env_v
+[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
 {
-  return 
-    case current_scope.parent of
-      | nothing() -> []
-      | just(p) -> if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
-        then []
-        else env_v (current_scope::seen_scopes, p)
-    end;
+  return merge_declarations_with_shadowing (env_l (seen_imports, seen_scopes, current_scope), 
+    env_p (seen_imports, seen_scopes, current_scope));
+}
+
+function env_l
+[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+{
+  return merge_declarations_with_shadowing (env_d (seen_imports, seen_scopes, current_scope), 
+    env_i (seen_imports, seen_scopes, current_scope));
 }
 
 function env_d
-[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
 {
   return 
     if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
@@ -88,11 +86,32 @@ function env_d
     else current_scope.declarations;
 }
 
-function env_v
-[Declaration<a>] ::= seen_scopes::[Scope<a>] current_scope::Scope<a>
+function env_i
+[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
 {
-  return merge_declarations_with_shadowing (env_d (seen_scopes, current_scope), env_p (seen_scopes, current_scope));
+  return 
+    if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+    then []
+    else 
+      let imp_list::[Usage<a>] = removeAllBy((\left::Scope<a> right::Scope<a> -> left.id == right.id), seen_imports, current_scope.imports) in
+      let res_list::[Declaration<a>] = foldl((\acc::[Declaration<a>] thing::Usage<a> -> acc ++ resolve(seen_imports, thing)), [], imp_list) in
+      let scope_list::[Scope<a>] = foldl((\acc::[Scope<a>] thing::Declaration<a> -> acc ++ (case thing.associated_scope of | nothing() -> [] | just(p) -> p)), [], res_list) in
+      foldl((\acc[Declaration<a>] thing::Scope<a> -> env_l(seen_imports, seen_scopes ++ [current_scope], thing)), [], scope_list);
 }
+
+function env_p
+[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+{
+  return 
+    case current_scope.parent of
+      | nothing() -> []
+      | just(p) -> if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+        then []
+        else env_v (seen_imports, current_scope::seen_scopes, p)
+    end;
+}
+
+
 
 @{--
  - Merges two lists of declarations such that the left-hand list shadows the right
@@ -103,7 +122,7 @@ function env_v
 function merge_declarations_with_shadowing
 [Declaration<a>] ::= left::[Declaration<a>] right::[Declaration<a>]
 {
-  return unionBy (\mem_r::Declaration<a> mem_l::Declaration<a> -> fst(mem_r) == fst(mem_l), 
+  return unionBy (\mem_r::Declaration<a> mem_l::Declaration<a> -> mem_r.identifier == mem_l.identifier, 
       right , left);
 }
 -}
