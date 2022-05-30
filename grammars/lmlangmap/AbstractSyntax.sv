@@ -9,20 +9,39 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
+type Target_type = Decorated Exp;
+type Scope_type = Scope<Target_type>;
+type Decl_type = Declaration<Target_type>;
+type Usage_type = Usage<Target_type>;
+
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 global tab_spacing :: String = "\t";
 
-inherited attribute inh_scope::Scope<Decorated Exp> occurs on DeclList, Decl, Qid, Exp, 
+inherited attribute inh_scope::Scope_type occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-inherited attribute inh_scope_two::Scope<Decorated Exp> occurs on BindListPar;
+inherited attribute inh_scope_two::Scope_type occurs on BindListPar, Qid;
 
-synthesized attribute syn_scope::Scope<Decorated Exp> occurs on Program, DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_scope::Scope_type occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_scope_two::Scope<Decorated Exp> occurs on BindListPar;
-synthesized attribute ret_scope::Scope<Decorated Exp> occurs on BindListSeq;
+
+synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
+  Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
+synthesized attribute syn_refs::[(String, Decorated Usage<Target_type>)] occurs on DeclList, 
+  Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute syn_imports::[(String, Decorated Usage<Target_type>)] occurs on DeclList, 
+  Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+
+synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on BindListPar;
+synthesized attribute syn_refs_two::[(String, Decorated Usage<Target_type>)] occurs on BindListPar;
+synthesized attribute syn_imports_two::[(String, Decorated Usage<Target_type>)] occurs on BindListPar;
+
+synthesized attribute syn_iqid_import::(String, Decorated Usage<Target_type>) occurs on Qid;
+
+synthesized attribute syn_scope_two::Scope_type occurs on BindListPar;
+synthesized attribute ret_scope::Scope_type occurs on BindListSeq;
 
 
 
@@ -35,10 +54,15 @@ top::Program ::= list::DeclList
 {
   top.pp = "program(\n" ++ list.pp ++ "\n)";
   list.tab_level = tab_spacing;
-
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(nothing(), [], [], []);
+  
+  local attribute init_scope::Scope_type = cons_scope(
+    nothing(),
+    list.syn_decls,
+    list.syn_refs,
+    list.syn_imports
+  );
   list.inh_scope = init_scope;
-  top.syn_scope = list.syn_scope;
+  top.syn_scope = init_scope;
 }
 
 
@@ -53,11 +77,11 @@ top::DeclList ::= decl::Decl list::DeclList
   top.pp = top.tab_level ++ "decl_list(\n" ++ decl.pp ++ ",\n" 
     ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
   decl.tab_level = tab_spacing ++ top.tab_level;
-  list.tab_level = tab_spacing ++ top.tab_level;
+  list.tab_level = tab_spacing ++ top.tab_level; 
 
-  decl.inh_scope = top.inh_scope;
-  list.inh_scope = decl.syn_scope;
-  top.syn_scope = list.syn_scope;
+  top.syn_decls = decl.syn_decls ++ list.syn_decls;
+  top.syn_refs = decl.syn_refs ++ list.syn_refs;
+  top.syn_imports = decl.syn_imports ++ list.syn_imports;
 }
 
 abstract production decllist_nothing
@@ -65,23 +89,49 @@ top::DeclList ::=
 {
   top.pp = top.tab_level ++ "decl_list()";
   top.syn_scope = top.inh_scope;
+
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
 }
-
-
 
 ------------------------------------------------------------
 ---- Declarations
 ------------------------------------------------------------
 
-abstract production decl_exp
--- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
-top::Decl ::= exp::Exp
+abstract production decl_module
+top::Decl ::= id::ID_t list::DeclList
 {
-  top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
-  exp.tab_level = tab_spacing ++ top.tab_level;
+  top.pp = top.tab_level ++ "module(\n" ++ tab_spacing ++ top.tab_level ++ id.lexeme ++ ",\n" 
+    ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  list.tab_level = tab_spacing ++ top.tab_level;
 
-  exp.inh_scope = top.inh_scope;
-  top.syn_scope = exp.syn_scope;
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    list.syn_decls,
+    list.syn_refs,
+    list.syn_imports
+  );
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl(
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    just(init_scope)
+  );
+  top.syn_decls = [(id.lexeme, init_decl)];
+  top.syn_refs = [];
+  top.syn_imports = [];
+  list.inh_scope = init_scope;
+}
+
+abstract production decl_import
+top::Decl ::= qid::Qid
+{
+  top.pp = top.tab_level ++ "import(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+
+  top.syn_decls = qid.syn_decls;
+  top.syn_refs = qid.syn_refs;
+  top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
 }
 
 abstract production decl_def
@@ -91,53 +141,28 @@ top::Decl ::= id::ID_t exp::Exp
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
-
-
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(exp.syn_scope),     
-    (id.lexeme, init_decl)::exp.syn_scope.declarations,
-    exp.syn_scope.references, 
-    exp.syn_scope.imports
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl (
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    nothing()
   );
-  exp.inh_scope = init_scope;
-  top.syn_scope = exp.syn_scope;
+  top.syn_decls = [(id.lexeme, init_decl)] ++ exp.syn_decls;
+  top.syn_refs = exp.syn_refs;
+  top.syn_imports = exp.syn_imports;
+  exp.inh_scope = top.inh_scope;
 }
 
-abstract production decl_import
-top::Decl ::= qid::Qid
+abstract production decl_exp
+-- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
+top::Decl ::= exp::Exp
 {
-  qid.inh_scope = top.inh_scope;
+  top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  exp.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute iqid_scope::Scope<Decorated Exp> = cons_scope(
-    qid.syn_scope.parent,
-    qid.syn_scope.declarations,
-    qid.syn_scope.references,
-    (qid.syn_last_ref.identifier, qid.syn_last_ref)::qid.syn_scope.imports
-  );
-  top.syn_scope = qid.syn_scope;
-}
-
-abstract production decl_module
-top::Decl ::= id::ID_t list::DeclList
-{
-  -- Remaking parent scope with new declaration
-  local attribute assoc_scope::Scope<Decorated Exp> = list.syn_scope;
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, just(assoc_scope));
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent,     
-    (id.lexeme, init_decl)::top.inh_scope.declarations,
-    top.inh_scope.references, 
-    top.inh_scope.imports
-  );
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
-    just(init_scope), 
-    [], 
-    [], 
-    []
-  );
-  list.inh_scope = new_scope;
-  top.syn_scope = init_scope; 
+  top.syn_decls = exp.syn_decls;
+  top.syn_refs = exp.syn_refs;
+  top.syn_imports = top.syn_imports;
 }
 
 
@@ -153,8 +178,9 @@ top::Exp ::= list::BindListSeq exp::Exp
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
-  list.inh_scope = top.inh_scope;
-  top.syn_scope = list.syn_scope;
+  top.syn_decls = list.syn_decls;
+  top.syn_refs = list.syn_refs;
+  top.syn_imports = list.syn_imports;
   exp.inh_scope = list.ret_scope;
 }
 
@@ -167,26 +193,33 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  exp.inh_scope = top.inh_scope; -- Passing S to e in the grammar
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(exp.syn_scope),     
-    (id.lexeme, init_decl)::exp.syn_scope.declarations,
-    exp.syn_scope.references, 
-    exp.syn_scope.imports
+  top.syn_decls = exp.syn_decls;
+  top.syn_refs = exp.syn_refs;
+  top.syn_imports = exp.syn_imports;
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl (
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    nothing()
+  );
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    list.syn_decls ++ [(id.lexeme, init_decl)],
+    list.syn_refs,
+    list.syn_imports
   );
   list.inh_scope = init_scope;
-  top.syn_scope = exp.syn_scope; -- Returning the parent scope passed to exp, can only change in exp
-  top.ret_scope = list.ret_scope; -- Returning the scope possibly created in sub binding list
+  top.ret_scope = list.ret_scope;
 }
 
 abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 {
   top.pp = top.tab_level ++ "bind_list()";
-
-  top.syn_scope = top.inh_scope; -- Simply returning the unchanged parent scope, this won't be used as binding list cannot change parent scope unless has an exp
-  top.ret_scope = top.inh_scope; -- No new scope was created, to the binding list above should synthesize its own new scope
+  top.ret_scope = top.inh_scope;
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
 }
 
 
@@ -202,16 +235,6 @@ top::Exp ::= list::BindListRec exp::Exp
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
-
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent, 
-    top.inh_scope.declarations, 
-    top.inh_scope.references, 
-    top.inh_scope.imports
-  );
-  list.inh_scope = init_scope;
-  exp.inh_scope = list.syn_scope;
-  top.syn_scope = top.inh_scope; -- inherited (parent) scope is unchanged, since init_scope is used in sub bind list and exp
 }
 
 -- Defines the binding pattern for the recursive let feature
@@ -223,24 +246,26 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope),     
-    (id.lexeme, init_decl)::top.inh_scope.declarations,
-    top.inh_scope.references, 
-    top.inh_scope.imports
-  ); -- change made to parent scope, must become syn_scope (after possible changes in exp and sub bind list)
-  exp.inh_scope = init_scope;
-  list.inh_scope = exp.syn_scope;
-  top.syn_scope = list.syn_scope;
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl (
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    nothing()
+  );
+  top.syn_decls = exp.syn_decls ++ list.syn_decls ++ [(id.lexeme, init_decl)];
+  top.syn_refs = exp.syn_refs ++ list.syn_refs;
+  top.syn_imports = exp.syn_imports ++ list.syn_imports;
+  exp.inh_scope = top.inh_scope;
+  list.inh_scope = top.inh_scope;
 }
 
 abstract production bindlist_nothing_rec
 top::BindListRec ::=
 {
   top.pp = top.tab_level ++ "bindlist_list()";
-
-  top.syn_scope = top.inh_scope; -- inherited (parent) scope unchanged
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
 }
 
 
@@ -257,16 +282,20 @@ top::Exp ::= list::BindListPar exp::Exp
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent, 
-    top.inh_scope.declarations, 
-    top.inh_scope.references, 
-    top.inh_scope.imports
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    list.syn_decls_two ++ exp.syn_decls,
+    list.syn_refs_two ++ exp.syn_refs,
+    list.syn_imports_two ++ exp.syn_imports 
   );
+
+  exp.inh_scope = init_scope;
   list.inh_scope = top.inh_scope;
   list.inh_scope_two = init_scope;
-  exp.inh_scope = list.syn_scope_two;
-  top.syn_scope = list.syn_scope;
+
+  top.syn_decls = list.syn_decls;
+  top.syn_refs = list.syn_refs;
+  top.syn_imports = list.syn_imports;
 }
 
 -- Defines the binding pattern for the parallel let feature
@@ -278,17 +307,25 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope_two),     
-    (id.lexeme, init_decl)::top.inh_scope_two.declarations,
-    top.inh_scope_two.references, 
-    top.inh_scope_two.imports
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl (
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    nothing()
   );
+
+  top.syn_decls = exp.syn_decls;
+  top.syn_refs = exp.syn_refs;
+  top.syn_imports = exp.syn_imports;
+
+  top.syn_decls_two = list.syn_decls_two ++ [(id.lexeme, init_decl)];
+  top.syn_refs_two = list.syn_refs_two;
+  top.syn_imports_two = list.syn_imports_two;
+
   exp.inh_scope = top.inh_scope;
-  list.inh_scope = exp.syn_scope;
-  list.inh_scope_two = init_scope;
-  top.syn_scope = list.syn_scope;
+  list.inh_scope = top.inh_scope;
+  list.inh_scope_two = top.inh_scope_two;
+
 }
 
 abstract production bindlist_nothing_par
@@ -296,8 +333,13 @@ top::BindListPar ::=
 {
   top.pp = top.tab_level ++ "bindlist_nothing()";
 
-  top.syn_scope = top.inh_scope;
-  top.syn_scope_two = top.inh_scope_two;
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
+
+  top.syn_decls_two = [];
+  top.syn_refs_two = [];
+  top.syn_imports_two = [];
 }
 
 
@@ -312,19 +354,27 @@ top::Exp ::= id::ID_t exp::Exp
   top.pp = top.tab_level ++ "fun/fix(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n"
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
-  
-  local attribute init_decl::Declaration<Decorated Exp> = cons_decl(id.lexeme, init_scope, nothing());
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    just(top.inh_scope), 
-    
-    -- (id.lexeme, nothing())::top.inh_scope.declarations, -- BEFORE
-    (id.lexeme, init_decl)::top.inh_scope.declarations,
 
-    top.inh_scope.references, 
-    top.inh_scope.imports
+  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute init_decl::Decl_type = cons_decl (
+    id.lexeme,
+    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
+    nothing()
   );
+
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    exp.syn_decls ++ [(id.lexeme, init_decl)],
+    exp.syn_refs,
+    exp.syn_imports
+  );
+
   exp.inh_scope = init_scope;
-  top.syn_scope = top.inh_scope; -- inherited (parent) scope does not change
+
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
+
 }
 
 abstract production exp_plus
@@ -335,9 +385,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
-  expLeft.inh_scope = top.inh_scope;
-  expRight.inh_scope = expLeft.syn_scope;
-  top.syn_scope = expRight.syn_scope;
+  top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
+  top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
+  top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
 }
 
 abstract production exp_app
@@ -348,9 +398,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
-  expLeft.inh_scope = top.inh_scope;
-  expRight.inh_scope = expLeft.syn_scope;
-  top.syn_scope = expRight.syn_scope;
+  top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
+  top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
+  top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
 }
 
 abstract production exp_qid
@@ -359,9 +409,9 @@ top::Exp ::= qid::Qid
   top.pp = top.tab_level ++ "exp_qid(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
-  qid.inh_scope = top.inh_scope;
-
-  top.syn_scope = qid.syn_scope;
+  top.syn_decls = qid.syn_decls;
+  top.syn_refs = qid.syn_refs;
+  top.syn_imports = qid.syn_imports;
 }
 
 abstract production exp_int
@@ -369,6 +419,10 @@ top::Exp ::= val::Int_t
 {
   top.pp = top.tab_level ++ "exp_int(\n" ++ top.tab_level ++ tab_spacing 
     ++ val.lexeme ++ "\n" ++ top.tab_level ++ ")";
+  
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
 }
 
 
@@ -377,7 +431,7 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-synthesized attribute syn_last_ref::Decorated Usage<Decorated Exp> occurs on Qid;
+synthesized attribute syn_last_ref::Decorated Usage<Target_type> occurs on Qid;
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
@@ -386,24 +440,30 @@ top::Qid ::= id::ID_t qid::Qid
     ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
-  -- Have to create a new scope at this point so that we can add the reference to id
-  local attribute init_ref::Usage<Decorated Exp> = cons_usage(id.lexeme, init_scope);  
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent, 
-    top.inh_scope.declarations, 
-    (id.lexeme, init_ref)::top.inh_scope.references, 
-    top.inh_scope.imports
+  -- iqid
+  qid.inh_scope_two = top.inh_scope_two;
+  top.syn_iqid_import = qid.syn_iqid_import;
+
+  -- rqid
+  local attribute par_scope::Scope_type = top.inh_scope;
+  local attribute init_usage::Usage_type = cons_usage (
+    id.lexeme,
+    par_scope
   );
 
-  local attribute new_scope::Scope<Decorated Exp> = cons_scope(
+  local attribute init_scope::Scope_type = cons_scope (
     nothing(),
-    [],
-    [],
-    [(id.lexeme, init_ref)]     -- come back to this - need to work out imports, should add (id, something) to imports for this scope
+    qid.syn_decls,
+    qid.syn_refs,
+    qid.syn_imports ++ [(id.lexeme, init_usage)]
   );
-  qid.inh_scope = new_scope;
-  top.syn_scope = init_scope;
-  top.syn_last_ref = qid.syn_last_ref;
+
+  qid.inh_scope = init_scope;
+
+  top.syn_decls = [];
+  top.syn_refs = [(id.lexeme, init_usage)];
+  top.syn_imports = [];
+
 }
 
 abstract production qid_single
@@ -412,16 +472,21 @@ top::Qid ::= id::ID_t
   top.pp = top.tab_level ++ "qid(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" 
     ++ top.tab_level ++ ")";
 
-  -- Have to create a new scope at this point so that we can add the reference to id
-  local attribute init_ref::Usage<Decorated Exp> = cons_usage(id.lexeme, init_scope);
-  local attribute init_scope::Scope<Decorated Exp> = cons_scope(
-    top.inh_scope.parent, 
-    top.inh_scope.declarations, 
-    (id.lexeme, init_ref)::top.inh_scope.references, 
-    top.inh_scope.imports
-  );
-
   -- iqid
-  top.syn_scope = init_scope;
-  top.syn_last_ref = init_ref;
+  local attribute par_scope_two::Scope_type = top.inh_scope_two;
+  local attribute init_import_two::Usage_type = cons_usage (
+    id.lexeme,
+    par_scope_two
+  );
+  top.syn_iqid_import = (id.lexeme, init_import_two);
+
+  -- rqid:
+  local attribute par_scope::Scope_type = top.inh_scope;
+  local attribute init_import::Usage_type = cons_usage (
+    id.lexeme,
+    par_scope
+  );
+  top.syn_decls = [];
+  top.syn_refs = [(id.lexeme, init_import)];
+  top.syn_imports = [];
 }
