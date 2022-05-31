@@ -524,9 +524,10 @@ top::Qid ::= id::ID_t
   -- checking with scope graph
 
   local attribute resolved::[Decl_type] = resolve([], init_import);
-  
+
   top.errors := if (length(resolved) == 0) then
     ["Reference " ++ id.lexeme ++ " has no declaration!"]
+  -- other cases...
   else
     [];
 
