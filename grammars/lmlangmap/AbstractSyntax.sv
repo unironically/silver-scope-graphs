@@ -42,7 +42,9 @@ synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on 
 
 synthesized attribute ret_scope::Scope_type occurs on BindListSeq;
 
-
+-- Error checking
+synthesized attribute errors :: [String] with ++ occurs on Program, DeclList, Decl, Qid, Exp,
+  BindListSeq, BindListRec, BindListPar;
 
 ------------------------------------------------------------
 ---- Program root
@@ -62,6 +64,8 @@ top::Program ::= list::DeclList
   );
   list.inh_scope = init_scope;
   top.syn_scope = init_scope;
+
+  top.errors := ["ok"];
 }
 
 

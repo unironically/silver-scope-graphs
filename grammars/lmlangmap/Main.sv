@@ -20,12 +20,12 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute r::Program = r_cst.ast;
 
   local attribute print_success :: IOToken;
-  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n", ioin);
+  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n"++ implode("\n", r.errors), ioin);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT("Failure!", ioin);
+  print_failure = printT("Failure!\n" ++ implode("\n", r.errors), ioin);
 
 
-  return ioval(if result.parseSuccess then print_success else print_failure, 0);
+  return ioval(if r.errors == [] then print_success else print_failure, 0);
 
 }
