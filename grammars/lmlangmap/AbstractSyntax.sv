@@ -86,6 +86,9 @@ top::DeclList ::= decl::Decl list::DeclList
   top.syn_refs = decl.syn_refs ++ list.syn_refs;
   top.syn_imports = decl.syn_imports ++ list.syn_imports;
 
+  decl.inh_scope = top.inh_scope;
+  list.inh_scope = top.inh_scope;
+
   top.errors := decl.errors ++ list.errors;
 }
 
@@ -199,6 +202,8 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.syn_refs = list.syn_refs;
   top.syn_imports = list.syn_imports;
   exp.inh_scope = list.ret_scope;
+
+  list.inh_scope = top.inh_scope;
 
   top.errors := exp.errors;
 }
@@ -413,6 +418,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
 
+  expLeft.inh_scope = top.inh_scope;
+  expRight.inh_scope = top.inh_scope;
+
   top.errors := expLeft.errors ++ expRight.errors;
 }
 
@@ -428,6 +436,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
 
+  expLeft.inh_scope = top.inh_scope;
+  expRight.inh_scope = top.inh_scope;
+
   top.errors := expLeft.errors ++ expRight.errors;
 }
 
@@ -440,6 +451,8 @@ top::Exp ::= qid::Qid
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports;
+
+  qid.inh_scope = top.inh_scope;
 
   top.errors := qid.errors;
 }
@@ -526,7 +539,7 @@ top::Qid ::= id::ID_t
   local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
 
   top.errors := if (length(resolved) == 0) then
-    ["Reference " ++ id.lexeme ++ " has no declaration!"]
+    ["Reference " ++ id.lexeme ++ " has no declaration!\n"]
   -- other cases...
   else
     [];
