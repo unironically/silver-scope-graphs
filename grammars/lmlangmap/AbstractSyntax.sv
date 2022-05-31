@@ -65,7 +65,7 @@ top::Program ::= list::DeclList
   list.inh_scope = init_scope;
   top.syn_scope = init_scope;
 
-  top.errors := ["ok"];
+  top.errors := list.errors;
 }
 
 
@@ -85,6 +85,8 @@ top::DeclList ::= decl::Decl list::DeclList
   top.syn_decls = decl.syn_decls ++ list.syn_decls;
   top.syn_refs = decl.syn_refs ++ list.syn_refs;
   top.syn_imports = decl.syn_imports ++ list.syn_imports;
+
+  top.errors := decl.errors ++ list.errors;
 }
 
 abstract production decllist_nothing
@@ -96,6 +98,8 @@ top::DeclList ::=
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
+
+  top.errors := [];
 }
 
 
@@ -127,6 +131,8 @@ top::Decl ::= id::ID_t list::DeclList
   top.syn_refs = [];
   top.syn_imports = [];
   list.inh_scope = init_scope;
+
+  top.errors := list.errors;
 }
 
 abstract production decl_import
@@ -137,6 +143,8 @@ top::Decl ::= qid::Qid
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
+
+  top.errors := qid.errors;
 }
 
 abstract production decl_def
@@ -156,6 +164,8 @@ top::Decl ::= id::ID_t exp::Exp
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
   exp.inh_scope = top.inh_scope;
+
+  top.errors := exp.errors;
 }
 
 abstract production decl_exp
@@ -168,6 +178,8 @@ top::Decl ::= exp::Exp
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = top.syn_imports;
+
+  top.errors := exp.errors;
 }
 
 
@@ -187,6 +199,8 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.syn_refs = list.syn_refs;
   top.syn_imports = list.syn_imports;
   exp.inh_scope = list.ret_scope;
+
+  top.errors := exp.errors;
 }
 
 -- Defines the binding pattern for the sequential let feature
@@ -215,6 +229,8 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   );
   list.inh_scope = init_scope;
   top.ret_scope = list.ret_scope;
+
+  top.errors := exp.errors ++ list.errors;
 }
 
 abstract production bindlist_nothing_seq
@@ -225,6 +241,8 @@ top::BindListSeq ::=
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
+
+  top.errors := [];
 }
 
 
@@ -380,6 +398,7 @@ top::Exp ::= id::ID_t exp::Exp
   top.syn_refs = [];
   top.syn_imports = [];
 
+  top.errors := exp.errors;
 }
 
 abstract production exp_plus
@@ -393,6 +412,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
+
+  top.errors := expLeft.errors ++ expRight.errors;
 }
 
 abstract production exp_app
@@ -406,6 +427,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
+
+  top.errors := expLeft.errors ++ expRight.errors;
 }
 
 abstract production exp_qid
@@ -417,6 +440,8 @@ top::Exp ::= qid::Qid
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports;
+
+  top.errors := qid.errors;
 }
 
 abstract production exp_int
@@ -428,6 +453,8 @@ top::Exp ::= val::Int_t
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
+
+  top.errors := [];
 }
 
 
@@ -466,6 +493,7 @@ top::Qid ::= id::ID_t qid::Qid
   top.syn_refs = [(id.lexeme, init_usage)];
   top.syn_imports = [];
 
+  top.errors := [];
 }
 
 abstract production qid_single
@@ -491,4 +519,16 @@ top::Qid ::= id::ID_t
   top.syn_decls = [];
   top.syn_refs = [(id.lexeme, init_import)];
   top.syn_imports = [];
+
+  ----------------------------
+  -- checking with scope graph
+
+  local attribute resolved::[Decl_type] = resolve([], init_import);
+  
+  top.errors := if (length(resolved) == 0) then
+    ["Reference " ++ id.lexeme ++ " has no declaration!"]
+  else
+    [];
+
+
 }
