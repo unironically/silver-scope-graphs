@@ -20,11 +20,11 @@ inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Ex
   BindListSeq, BindListRec, BindListPar;
 global tab_spacing :: String = "\t";
 
-inherited attribute inh_scope::Scope_type occurs on DeclList, Decl, Qid, Exp, 
+inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-inherited attribute inh_scope_two::Scope_type occurs on BindListPar, Qid;
+inherited attribute inh_scope_two::Decorated Scope_type occurs on BindListPar, Qid;
 
-synthesized attribute syn_scope::Scope_type occurs on Program, DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_scope::Decorated Scope_type occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
@@ -40,7 +40,7 @@ synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs o
 
 synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
 
-synthesized attribute ret_scope::Scope_type occurs on BindListSeq;
+synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 
 -- Error checking
 synthesized attribute errors :: [String] with ++ occurs on Program, DeclList, Decl, Qid, Exp,
@@ -121,7 +121,7 @@ top::Decl ::= id::ID_t list::DeclList
     list.syn_refs,
     list.syn_imports
   );
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl(
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -154,7 +154,7 @@ top::Decl ::= id::ID_t exp::Exp
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -215,7 +215,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -269,7 +269,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -330,7 +330,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -378,7 +378,7 @@ top::Exp ::= id::ID_t exp::Exp
     ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
-  local attribute par_scope::Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
+  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
@@ -477,7 +477,7 @@ top::Qid ::= id::ID_t qid::Qid
   top.syn_iqid_import = qid.syn_iqid_import;
 
   -- rqid
-  local attribute par_scope::Scope_type = top.inh_scope;
+  local attribute par_scope::Decorated Scope_type = top.inh_scope;
   local attribute init_usage::Usage_type = cons_usage (
     id.lexeme,
     par_scope
@@ -503,7 +503,7 @@ top::Qid ::= id::ID_t
     ++ top.tab_level ++ ")";
 
   -- iqid
-  local attribute par_scope_two::Scope_type = top.inh_scope_two;
+  local attribute par_scope_two::Decorated Scope_type = top.inh_scope_two;
   local attribute init_import_two::Usage_type = cons_usage (
     id.lexeme,
     par_scope_two
@@ -511,7 +511,7 @@ top::Qid ::= id::ID_t
   top.syn_iqid_import = (id.lexeme, init_import_two);
 
   -- rqid:
-  local attribute par_scope::Scope_type = top.inh_scope;
+  local attribute par_scope::Decorated Scope_type = top.inh_scope;
   local attribute init_import::Usage_type = cons_usage (
     id.lexeme,
     par_scope
@@ -523,6 +523,7 @@ top::Qid ::= id::ID_t
   ----------------------------
   -- checking with scope graph
 
+{-
   local attribute resolved::[Decl_type] = resolve([], init_import);
 
   top.errors := if (length(resolved) == 0) then
@@ -530,6 +531,6 @@ top::Qid ::= id::ID_t
   -- other cases...
   else
     [];
-
+-}
 
 }

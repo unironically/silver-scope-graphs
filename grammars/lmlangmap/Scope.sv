@@ -1,7 +1,7 @@
 grammar lmlangmap;
 
 synthesized attribute id::Integer;
-synthesized attribute parent<a>::Maybe<Scope<a>>;
+synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
 synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
 synthesized attribute references<a>::[(String, Decorated Usage<a>)];
 synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
@@ -9,7 +9,7 @@ synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
 nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>;
 
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[(String, Decorated Usage<a>)] imps::[(String, Decorated Usage<a>)]
+top::Scope<a> ::= par::Maybe<Decorated Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[(String, Decorated Usage<a>)] imps::[(String, Decorated Usage<a>)]
 {
   top.id = genInt();
   top.parent = par;
@@ -51,61 +51,67 @@ top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
 
 
 
-{-
 --------------------------------------------------------------------
 --- Functions corresponding to the scope graphs resolution algorithm
 --------------------------------------------------------------------
 
 function resolve
-[Declaration<a>] ::= seen_imports::[Usage<a>] reference::Usage<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] reference::Decorated Usage<a>
 {
-  return filter ((\s::Declaration<a> -> s.identifier == reference.identifier), 
+  return filter ((\s::Decorated Declaration<a> -> s.identifier == reference.identifier), 
     env_v ([reference] ++ seen_imports, [], reference.in_scope));
 }
 
 function env_v
-[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] current_scope::Decorated Scope<a>
 {
   return merge_declarations_with_shadowing (env_l (seen_imports, seen_scopes, current_scope), 
     env_p (seen_imports, seen_scopes, current_scope));
 }
 
 function env_l
-[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] current_scope::Decorated Scope<a>
 {
   return merge_declarations_with_shadowing (env_d (seen_imports, seen_scopes, current_scope), 
     env_i (seen_imports, seen_scopes, current_scope));
 }
 
 function env_d
-[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] current_scope::Decorated Scope<a>
 {
   return 
-    if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+    if containsBy ((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), current_scope, seen_scopes)
     then []
-    else current_scope.declarations;
+    else map((\thing::(String, Decorated Declaration<a>) -> snd(thing)), current_scope.declarations);
 }
 
 function env_i
-[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] current_scope::Decorated Scope<a>
 {
   return 
-    if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+    if (containsBy ((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), current_scope, seen_scopes))
     then []
     else 
-      let imp_list::[Usage<a>] = removeAllBy((\left::Scope<a> right::Scope<a> -> left.id == right.id), seen_imports, current_scope.imports) in
-      let res_list::[Declaration<a>] = foldl((\acc::[Declaration<a>] thing::Usage<a> -> acc ++ resolve(seen_imports, thing)), [], imp_list) in
-      let scope_list::[Scope<a>] = foldl((\acc::[Scope<a>] thing::Declaration<a> -> acc ++ (case thing.associated_scope of | nothing() -> [] | just(p) -> p)), [], res_list) in
-      foldl((\acc[Declaration<a>] thing::Scope<a> -> env_l(seen_imports, seen_scopes ++ [current_scope], thing)), [], scope_list);
+
+      let imp_list::[Decorated Usage<a>] = removeAllBy((\left::Decorated Usage<a> right::Decorated Usage<a> -> left.identifier == right.identifier), seen_imports, map((\thing::(String, Decorated Usage<a>) -> snd(thing)), current_scope.imports)) in
+
+      let res_list::[Decorated Declaration<a>] = foldl((\acc::[Decorated Declaration<a>] thing::Decorated Usage<a> -> acc ++ resolve(seen_imports, thing)), [], imp_list) in
+
+      let scope_list::[Decorated Scope<a>] = foldl((\acc::[Decorated Scope<a>] thing::Decorated Declaration<a> -> acc ++ (case thing.associated_scope of | nothing() -> [] | just(p) -> [p] end)), [], res_list) in
+
+      let last_list::[Decorated Declaration<a>] = 
+      foldl((\acc::[Decorated Declaration<a>] thing::Decorated Scope<a> -> env_l(seen_imports, seen_scopes ++ [current_scope], thing)), [], scope_list) in 
+
+      last_list end end end end;
 }
 
 function env_p
-[Declaration<a>] ::= seen_imports::[Usage<a>] seen_scopes::[Scope<a>] current_scope::Scope<a>
+[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] current_scope::Decorated Scope<a>
 {
   return 
     case current_scope.parent of
       | nothing() -> []
-      | just(p) -> if containsBy ((\left::Scope<a> right::Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+      | just(p) -> if containsBy ((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), current_scope, seen_scopes)
         then []
         else env_v (seen_imports, current_scope::seen_scopes, p)
     end;
@@ -120,9 +126,8 @@ function env_p
  - @param right The shadowed right-hand list of declarations
 -}
 function merge_declarations_with_shadowing
-[Declaration<a>] ::= left::[Declaration<a>] right::[Declaration<a>]
+[Decorated Declaration<a>] ::= left::[Decorated Declaration<a>] right::[Decorated Declaration<a>]
 {
-  return unionBy (\mem_r::Declaration<a> mem_l::Declaration<a> -> mem_r.identifier == mem_l.identifier, 
+  return unionBy (\mem_r::Decorated Declaration<a> mem_l::Decorated Declaration<a> -> mem_r.identifier == mem_l.identifier, 
       right , left);
 }
--}
