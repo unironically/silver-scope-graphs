@@ -86,7 +86,7 @@ top::BindList_c_seq ::= id::ID_t '=' exp::Exp_c list::BindList_c_seq
 }
 
 
-
+{-
 concrete production exp_c_letrec
 top::Exp_c ::= 'letrec' list::BindList_c_rec 'in' exp::Exp_c
 {
@@ -124,7 +124,7 @@ top::BindList_c_par ::= id::ID_t '=' exp::Exp_c list::BindList_c_par
 {
   top.ast = bindlist_list_par(id, exp.ast, list.ast);
 }
-
+-}
 
 
 -- expressions
