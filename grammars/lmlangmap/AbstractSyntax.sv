@@ -24,8 +24,7 @@ inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Qi
   BindListSeq, BindListRec, BindListPar;
 inherited attribute inh_scope_two::Decorated Scope_type occurs on BindListPar, Qid;
 
-synthesized attribute syn_scope::Decorated Scope_type occurs on Program, DeclList, Decl, Qid, Exp, 
-  BindListSeq, BindListRec, BindListPar;
+synthesized attribute syn_scope::Decorated Scope_type occurs on Program;
 
 synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
@@ -96,7 +95,6 @@ abstract production decllist_nothing
 top::DeclList ::=
 {
   top.pp = top.tab_level ++ "decl_list()";
-  top.syn_scope = top.inh_scope;
 
   top.syn_decls = [];
   top.syn_refs = [];
