@@ -93,14 +93,18 @@ function env_i
     then []
     else 
 
+      -- Get all imports of current scope, minus the ones already seen
       let imp_list::[Decorated Usage<a>] = removeAllBy((\left::Decorated Usage<a> right::Decorated Usage<a> -> left.identifier == right.identifier), seen_imports, map((\thing::(String, Decorated Usage<a>) -> snd(thing)), current_scope.imports)) in
 
+      -- Generate a list of declarations by resolving each of the known imports in the current scope
       let res_list::[Decorated Declaration<a>] = foldl((\acc::[Decorated Declaration<a>] thing::Decorated Usage<a> -> acc ++ resolve(seen_imports, thing)), [], imp_list) in
 
+      -- Get all the 'associated scope' nodes from the list generated above
       let scope_list::[Decorated Scope<a>] = foldl((\acc::[Decorated Scope<a>] thing::Decorated Declaration<a> -> acc ++ (case thing.associated_scope of | nothing() -> [] | just(p) -> [p] end)), [], res_list) in
 
+      -- Union the result of calling env_l on each of the scopes found above, adding the current scope to the seen scopes list
       let last_list::[Decorated Declaration<a>] = 
-      foldl((\acc::[Decorated Declaration<a>] thing::Decorated Scope<a> -> env_l(seen_imports, seen_scopes ++ [current_scope], thing)), [], scope_list) in 
+      foldl((\acc::[Decorated Declaration<a>] thing::Decorated Scope<a> -> acc ++ env_l(seen_imports, seen_scopes ++ [current_scope], thing)), [], scope_list) in 
 
       last_list end end end end;
 }

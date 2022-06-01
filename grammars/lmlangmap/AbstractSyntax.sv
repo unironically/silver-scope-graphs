@@ -140,12 +140,16 @@ abstract production decl_import
 top::Decl ::= qid::Qid
 {
   top.pp = top.tab_level ++ "import(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
-
+  qid.tab_level = top.tab_level ++ tab_spacing;
+  
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
 
   top.errors := qid.errors;
+
+  qid.inh_scope = top.inh_scope;
+  qid.inh_scope_two = top.inh_scope;
 }
 
 abstract production decl_def
