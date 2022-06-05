@@ -1,4 +1,23 @@
-grammar lmlangmap;
+grammar scopegraph;
+
+
+
+----------------
+-- Scope Graph:
+
+synthesized attribute scope_list<a>::[Decorated Scope<a>];
+
+nonterminal Graph<a> with scope_list<a>;
+
+abstract production cons_graph
+top::Graph<a> ::= scope_list::[Decorated Scope<a>]
+{
+  top.scope_list = scope_list;
+}
+
+
+----------------
+-- Scopes:
 
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
@@ -18,6 +37,8 @@ top::Scope<a> ::= par::Maybe<Decorated Scope<a>> decls::[(String, Decorated Decl
   top.imports = imps;
 }
 
+
+
 ----------------
 -- Declarations:
 
@@ -30,10 +51,14 @@ nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>;
 abstract production cons_decl
 top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a> assoc_scope_arg::Maybe<Decorated Scope<a>>
 {
+  -- two productions instead? one with/without assoc scope
+  -- line/col number to know which declaration we're seeing in testing
   top.identifier = id;
   top.in_scope = in_scope_arg;
   top.associated_scope = assoc_scope_arg;
 }
+
+
 
 -----------
 -- Imports/References (called "Usage" for now until something better comes along):
@@ -45,6 +70,7 @@ nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>;
 abstract production cons_usage
 top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
 {
+  -- line/col number to know which declaration we're seeing in testing
   top.identifier = id;
   top.in_scope = in_scope_arg;
 }
