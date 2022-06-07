@@ -8,6 +8,11 @@ synthesized attribute scope_list<a>::[Decorated Scope<a>];
 
 nonterminal Graph<a> with scope_list<a>;
 
+@{-
+ - Constructing a graph node.
+ -
+ - @param scope_list The list of scopes the graph contains.
+-}
 abstract production cons_graph
 top::Graph<a> ::= scope_list::[Decorated Scope<a>]
 {
@@ -26,14 +31,23 @@ synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
 
 nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>;
 
+@{-
+ - Constructing a scope node.
+ -
+ - @param parent The scope node representing the lexically enclosing scope.
+ - @param declarations The list of declarations attached to a node.
+ - @param references The list of references attached to a node.
+ - @param imports The list of imports attached to a node.
+-}
 abstract production cons_scope
-top::Scope<a> ::= par::Maybe<Decorated Scope<a>> decls::[(String, Decorated Declaration<a>)] refs::[(String, Decorated Usage<a>)] imps::[(String, Decorated Usage<a>)]
+top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> declarations::[(String, Decorated Declaration<a>)] 
+  references::[(String, Decorated Usage<a>)] imports::[(String, Decorated Usage<a>)]
 {
   top.id = genInt();
-  top.parent = par;
-  top.declarations = decls;
-  top.references = refs;
-  top.imports = imps;
+  top.parent = parent;
+  top.declarations = declarations;
+  top.references = references;
+  top.imports = imports;
 }
 
 
@@ -48,15 +62,23 @@ synthesized attribute column::Integer;
 
 nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column;
 
+@{-
+ - Constructing a declaration node.
+ -
+ - @param identifier The scope node representing the lexically enclosing scope.
+ - @param in_scope The scope node corresponding to the lexically enclosing scope of this declaration.
+ - @param associated_scope The scope this node points to in the case of imports.
+ - @param line The line this declaration was found on.
+ - @param column The column this declaration was found on.
+-}
 abstract production cons_decl
-top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a> 
-  assoc_scope_arg::Maybe<Decorated Scope<a>> line::Integer column::Integer
+top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a> 
+  associated_scope::Maybe<Decorated Scope<a>> line::Integer column::Integer
 {
   -- two productions instead? one with/without assoc scope
-  -- line/col number to know which declaration we're seeing in testing
-  top.identifier = id;
-  top.in_scope = in_scope_arg;
-  top.associated_scope = assoc_scope_arg;
+  top.identifier = identifier;
+  top.in_scope = in_scope;
+  top.associated_scope = associated_scope;
   top.line = line;
   top.column = column;
 }
@@ -69,12 +91,19 @@ inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that t
 
 nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>, line, column;
 
+@{-
+ - Constructing a usage (reference/import) node.
+ -
+ - @param identifier The scope node representing the lexically enclosing scope.
+ - @param in_scope The scope node corresponding to the lexically enclosing scope of this usage.
+ - @param line The line this usage was found on.
+ - @param column The column this usage was found on.
+-}
 abstract production cons_usage
-top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a> line::Integer column::Integer
+top::Usage<a> ::= identifier::String in_scope::Decorated Scope<a> line::Integer column::Integer
 {
-  -- line/col number to know which declaration we're seeing in testing
-  top.identifier = id;
-  top.in_scope = in_scope_arg;
+  top.identifier = identifier;
+  top.in_scope = in_scope;
   top.line = line;
   top.column = column;
 }
