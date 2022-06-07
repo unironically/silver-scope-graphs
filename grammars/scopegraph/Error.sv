@@ -1,0 +1,6 @@
+grammar scopegraph;
+
+
+
+------------------
+-- Errors:

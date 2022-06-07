@@ -59,9 +59,9 @@ synthesized attribute errors :: [String] with ++ occurs on Program, DeclList, De
   - Scope type in scope.sv which carries a list of scopes
   - extend library to find all unresolved names, names with two or more (visible) declarations, declarations with no references, 
 
-  - 0. reshuffle directories and import scope library
+  [-] 0. reshuffle directories and import scope library
   - 1. tests (line/col number to declaration, don't worry about types (e.g. resolving to modules) for now)
-  - 2. scopes in graph nonterminal (see above). write functions in library. e.g. find all undeclared usages, compare to list of errors in program. i.e. compare the two methods of testing.
+  [-] 2. scopes in graph nonterminal (see above). write functions in library. e.g. find all undeclared usages, compare to list of errors in program. i.e. compare the two methods of testing.
   - 3. language specific typing things?
 -}
 abstract production prog 
