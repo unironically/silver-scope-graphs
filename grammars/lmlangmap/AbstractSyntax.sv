@@ -85,7 +85,6 @@ top::Program ::= list::DeclList
 }
 
 
-
 ------------------------------------------------------------
 ---- Declaration lists
 ------------------------------------------------------------
@@ -125,7 +124,6 @@ top::DeclList ::=
 }
 
 
-
 ------------------------------------------------------------
 ---- Declarations
 ------------------------------------------------------------
@@ -143,11 +141,12 @@ top::Decl ::= id::ID_t list::DeclList
     list.syn_refs,
     list.syn_imports
   );
-  local attribute par_scope::Decorated Scope_type = top.inh_scope; -- Cannot simply use top.inh_scope in cons_decl(?)
   local attribute init_decl::Decl_type = cons_decl(
     id.lexeme,
-    par_scope, -- Cannot simply use top.inh_scope in cons_decl(?)
-    just(init_scope)
+    top.inh_scope,
+    just(init_scope),
+    id.line,
+    id.column
   );
   top.syn_decls = [(id.lexeme, init_decl)];
   top.syn_refs = [];
@@ -187,7 +186,9 @@ top::Decl ::= id::ID_t exp::Exp
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
-    nothing()
+    nothing(),
+    id.line,
+    id.column
   );
   top.syn_decls = [(id.lexeme, init_decl)] ++ exp.syn_decls;
   top.syn_refs = exp.syn_refs;
@@ -214,7 +215,6 @@ top::Decl ::= exp::Exp
 
   top.errors := exp.errors;
 }
-
 
 
 ------------------------------------------------------------
@@ -265,7 +265,9 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
-    nothing()
+    nothing(),
+    id.line,
+    id.column
   );
   local attribute init_scope::Scope_type = cons_scope (
     just(top.inh_scope),
@@ -294,7 +296,6 @@ top::BindListSeq ::=
 
   top.errors := [];
 }
-
 
 
 ------------------------------------------------------------
@@ -339,7 +340,9 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
-    nothing()
+    nothing(),
+    id.line,
+    id.column
   );
   top.syn_decls = exp.syn_decls ++ list.syn_decls ++ [(id.lexeme, init_decl)];
   top.syn_refs = exp.syn_refs ++ list.syn_refs;
@@ -360,7 +363,6 @@ top::BindListRec ::=
 
   top.syn_scope_list = [];
 }
-
 
 
 ------------------------------------------------------------
@@ -405,7 +407,9 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
-    nothing()
+    nothing(),
+    id.line,
+    id.column
   );
 
   top.syn_decls = exp.syn_decls;
@@ -441,7 +445,6 @@ top::BindListPar ::=
 }
 
 
-
 ------------------------------------------------------------
 ---- Other expressions
 ------------------------------------------------------------
@@ -456,7 +459,9 @@ top::Exp ::= id::ID_t exp::Exp
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
-    nothing()
+    nothing(),
+    id.line,
+    id.column
   );
 
   local attribute init_scope::Scope_type = cons_scope (
@@ -571,7 +576,9 @@ top::Qid ::= id::ID_t qid::Qid
   -- rqid
   local attribute init_usage::Usage_type = cons_usage (
     id.lexeme,
-    top.inh_scope
+    top.inh_scope,
+    id.line,
+    id.column
   );
   local attribute init_scope::Scope_type = cons_scope (
     nothing(),
@@ -598,14 +605,18 @@ top::Qid ::= id::ID_t
   -- iqid
   local attribute init_import_two::Usage_type = cons_usage (
     id.lexeme,
-    top.inh_scope_two
+    top.inh_scope_two,
+    id.line,
+    id.column
   );
   top.syn_iqid_import = (id.lexeme, init_import_two);
 
   -- rqid:
   local attribute init_import::Usage_type = cons_usage (
     id.lexeme,
-    top.inh_scope
+    top.inh_scope,
+    id.line,
+    id.column
   );
   top.syn_decls = [];
   top.syn_refs = [(id.lexeme, init_import)];

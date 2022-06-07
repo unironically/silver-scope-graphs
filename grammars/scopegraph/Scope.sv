@@ -2,7 +2,7 @@ grammar scopegraph;
 
 
 ----------------
--- Scope Graph:
+-- Scope Graph
 
 synthesized attribute scope_list<a>::[Decorated Scope<a>];
 
@@ -16,7 +16,7 @@ top::Graph<a> ::= scope_list::[Decorated Scope<a>]
 
 
 ----------------
--- Scopes:
+-- Scopes
 
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
@@ -38,36 +38,43 @@ top::Scope<a> ::= par::Maybe<Decorated Scope<a>> decls::[(String, Decorated Decl
 
 
 ----------------
--- Declarations:
+-- Declarations
 
 synthesized attribute identifier::String; -- Name of the declaration
 synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the declaration resides
 synthesized attribute associated_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
+synthesized attribute line::Integer;
+synthesized attribute column::Integer;
 
-nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>;
+nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column;
 
 abstract production cons_decl
-top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a> assoc_scope_arg::Maybe<Decorated Scope<a>>
+top::Declaration<a> ::= id::String in_scope_arg::Decorated Scope<a> 
+  assoc_scope_arg::Maybe<Decorated Scope<a>> line::Integer column::Integer
 {
   -- two productions instead? one with/without assoc scope
   -- line/col number to know which declaration we're seeing in testing
   top.identifier = id;
   top.in_scope = in_scope_arg;
   top.associated_scope = assoc_scope_arg;
+  top.line = line;
+  top.column = column;
 }
 
 
------------
--- Imports/References (called "Usage" for now until something better comes along):
+----------------
+-- Imports/References
 
 inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>;
+nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>, line, column;
 
 abstract production cons_usage
-top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a>
+top::Usage<a> ::= id::String in_scope_arg::Decorated Scope<a> line::Integer column::Integer
 {
   -- line/col number to know which declaration we're seeing in testing
   top.identifier = id;
   top.in_scope = in_scope_arg;
+  top.line = line;
+  top.column = column;
 }

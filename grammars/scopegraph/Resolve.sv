@@ -70,8 +70,6 @@ function env_p
     end;
 }
 
-
-
 @{--
  - Merges two lists of declarations such that the left-hand list shadows the right
  -
