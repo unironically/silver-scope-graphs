@@ -48,7 +48,7 @@ function string_errors
 String ::= list::[Decorated Error<a>]
 {
   return case list of 
-  | h::t -> h.message ++ string_errors(t)
+  | h::t -> "ERROR: " ++ h.message ++ "\n" ++ string_errors(t)
   | [] -> ""
   end;
 }
