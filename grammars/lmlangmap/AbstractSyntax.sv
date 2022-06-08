@@ -16,6 +16,7 @@ type Graph_type = Graph<Target_type>;
 type Scope_type = Scope<Target_type>;
 type Decl_type = Declaration<Target_type>;
 type Usage_type = Usage<Target_type>;
+type Error_type = Error<Target_type>;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
@@ -46,8 +47,9 @@ synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on 
 
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 
--- Error checking
-synthesized attribute errors :: [String] with ++ occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+synthesized attribute errors::[Decorated Error_type] occurs on Program, DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar;
+
 -- make new errors non-terminal instead (in scope library), e.g. production "name_undeclared" which takes a usage, "multiple_found" similar, "declaration_never_used". constructed when errors found in resolution. 
 -- errors attribute is list of above passed up tree. tests like "is this particular error in the list" for example programs.
 
@@ -81,7 +83,9 @@ top::Program ::= list::DeclList
   local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_scope_list);
   top.syn_graph = init_graph;
 
-  top.errors := list.errors;
+  -- error handlings
+  top.errors = list.errors;
+
 }
 
 
@@ -106,7 +110,8 @@ top::DeclList ::= decl::Decl list::DeclList
 
   top.syn_scope_list = decl.syn_scope_list ++ list.syn_scope_list;
 
-  top.errors := decl.errors ++ list.errors;
+  -- error handling
+  top.errors = decl.errors ++ list.errors;
 }
 
 abstract production decllist_nothing
@@ -120,7 +125,8 @@ top::DeclList ::=
 
   top.syn_scope_list = [];
 
-  top.errors := [];
+  -- error handling
+  top.errors = [];
 }
 
 
@@ -155,7 +161,9 @@ top::Decl ::= id::ID_t list::DeclList
 
   top.syn_scope_list = [init_scope] ++ list.syn_scope_list;
 
-  top.errors := list.errors;
+  -- error handling
+  top.errors = list.errors;
+
 }
 
 abstract production decl_import
@@ -168,12 +176,14 @@ top::Decl ::= qid::Qid
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
 
-  top.errors := qid.errors;
 
   qid.inh_scope = top.inh_scope;
   qid.inh_scope_two = top.inh_scope;
 
   top.syn_scope_list = qid.syn_scope_list;
+
+  -- error handling
+  top.errors = qid.errors;
 }
 
 abstract production decl_def
@@ -197,7 +207,9 @@ top::Decl ::= id::ID_t exp::Exp
 
   top.syn_scope_list = exp.syn_scope_list;
 
-  top.errors := exp.errors;
+  -- error handling
+  top.errors = exp.errors;
+
 }
 
 abstract production decl_exp
@@ -207,13 +219,17 @@ top::Decl ::= exp::Exp
   top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
+  exp.inh_scope = top.inh_scope;
+
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = top.syn_imports;
 
   top.syn_scope_list = exp.syn_scope_list;
 
-  top.errors := exp.errors;
+  -- error handling
+  top.errors = exp.errors;
+
 }
 
 
@@ -245,7 +261,9 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   top.syn_scope_list = list.syn_scope_list ++ exp.syn_scope_list;
 
-  top.errors := exp.errors;
+  -- error handling
+  top.errors = list.errors ++ exp.errors;
+
 }
 
 -- Defines the binding pattern for the sequential let feature
@@ -280,7 +298,9 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 
   top.syn_scope_list = [init_scope] ++ exp.syn_scope_list ++ list.syn_scope_list;
 
-  top.errors := exp.errors ++ list.errors;
+  -- error handling
+  top.errors = exp.errors ++ list.errors;
+
 }
 
 abstract production bindlist_nothing_seq
@@ -294,7 +314,9 @@ top::BindListSeq ::=
 
   top.syn_scope_list = [];
 
-  top.errors := [];
+  -- error handling
+  top.errors = [];
+
 }
 
 
@@ -326,6 +348,10 @@ top::Exp ::= list::BindListRec exp::Exp
 
   top.syn_scope_list = [init_scope] ++ list.syn_scope_list ++ exp.syn_scope_list;
 
+  -- error handling
+  top.errors = list.errors ++ exp.errors;
+
+
 }
 
 -- Defines the binding pattern for the recursive let feature
@@ -351,6 +377,11 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   list.inh_scope = top.inh_scope;
 
   top.syn_scope_list = exp.syn_scope_list ++ list.syn_scope_list;
+
+  -- error handling
+  top.errors = exp.errors ++ list.errors;
+
+
 }
 
 abstract production bindlist_nothing_rec
@@ -362,6 +393,10 @@ top::BindListRec ::=
   top.syn_imports = [];
 
   top.syn_scope_list = [];
+
+  -- error handling
+  top.errors = [];
+
 }
 
 
@@ -393,6 +428,10 @@ top::Exp ::= list::BindListPar exp::Exp
   top.syn_imports = list.syn_imports;
 
   top.syn_scope_list = [init_scope] ++ list.syn_scope_list ++ exp.syn_scope_list;
+
+  -- error handling
+  top.errors = list.errors ++ exp.errors;
+
 }
 
 -- Defines the binding pattern for the parallel let feature
@@ -426,6 +465,9 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 
   top.syn_scope_list = exp.syn_scope_list ++ list.syn_scope_list;
 
+  -- error handling
+  top.errors = exp.errors ++ list.errors;
+
 }
 
 abstract production bindlist_nothing_par
@@ -442,6 +484,10 @@ top::BindListPar ::=
   top.syn_imports_two = [];
 
   top.syn_scope_list = [];
+
+  -- error handling
+  top.errors = [];
+
 }
 
 
@@ -479,7 +525,9 @@ top::Exp ::= id::ID_t exp::Exp
 
   top.syn_scope_list = [init_scope] ++ exp.syn_scope_list;
 
-  top.errors := exp.errors;
+  -- error handling
+  top.errors = exp.errors;
+
 }
 
 abstract production exp_plus
@@ -499,7 +547,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   top.syn_scope_list = expLeft.syn_scope_list ++ expRight.syn_scope_list;
 
-  top.errors := expLeft.errors ++ expRight.errors;
+  -- error handling
+  top.errors = expLeft.errors ++ expRight.errors;
 }
 
 abstract production exp_app
@@ -519,7 +568,9 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   top.syn_scope_list = expLeft.syn_scope_list ++ expRight.syn_scope_list;
 
-  top.errors := expLeft.errors ++ expRight.errors;
+  -- error handling
+  top.errors = expLeft.errors ++ expRight.errors;
+
 }
 
 abstract production exp_qid
@@ -536,7 +587,9 @@ top::Exp ::= qid::Qid
 
   top.syn_scope_list = qid.syn_scope_list;
 
-  top.errors := qid.errors;
+  -- error handling
+  top.errors = qid.errors;
+
 }
 
 abstract production exp_int
@@ -551,7 +604,9 @@ top::Exp ::= val::Int_t
 
   top.syn_scope_list = [];
 
-  top.errors := [];
+  -- error handling
+  top.errors = [];
+
 }
 
 
@@ -593,7 +648,9 @@ top::Qid ::= id::ID_t qid::Qid
 
   top.syn_scope_list = [init_scope] ++ qid.syn_scope_list;
 
-  top.errors := [];
+  -- error handling
+  top.errors = qid.errors;
+
 }
 
 abstract production qid_single
@@ -624,14 +681,17 @@ top::Qid ::= id::ID_t
 
   top.syn_scope_list = [];
 
-  ----------------------------
-  -- checking with scope graph
+  -- error handling
 
   local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
 
-  top.errors := if (length(resolved) == 0) then
-    ["Reference " ++ id.lexeme ++ " has no declaration!\n"]
-  -- other cases... 
+  local attribute no_decl::Error_type = no_declaration_found(init_import);
+  local attribute mul_decl::Error_type = multiple_declarations_found(init_import);
+
+  top.errors = if (length(resolved) < 1) then
+    [no_decl]
+  else if (length(resolved) > 1) then
+    [mul_decl]
   else
     [];
 

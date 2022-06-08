@@ -1,8 +1,8 @@
 grammar scopegraph;
 
 
---------------------------------------------------------------------
---- Functions corresponding to the scope graphs resolution algorithm
+----------------
+-- Functions corresponding to the scope graphs resolution algorithm
 
 @{-
  - The entry point function for the resolution algorithm.
@@ -116,7 +116,8 @@ function env_p
   return 
     case current_scope.parent of
       | nothing() -> []
-      | just(p) -> if containsBy ((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), current_scope, seen_scopes)
+      | just(p) -> if containsBy ((\left::Decorated Scope<a> right::Decorated Scope<a> -> 
+        left.id == right.id), current_scope, seen_scopes)
         then []
         else env_v (seen_imports, current_scope::seen_scopes, p)
     end;
@@ -132,6 +133,6 @@ function env_p
 function merge_declarations_with_shadowing
 [Decorated Declaration<a>] ::= left::[Decorated Declaration<a>] right::[Decorated Declaration<a>]
 {
-  return unionBy (\mem_r::Decorated Declaration<a> mem_l::Decorated Declaration<a> -> mem_r.identifier == mem_l.identifier, 
-      right , left);
+  return unionBy (\mem_r::Decorated Declaration<a> mem_l::Decorated Declaration<a> -> 
+    mem_r.identifier == mem_l.identifier, right , left);
 }
