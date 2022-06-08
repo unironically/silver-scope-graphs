@@ -25,8 +25,6 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute print_failure :: IOToken;
   print_failure = printT("Failure!\n" ++ string_errors(r.errors), ioin);
 
- --return ioval(if result.parseSuccess then print_success else print_failure, 0);
-
  return ioval(if length(r.errors) <= 0 then print_success else print_failure, 0);
 
 }
