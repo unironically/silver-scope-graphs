@@ -223,7 +223,7 @@ top::Decl ::= exp::Exp
 
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
-  top.syn_imports = top.syn_imports;
+  top.syn_imports = exp.syn_imports;
 
   top.syn_scope_list = exp.syn_scope_list;
 
