@@ -42,8 +42,18 @@ equalityTest(
 equalityTest(
   no_errors(parse_input_ast("def c = 4 module x { import y def a = b + c } module y { import z def b = 0 } module z { def b = 1 def c = b }").errors),
   true,
-  Boolean
-  ,lmlangmaptesting
+  Boolean,
+  lmlangmaptesting
+);
+
+----------------
+-- Input program 1 from Fig. 14 of [1]:
+
+equalityTest(
+  no_errors(parse_input_ast("def a = 0 def b = 1 def c = 2 let a = c b = a c = b in a + b + c").errors),
+  true,
+  Boolean,
+  lmlangmaptesting
 );
 
 ----------------
