@@ -17,7 +17,26 @@ Boolean ::= errors::[Decorated Error<a>]
   end;
 }
 
-function def_example1
+function no_declarations_only
+Boolean ::= errors::[Decorated Error<a>]
+{
+  return case errors of 
+    | no_declaration_found(_)::[] -> true
+    | _ -> false
+    end;
+}
+
+function multiple_declarations_only
+Boolean ::= errors::[Decorated Error<a>]
+{
+  return case errors of 
+    | multiple_declarations_found(_)::[] -> true
+    | _ -> false
+    end;
+}
+
+
+function multiple_and_no_declarations
 Boolean ::= errors::[Decorated Error<a>]
 {
   return case errors of 
@@ -30,7 +49,14 @@ Boolean ::= errors::[Decorated Error<a>]
 -- Input program from Fig. 5 of [1]:
 
 equalityTest(
-  def_example1(parse_input_ast("def a = 0 def b = a + c def b = b + d def c = 0").errors),
+  multiple_and_no_declarations(parse_input_ast("def a = 0 def b = a + c def b = b + d def c = 0").errors),
+  true,
+  Boolean,
+  lmlangmaptesting
+);
+
+equalityTest(
+  multiple_declarations_only(parse_input_ast("def a = 0 def b = a + c def b = b + a def c = 0").errors),
   true,
   Boolean,
   lmlangmaptesting
@@ -46,11 +72,25 @@ equalityTest(
   lmlangmaptesting
 );
 
+equalityTest(
+  no_errors(parse_input_ast("def c = 4 module x { import y def a = x + c } module y { import z def b = 0 } module z { def b = 1 def c = b }").errors),
+  false,
+  Boolean,
+  lmlangmaptesting
+);
+
 ----------------
 -- Input program 1 from Fig. 14 of [1]:
 
 equalityTest(
   no_errors(parse_input_ast("def a = 0 def b = 1 def c = 2 let a = c b = a c = b in a + b + c").errors),
+  true,
+  Boolean,
+  lmlangmaptesting
+);
+
+equalityTest(
+  no_declarations_only(parse_input_ast("def a = 0 def b = 1 def c = 2 let a = x x = a c = b in a + b + c").errors),
   true,
   Boolean,
   lmlangmaptesting
