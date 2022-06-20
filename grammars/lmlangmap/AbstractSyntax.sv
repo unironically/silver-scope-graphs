@@ -291,7 +291,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   );
   local attribute init_scope::Scope_type = cons_scope (
     just(top.inh_scope),
-    [(id.lexeme, init_decl)], -- ++ list.syn_decls (same for below),
+    [(id.lexeme, init_decl)],
     [],
     []
   );

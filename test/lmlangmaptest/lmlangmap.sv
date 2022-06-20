@@ -109,6 +109,20 @@ equalityTest(
 );
 
 equalityTest(
+  no_errors(parse_input_ast("def a = 0 def b = 1 def c = 2 letrec a = c b = a c = b in a + b + c").errors),
+  true,
+  Boolean,
+  lmlangmaptesting
+);
+
+equalityTest(
+  no_errors(parse_input_ast("def a = 0 def b = 1 def c = 2 letpar a = c b = a c = b in a + b + c").errors),
+  true,
+  Boolean,
+  lmlangmaptesting
+);
+
+equalityTest(
   no_declarations_only(parse_input_ast("def a = 0 def b = 1 def c = 2 let a = x x = a c = b in a + b + c").errors),
   true,
   Boolean,
