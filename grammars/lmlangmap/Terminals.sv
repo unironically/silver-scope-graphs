@@ -16,7 +16,7 @@ terminal LetPar_t 'letpar' precedence = 1, dominates {ID_t};
 terminal In_t 'in' precedence = 4, dominates {ID_t};
 
 terminal Plus_t '+' precedence = 5, association = left;
-terminal App_t '' precedence = 6, association = left;
+terminal App_t '*' precedence = 6, association = left;
 terminal Eq_t '=';
 
 terminal Semi_t ';';

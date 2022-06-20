@@ -2,7 +2,7 @@ grammar scopegraph;
 
 
 ----------------
--- Functions corresponding to the scope graphs resolution algorithm
+-- Functions corresponding to the scope graphs resolution algorithm:
 
 @{-
  - The entry point function for the resolution algorithm.

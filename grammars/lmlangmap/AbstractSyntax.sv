@@ -22,7 +22,7 @@ synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp,
   BindListSeq, BindListRec, BindListPar;
 inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-global tab_spacing :: String = "\t";
+global tab_spacing :: String = "";
 
 inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
@@ -69,7 +69,7 @@ synthesized attribute errors::[Decorated Error_type] occurs on Program, DeclList
 abstract production prog 
 top::Program ::= list::DeclList
 {
-  top.pp = "prog(\n" ++ list.pp ++ "\n)";
+  top.pp = "prog(" ++ list.pp ++ ")";
   list.tab_level = tab_spacing;
   
   local attribute init_scope::Scope_type = cons_scope(
@@ -96,8 +96,8 @@ top::Program ::= list::DeclList
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
-  top.pp = top.tab_level ++ "decllist_list(\n" ++ decl.pp ++ ",\n" 
-    ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decllist_list(" ++ decl.pp ++ "," 
+    ++ list.pp ++ "" ++ top.tab_level ++ ")";
   decl.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level; 
 
@@ -137,8 +137,8 @@ top::DeclList ::=
 abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
 {
-  top.pp = top.tab_level ++ "decl_module(\n" ++ tab_spacing ++ top.tab_level ++ id.lexeme ++ ",\n" 
-    ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decl_module(" ++ tab_spacing ++ top.tab_level ++ id.lexeme ++ "," 
+    ++ list.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
 
   local attribute init_scope::Scope_type = cons_scope (
@@ -169,7 +169,7 @@ top::Decl ::= id::ID_t list::DeclList
 abstract production decl_import
 top::Decl ::= qid::Qid
 {
-  top.pp = top.tab_level ++ "decl_import(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decl_import(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = top.tab_level ++ tab_spacing;
 
   top.syn_decls = qid.syn_decls;
@@ -189,8 +189,8 @@ top::Decl ::= qid::Qid
 abstract production decl_def
 top::Decl ::= id::ID_t exp::Exp
 {
-  top.pp = top.tab_level ++ "decl_def(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n"
-    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decl_def(" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ","
+    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
   local attribute init_decl::Decl_type = cons_decl (
@@ -216,7 +216,7 @@ abstract production decl_exp
 -- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
 top::Decl ::= exp::Exp
 {
-  top.pp = top.tab_level ++ "decl_exp(\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "decl_exp(" ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
   exp.inh_scope = top.inh_scope;
@@ -247,7 +247,7 @@ write tests - testing framework in silver (call parser for example programs) - p
 abstract production exp_let
 top::Exp ::= list::BindListSeq exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_let(\n" ++ list.pp ++ ",\n" ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -270,8 +270,8 @@ top::Exp ::= list::BindListSeq exp::Exp
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  top.pp = top.tab_level ++ "bindlist_list_seq(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
-    ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list_seq(" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "," 
+    ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -327,8 +327,8 @@ top::BindListSeq ::=
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_letrec(\n" ++ list.pp ++ ",\n" 
-    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_letrec(" ++ list.pp ++ "," 
+    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -358,8 +358,8 @@ top::Exp ::= list::BindListRec exp::Exp
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
-  top.pp = top.tab_level ++ "bindlist_list_rec(\n" ++ top.tab_level ++ tab_spacing 
-    ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list_rec(" ++ top.tab_level ++ tab_spacing 
+    ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -407,8 +407,8 @@ top::BindListRec ::=
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_letpar(\n" ++ list.pp ++ ",\n" 
-    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_letpar(" ++ list.pp ++ "," 
+    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = tab_spacing ++ top.tab_level;
   exp.tab_level = tab_spacing ++ top.tab_level;
 
@@ -438,8 +438,8 @@ top::Exp ::= list::BindListPar exp::Exp
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 {
-  top.pp = top.tab_level ++ "bindlist_list_par(\n" ++ top.tab_level ++ tab_spacing 
-    ++ id.lexeme ++ " = " ++ exp.pp ++ ",\n" ++ list.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "bindlist_list_par(" ++ top.tab_level ++ tab_spacing 
+    ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
   list.tab_level = tab_spacing ++ top.tab_level;
 
@@ -498,8 +498,8 @@ top::BindListPar ::=
 abstract production exp_funfix
 top::Exp ::= id::ID_t exp::Exp
 {
-  top.pp = top.tab_level ++ "exp_funfix(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n"
-    ++ exp.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_funfix(" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ","
+    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = tab_spacing ++ top.tab_level;
 
   local attribute init_decl::Decl_type = cons_decl (
@@ -533,8 +533,8 @@ top::Exp ::= id::ID_t exp::Exp
 abstract production exp_plus
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = top.tab_level ++ "exp_plus(\n" ++ expLeft.pp ++ ",\n" 
-    ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_plus(" ++ expLeft.pp ++ "," 
+    ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
@@ -554,8 +554,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
 abstract production exp_app
 top::Exp ::= expLeft::Exp expRight::Exp
 {
-  top.pp = top.tab_level ++ "exp_app(\n" ++ expLeft.pp ++ ",\n" 
-    ++ expRight.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_app(" ++ expLeft.pp ++ "," 
+    ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
   expLeft.tab_level = tab_spacing ++ top.tab_level;
   expRight.tab_level = tab_spacing ++ top.tab_level;
 
@@ -576,7 +576,7 @@ top::Exp ::= expLeft::Exp expRight::Exp
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
-  top.pp = top.tab_level ++ "exp_qid(\n" ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_qid(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   top.syn_decls = qid.syn_decls;
@@ -595,8 +595,8 @@ top::Exp ::= qid::Qid
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
-  top.pp = top.tab_level ++ "exp_int(\n" ++ top.tab_level ++ tab_spacing 
-    ++ val.lexeme ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "exp_int(" ++ top.tab_level ++ tab_spacing 
+    ++ val.lexeme ++ "" ++ top.tab_level ++ ")";
   
   top.syn_decls = [];
   top.syn_refs = [];
@@ -619,8 +619,8 @@ synthesized attribute syn_last_ref::Decorated Usage_type occurs on Qid;
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
-  top.pp = top.tab_level ++ "qid_list(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ ",\n" 
-    ++ qid.pp ++ "\n" ++ top.tab_level ++ ")";
+  top.pp = top.tab_level ++ "qid_list(" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "," 
+    ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = tab_spacing ++ top.tab_level;
 
   -- iqid
@@ -655,7 +655,7 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  top.pp = top.tab_level ++ "qid_single(\n" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "\n" 
+  top.pp = top.tab_level ++ "qid_single(" ++ top.tab_level ++ tab_spacing ++ id.lexeme ++ "" 
     ++ top.tab_level ++ ")";
 
   -- iqid
