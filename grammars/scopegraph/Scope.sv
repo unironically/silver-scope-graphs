@@ -28,8 +28,10 @@ synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
 synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
 synthesized attribute references<a>::[(String, Decorated Usage<a>)];
 synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
+synthesized attribute to_string::String;
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>;
+
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string;
 
 @{-
  - Constructing a scope node.
@@ -48,6 +50,7 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> declarations::[(String, Deco
   top.declarations = declarations;
   top.references = references;
   top.imports = imports;
+  top.to_string = toString(top.id);
 }
 
 
@@ -59,7 +62,6 @@ synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the dec
 synthesized attribute associated_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
-synthesized attribute to_string::String;
 
 nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column, to_string;
 

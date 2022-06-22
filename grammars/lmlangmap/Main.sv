@@ -26,7 +26,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   print_failure = printT("Failure!\n" ++ string_errors(r.errors) ++ "\n" ++ r.pp, ioin);
 
   local attribute print_resolution_paths :: IOToken;
-  print_resolution_paths = systemT("echo '" ++ graphviz_paths(r.paths) ++ "' | dot -Tsvg > two.svg", print_success).io;
+  print_resolution_paths = systemT("echo '" ++ graphviz_scopes(r.syn_graph) ++ "' | dot -Tsvg > two.svg", print_success).io;
 
  return ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
 

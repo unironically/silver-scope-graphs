@@ -21,3 +21,18 @@ String ::= paths::[Decorated Path<a>]
 
 ----------------
 -- Scope graph:
+
+function graphviz_scopes
+String ::= graph::Decorated Graph<a>
+{
+  return "digraph {" ++ graphviz_scopes_helper(graph.scope_list) ++ "}";
+}
+
+function graphviz_scopes_helper
+String ::= scopes::[Decorated Scope<a>]
+{
+  return case scopes of 
+    | [] -> ""
+    | h::t -> h.to_string ++ (case h.parent of | nothing() -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ graphviz_scopes_helper(t)
+  end;
+}
