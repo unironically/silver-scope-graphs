@@ -59,8 +59,9 @@ synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the dec
 synthesized attribute associated_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
+synthesized attribute to_string::String;
 
-nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column;
+nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column, to_string;
 
 @{-
  - Constructing a declaration node.
@@ -81,6 +82,7 @@ top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a>
   top.associated_scope = associated_scope;
   top.line = line;
   top.column = column;
+  top.to_string = top.identifier ++ "[" ++ toString(line) ++ "," ++ toString(column) ++ "]";
 }
 
 
@@ -89,7 +91,7 @@ top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a>
 
 inherited attribute linked_node<a>::Decorated Declaration<a>; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>, line, column;
+nonterminal Usage<a> with identifier, in_scope<a>, linked_node<a>, line, column, to_string;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -106,4 +108,5 @@ top::Usage<a> ::= identifier::String in_scope::Decorated Scope<a> line::Integer 
   top.in_scope = in_scope;
   top.line = line;
   top.column = column;
+  top.to_string = top.identifier ++ "[" ++ toString(line) ++ "," ++ toString(column) ++ "]";
 }

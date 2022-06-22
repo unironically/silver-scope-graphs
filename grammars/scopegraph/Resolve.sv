@@ -136,3 +136,28 @@ function merge_declarations_with_shadowing
   return unionBy (\mem_r::Decorated Declaration<a> mem_l::Decorated Declaration<a> -> 
     mem_r.identifier == mem_l.identifier, right , left);
 }
+
+
+----------------
+-- Resolution paths:
+
+nonterminal Path<a> with start<a>, final<a>;
+
+synthesized attribute start<a>::Decorated Usage<a>;
+synthesized attribute final<a>::Decorated Declaration<a>;
+
+abstract production cons_path
+top::Path<a> ::= start::Decorated Usage<a> final::Decorated Declaration<a>
+{
+  top.start = start;
+  top.final = final;
+}
+
+function string_paths
+String ::= list::[Decorated Path<a>]
+{
+  return case list of 
+  | h::t -> "Found resolution: " ++ h.start.to_string ++ " --> " ++ h.final.to_string ++ "\n" ++ string_paths(t)
+  | [] -> ""
+  end;
+}

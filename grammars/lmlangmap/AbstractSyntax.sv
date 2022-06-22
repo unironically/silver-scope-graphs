@@ -17,6 +17,7 @@ type Scope_type = Scope<Target_type>;
 type Decl_type = Declaration<Target_type>;
 type Usage_type = Usage<Target_type>;
 type Error_type = Error<Target_type>;
+type Path_type = Path<Target_type>;
 
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
@@ -50,6 +51,9 @@ synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on 
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 
 synthesized attribute errors::[Decorated Error_type] occurs on Program, DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar;
+
+synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- make new errors non-terminal instead (in scope library), e.g. production "name_undeclared" which takes a usage, "multiple_found" similar, "declaration_never_used". constructed when errors found in resolution. 
@@ -87,6 +91,7 @@ top::Program ::= list::DeclList
 
   -- error handlings
   top.errors = list.errors;
+  top.paths = list.paths;
 
 }
 
@@ -114,6 +119,8 @@ top::DeclList ::= decl::Decl list::DeclList
 
   -- error handling
   top.errors = decl.errors ++ list.errors;
+  top.paths = decl.paths ++ list.paths;
+
 }
 
 abstract production decllist_nothing
@@ -129,6 +136,8 @@ top::DeclList ::=
 
   -- error handling
   top.errors = [];
+  top.paths = [];
+
 }
 
 
@@ -165,6 +174,7 @@ top::Decl ::= id::ID_t list::DeclList
 
   -- error handling
   top.errors = list.errors;
+  top.paths = list.paths;
 
 }
 
@@ -186,6 +196,8 @@ top::Decl ::= qid::Qid
 
   -- error handling
   top.errors = qid.errors;
+  top.paths = qid.paths;
+
 }
 
 abstract production decl_def
@@ -211,6 +223,7 @@ top::Decl ::= id::ID_t exp::Exp
 
   -- error handling
   top.errors = exp.errors;
+  top.paths = exp.paths;
 
 }
 
@@ -231,6 +244,7 @@ top::Decl ::= exp::Exp
 
   -- error handling
   top.errors = exp.errors;
+  top.paths = exp.paths;
 
 }
 
@@ -265,6 +279,7 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   -- error handling
   top.errors = list.errors ++ exp.errors;
+  top.paths = list.paths ++ exp.paths;
 
 }
 
@@ -302,6 +317,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 
   -- error handling
   top.errors = exp.errors ++ list.errors;
+  top.paths = exp.paths ++ list.paths;
 
 }
 
@@ -318,6 +334,7 @@ top::BindListSeq ::=
 
   -- error handling
   top.errors = [];
+  top.paths = [];
 
 }
 
@@ -352,7 +369,7 @@ top::Exp ::= list::BindListRec exp::Exp
 
   -- error handling
   top.errors = list.errors ++ exp.errors;
-
+  top.paths = list.paths ++ exp.paths;
 
 }
 
@@ -382,7 +399,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 
   -- error handling
   top.errors = exp.errors ++ list.errors;
-
+  top.paths = exp.paths ++ list.paths;
 
 }
 
@@ -398,6 +415,7 @@ top::BindListRec ::=
 
   -- error handling
   top.errors = [];
+  top.paths = [];
 
 }
 
@@ -433,6 +451,7 @@ top::Exp ::= list::BindListPar exp::Exp
 
   -- error handling
   top.errors = list.errors ++ exp.errors;
+  top.paths = list.paths ++ exp.paths;
 
 }
 
@@ -469,6 +488,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 
   -- error handling
   top.errors = exp.errors ++ list.errors;
+  top.paths = exp.paths ++ list.paths;
 
 }
 
@@ -489,6 +509,7 @@ top::BindListPar ::=
 
   -- error handling
   top.errors = [];
+  top.paths = [];
 
 }
 
@@ -529,6 +550,7 @@ top::Exp ::= id::ID_t exp::Exp
 
   -- error handling
   top.errors = exp.errors;
+  top.paths = exp.paths;
 
 }
 
@@ -551,6 +573,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   -- error handling
   top.errors = expLeft.errors ++ expRight.errors;
+  top.paths = expLeft.paths ++ expRight.paths;
+
 }
 
 abstract production exp_app
@@ -572,6 +596,7 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   -- error handling
   top.errors = expLeft.errors ++ expRight.errors;
+  top.paths = expLeft.paths ++ expRight.paths;
 
 }
 
@@ -591,6 +616,7 @@ top::Exp ::= qid::Qid
 
   -- error handling
   top.errors = qid.errors;
+  top.paths = qid.paths;
 
 }
 
@@ -608,6 +634,7 @@ top::Exp ::= val::Int_t
 
   -- error handling
   top.errors = [];
+  top.paths = [];
 
 }
 
@@ -651,6 +678,7 @@ top::Qid ::= id::ID_t qid::Qid
 
   -- error handling
   top.errors = qid.errors;
+  top.paths = qid.paths;
 
 }
 
@@ -695,5 +723,8 @@ top::Qid ::= id::ID_t
     [mul_decl]
   else
     [];
+
+  local attribute fst_path::Path_type = cons_path(init_import, head(resolved));
+  top.paths = [fst_path];
 
 }
