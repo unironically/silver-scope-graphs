@@ -82,7 +82,7 @@ top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a>
   top.associated_scope = associated_scope;
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "[" ++ toString(line) ++ "," ++ toString(column) ++ "]";
+  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
 
 
@@ -108,5 +108,5 @@ top::Usage<a> ::= identifier::String in_scope::Decorated Scope<a> line::Integer 
   top.in_scope = in_scope;
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "[" ++ toString(line) ++ "," ++ toString(column) ++ "]";
+  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
