@@ -46,6 +46,10 @@ synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on B
 synthesized attribute syn_refs_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 
+inherited attribute inh_decls::[(String, Decorated Decl_type)] occurs on BindListSeq;
+inherited attribute inh_refs::[(String, Decorated Usage_type)] occurs on BindListSeq;
+inherited attribute inh_imports::[(String, Decorated Usage_type)] occurs on BindListSeq;
+
 synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
 
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
@@ -273,6 +277,11 @@ top::Exp ::= list::BindListSeq exp::Exp
   
   exp.inh_scope = list.ret_scope;
 
+  -- bringing up exp's decls/refs/imports to give to the final scope in the binding list
+  list.inh_decls = exp.syn_decls;
+  list.inh_refs = exp.syn_refs;
+  list.inh_imports = exp.syn_imports;
+
   list.inh_scope = top.inh_scope;
 
   top.syn_scope_list = list.syn_scope_list ++ exp.syn_scope_list;
@@ -307,11 +316,16 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   local attribute init_scope::Scope_type = cons_scope (
     just(top.inh_scope),
     [(id.lexeme, init_decl)],
-    [],
-    []
+    list.syn_refs,
+    list.syn_imports
   );
   list.inh_scope = init_scope;
   top.ret_scope = list.ret_scope;
+
+  --tying nodes to the final scope in the binding list
+  list.inh_decls = top.inh_decls;
+  list.inh_refs = top.inh_refs;
+  list.inh_imports = top.inh_imports;
 
   top.syn_scope_list = [init_scope] ++ exp.syn_scope_list ++ list.syn_scope_list;
 
@@ -326,9 +340,9 @@ top::BindListSeq ::=
 {
   top.pp = top.tab_level ++ "bindlist_nothing_seq()";
   top.ret_scope = top.inh_scope;
-  top.syn_decls = [];
-  top.syn_refs = [];
-  top.syn_imports = [];
+  top.syn_decls = top.inh_decls;
+  top.syn_refs = top.inh_refs;
+  top.syn_imports = top.inh_imports;
 
   top.syn_scope_list = [];
 
