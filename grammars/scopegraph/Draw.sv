@@ -25,7 +25,7 @@ String ::= paths::[Decorated Path<a>]
 function graphviz_scopes
 String ::= graph::Decorated Graph<a>
 {
-  return "digraph {" ++ graphviz_scopes_helper(graph.scope_list) ++ "}";
+  return "digraph {{ node [shape=circle fontsize=12] " ++ foldl((\acc::String scope::Decorated Scope<a> -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ graphviz_scopes_helper(graph.scope_list) ++ "}";
 }
 
 function graphviz_scopes_helper
@@ -33,7 +33,7 @@ String ::= scopes::[Decorated Scope<a>]
 {
   return case scopes of 
     | [] -> ""
-    | h::t -> h.to_string ++ (case h.parent of | nothing() -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ graphviz_scope_refs(h, h.references) ++ graphviz_scope_decls(h, h.declarations) ++ graphviz_scopes_helper(t)
+    | h::t -> h.to_string ++ (case h.parent of | nothing() -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ graphviz_scope_refs(h, h.references) ++ graphviz_scope_decls(h, h.declarations) ++ graphviz_scope_imports(h, h.imports) ++ graphviz_scopes_helper(t)
   end;
 }
 
@@ -46,12 +46,21 @@ String ::= scope::Decorated Scope<a> refs::[(String, Decorated Usage<a>)]
   end;
 }
 
+function graphviz_scope_imports
+String ::= scope::Decorated Scope<a> refs::[(String, Decorated Usage<a>)]
+{
+  return case refs of 
+    | [] -> ""
+    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ graphviz_scope_imports(scope, t)
+  end;
+}
+
 function graphviz_scope_decls
 String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
 {
   return case decls of 
     | [] -> ""
-    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ graphviz_scope_decls(scope, t)
+    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ (case h2.associated_scope of | nothing() -> "" | just(s) -> h2.to_string ++ " -> " ++ s.to_string ++ " " end) ++ graphviz_scope_decls(scope, t)
   end;
 }
 
