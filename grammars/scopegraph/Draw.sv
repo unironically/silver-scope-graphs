@@ -33,7 +33,7 @@ String ::= scopes::[Decorated Scope<a>]
 {
   return case scopes of 
     | [] -> ""
-    | h::t -> h.to_string ++ (case h.parent of | nothing() -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ graphviz_scope_refs(h, h.references) ++ graphviz_scope_decls(h, h.declarations) ++ graphviz_scope_imports(h, h.imports) ++ graphviz_scopes_helper(t)
+    | h::t -> h.to_string ++ (case h.parent of | nothing() -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ graphviz_scope_refs(h, h.references) ++ graphviz_scope_decls(h, h.declarations) ++ "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++ graphviz_scopes_helper(t)
   end;
 }
 
@@ -60,7 +60,7 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
 {
   return case decls of 
     | [] -> ""
-    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ (case h2.associated_scope of | nothing() -> "" | just(s) -> h2.to_string ++ " -> " ++ s.to_string ++ " " end) ++ graphviz_scope_decls(scope, t)
+    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ (case h2.associated_scope of | nothing() -> "" | just(s) -> "{ edge [arrowhead=onormal] " ++ h2.to_string ++ " -> " ++ s.to_string ++ "} " end) ++ graphviz_scope_decls(scope, t)
   end;
 }
 
