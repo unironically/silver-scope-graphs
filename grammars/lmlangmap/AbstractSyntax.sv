@@ -486,9 +486,9 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
     id.column
   );
 
-  top.syn_decls = exp.syn_decls;
-  top.syn_refs = exp.syn_refs;
-  top.syn_imports = exp.syn_imports;
+  top.syn_decls = exp.syn_decls ++ list.syn_decls;
+  top.syn_refs = exp.syn_refs ++ list.syn_refs;
+  top.syn_imports = exp.syn_imports ++ list.syn_imports;
 
   top.syn_decls_two = list.syn_decls_two ++ [(id.lexeme, init_decl)];
   top.syn_refs_two = list.syn_refs_two;

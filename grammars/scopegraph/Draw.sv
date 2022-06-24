@@ -65,5 +65,5 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
 }
 
 {-
-def a = 0 def b = 1 + a def c = 2 let aa = c bb = a cc = b in aa + bb + cc
+def a = 0 def b = 1 def c = 2 letpar a = c b = a c = b in a + b + c
 -}
