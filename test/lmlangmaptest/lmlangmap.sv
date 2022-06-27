@@ -12,6 +12,7 @@ mainTestSuite lmlangmaptesting;
  - Handles cases where no scope errors are found.
  -
  - @param errors The list of scope errors found when parsing a program.
+ - @return Boolean indicating a successful test
 -}
 function no_errors
 Boolean ::= errors::[Decorated Error<a>]
@@ -26,6 +27,7 @@ Boolean ::= errors::[Decorated Error<a>]
  - Handles cases where no declarations are found for a single usage.
  -
  - @param errors The list of scope errors found when parsing a program.
+ - @return Boolean indicating a successful test.
 -}
 function no_declarations_only
 Boolean ::= errors::[Decorated Error<a>]
@@ -40,6 +42,7 @@ Boolean ::= errors::[Decorated Error<a>]
  - Handles cases where multiple declarations are found for a single usage.
  -
  - @param errors The list of scope errors found when parsing a program.
+ - @return Boolean indicating a successful test.
 -}
 function multiple_declarations_only
 Boolean ::= errors::[Decorated Error<a>]
@@ -54,6 +57,7 @@ Boolean ::= errors::[Decorated Error<a>]
  - Handles cases where multiple declarations are found for a single usage, and no declarations are found for another usage.
  -
  - @param errors The list of scope errors found when parsing a program.
+ - @return Boolean indicating a successful test.
 -}
 function multiple_and_no_declarations
 Boolean ::= errors::[Decorated Error<a>]
@@ -136,6 +140,7 @@ equalityTest(
  - Parses an input program and produces the abstract syntax tree for that program.
  -
  - @param input The input program to parse as a plaintext string.
+ - @return The abstract tree of the input program. 
 -}
 function parse_input_ast
 Program ::= input::String
