@@ -42,8 +42,10 @@ nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports
  - @param imports The list of imports attached to a node.
 -}
 abstract production cons_scope
-top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> declarations::[(String, Decorated Declaration<a>)] 
-  references::[(String, Decorated Usage<a>)] imports::[(String, Decorated Usage<a>)]
+top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> 
+  declarations::[(String, Decorated Declaration<a>)] 
+  references::[(String, Decorated Usage<a>)] 
+  imports::[(String, Decorated Usage<a>)]
 {
   top.id = genInt();
   top.parent = parent;
@@ -59,29 +61,29 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> declarations::[(String, Deco
 
 synthesized attribute identifier::String; -- Name of the declaration
 synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the declaration resides
-synthesized attribute associated_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
+synthesized attribute assoc_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
-nonterminal Declaration<a> with identifier, in_scope<a>, associated_scope<a>, line, column, to_string;
+nonterminal Declaration<a> with identifier, in_scope<a>, assoc_scope<a>, line, column, to_string;
 
 @{-
  - Constructing a declaration node.
  -
  - @param identifier The scope node representing the lexically enclosing scope.
  - @param in_scope The scope node corresponding to the lexically enclosing scope of this declaration.
- - @param associated_scope The scope this node points to in the case of imports.
+ - @param assoc_scope The scope this node points to in the case of imports.
  - @param line The line this declaration was found on.
  - @param column The column this declaration was found on.
 -}
 abstract production cons_decl
 top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a> 
-  associated_scope::Maybe<Decorated Scope<a>> line::Integer column::Integer
+  assoc_scope::Maybe<Decorated Scope<a>> line::Integer column::Integer
 {
   -- two productions instead? one with/without assoc scope
   top.identifier = identifier;
   top.in_scope = in_scope;
-  top.associated_scope = associated_scope;
+  top.assoc_scope = assoc_scope;
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);

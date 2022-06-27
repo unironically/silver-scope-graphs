@@ -44,6 +44,12 @@ top::Error<a> ::= declaration::Declaration<a>
     " at line: " ++ toString(declaration.line) ++ ", col: " ++ toString(declaration.column);
 }
 
+@{-
+ - Concatenate string information from a list of errors.
+ -
+ - @param list The list of errors to output.
+ - @return The string representing all errors found.
+-}
 function string_errors
 String ::= list::[Decorated Error<a>]
 {
