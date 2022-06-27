@@ -11,6 +11,7 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
+-- Types used in scope graphs for this language example
 type Target_type = Decorated Exp;
 type Graph_type = Graph<Target_type>;
 type Scope_type = Scope<Target_type>;
@@ -19,44 +20,50 @@ type Usage_type = Usage<Target_type>;
 type Error_type = Error<Target_type>;
 type Path_type = Path<Target_type>;
 
+-- Attributes used in printing an AST
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
-global pp_line_spacing :: String = "";
-global pp_tab_spacing :: String = "";
-
+-- The inherited scope passed to a node is the scope in which the corresponding construct resides
+-- Only the binding list of parrallel let expressions use two inherited scopes
 inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 inherited attribute inh_scope_two::Decorated Scope_type occurs on BindListPar, Qid;
 
+-- Information required for synthesizing a graph node at the root of an AST
 synthesized attribute syn_graph::Decorated Graph_type occurs on Program;
 synthesized attribute syn_scope_list::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
+-- Information required for constructing scope nodes with references, declarations and imports
+-- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
+-- Only the binding list of parrallel let expressions use two synthesized attributes for each
 synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
 synthesized attribute syn_refs::[(String, Decorated Usage_type)] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
 synthesized attribute syn_imports::[(String, Decorated Usage_type)] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-
 synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on BindListPar;
 synthesized attribute syn_refs_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 
+-- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
 inherited attribute inh_decls::[(String, Decorated Decl_type)] occurs on BindListSeq;
 inherited attribute inh_refs::[(String, Decorated Usage_type)] occurs on BindListSeq;
 inherited attribute inh_imports::[(String, Decorated Usage_type)] occurs on BindListSeq;
 
+-- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
 synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
 
+-- The scope returned by the binding list construct of a sequential let expression
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 
+-- The lists of errors and paths found in scope graph resolution
 synthesized attribute errors::[Decorated Error_type] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-
 synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
@@ -121,7 +128,6 @@ top::DeclList ::= decl::Decl list::DeclList
 abstract production decllist_nothing
 top::DeclList ::=
 {
-
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
@@ -228,7 +234,6 @@ top::Decl ::= id::ID_t exp::Exp
 }
 
 abstract production decl_exp
--- (un)removing this for now to (not) comply with the grammar in a theory of name resolution
 top::Decl ::= exp::Exp
 {
   top.syn_decls = exp.syn_decls;
@@ -279,7 +284,6 @@ top::Exp ::= list::BindListSeq exp::Exp
 
 }
 
--- Defines the binding pattern for the sequential let feature
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
@@ -377,7 +381,6 @@ top::Exp ::= list::BindListRec exp::Exp
 
 }
 
--- Defines the binding pattern for the recursive let feature
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
@@ -464,7 +467,6 @@ top::Exp ::= list::BindListPar exp::Exp
 
 }
 
--- Defines the binding pattern for the parallel let feature
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 {
@@ -695,7 +697,6 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  
   local attribute init_import_two::Usage_type = cons_usage (
     id.lexeme,
     top.inh_scope_two,
