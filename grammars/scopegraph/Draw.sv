@@ -14,7 +14,7 @@ grammar scopegraph;
 function graphviz_draw_graph
 String ::= graph::Decorated Graph<a> draw_paths::Boolean
 {
-  return "digraph { graph [overlap=false] { node [shape=circle style=solid fontsize=12] " ++ 
+  return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<a> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
     "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 

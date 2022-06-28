@@ -11,7 +11,7 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
-global pp_line_spacing :: String = ""; 
+global pp_line_spcing :: String = ""; 
 global pp_tab_spacing :: String = ""; 
 
 -- Types used in scope graphs for this language example

@@ -21,12 +21,12 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute r::Program = r_cst.ast;
 
   local attribute print_success :: IOToken;
-  print_success = printT("Successful parse\n" ++ string_paths(r.paths) ++ 
-    "Scope graph illustration: " ++ file_output ++ "\n" ++ 
+  print_success = printT("Successful parse!\n" ++ 
+    (if (contains("--show-resolution", largs)) then string_paths(r.paths) else "") ++ 
     if (contains("--pretty-print", largs)) then "Pretty print:\n" ++ r.pp ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT("Parse failure\n" ++ string_errors(r.errors) ++ "\n", ioin);
+  print_failure = printT("Parse failure!\n" ++ string_errors(r.errors) ++ "\n", ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
