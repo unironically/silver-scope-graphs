@@ -27,7 +27,7 @@ top::Graph<a> ::= scope_list::[Decorated Scope<a>] paths::[Decorated Path<a>]
 
 synthesized attribute id::Integer;
 synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
-synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)];
+synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)]; -- pair of identifier name and node
 synthesized attribute references<a>::[(String, Decorated Usage<a>)];
 synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
 synthesized attribute to_string::String;
@@ -82,7 +82,6 @@ abstract production cons_decl
 top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a> 
   assoc_scope::Maybe<Decorated Scope<a>> line::Integer column::Integer
 {
-  -- two productions instead? one with/without assoc scope
   top.identifier = identifier;
   top.in_scope = in_scope;
   top.assoc_scope = assoc_scope;

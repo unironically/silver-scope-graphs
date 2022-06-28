@@ -26,7 +26,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
     if (contains("--pretty-print", largs)) then "Pretty print:\n" ++ r.pp ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT("Parse failure!\n" ++ string_errors(r.errors) ++ "\n", ioin);
+  print_failure = printT("Parse failure!\n" ++ string_errors(r.errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 

@@ -85,10 +85,10 @@ top::Program ::= list::DeclList
     list.syn_imports
   );
   
-  list.inh_scope = init_scope;
-
   local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_scope_list, list.paths);
   top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
+
+  list.inh_scope = init_scope;
 
   -- error and path handling
   top.errors = list.errors;
@@ -114,6 +114,7 @@ top::DeclList ::= decl::Decl list::DeclList
   top.syn_scope_list = decl.syn_scope_list ++ list.syn_scope_list;
 
   decl.inh_scope = top.inh_scope;
+
   list.inh_scope = top.inh_scope;
 
   -- error and path handling
