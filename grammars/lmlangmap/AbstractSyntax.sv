@@ -91,13 +91,47 @@ top::Program ::= list::DeclList
   list.inh_scope = init_scope;
 
   -- error and path handling
-  top.errors = list.errors;
+
+  -- collect all of the declarations that some reference is resolved to
+  local attribute used_decls::[Decorated Decl_type] = map((\path::Decorated Path_type -> path.final), list.paths);
+
+  -- create a list from the list of all declarations in a graph
+  -- each declaration in the list is mapped to a boolean indicating whether it is ever referred to
+  -- e.g. (x, false) is in 'mapped' if x is a declaration and is not referred to
+  local attribute mapped::[(Decorated Decl_type, Boolean)] = map(
+    (\decl::Decorated Decl_type 
+      -> (decl, containsBy(
+        (\l::Decorated Decl_type r::Decorated Decl_type -> l.to_string == r.to_string), 
+        decl, used_decls))), 
+    init_graph.all_decls);
+
+  -- use the above lists to generate errors where declarations exist which are not referred to
+  top.errors = list.errors ++ foldl((
+    \errors::[Decorated Error_type] decl_pair::(Decorated Decl_type, Boolean) 
+      -> errors ++ (if !snd(decl_pair) then [decorate_err(fst(decl_pair))] else []) -- had to use decorate_err function instead of declaration_unused constructor??
+  ), [], mapped);
+
   top.paths = list.paths;
   
   -- pretty printing
   top.pp = "prog(" ++ list.pp ++ ")";
   list.tab_level = pp_tab_spacing;
 
+}
+
+@{-
+ - Had to create this function so that I can generate a decorated error.
+ - Simply using the declaration_unused constructor in the above code resulted in wrong typing.
+ - See comment in lines above where used.
+ -
+ - @param decl The declaration that is never used.
+ - @return The error node corresponding to the declaration given never being used.
+-}
+function decorate_err
+Decorated Error_type ::= decl::Decorated Decl_type
+{
+  local attribute ret_err::Error_type = declaration_unused(decl);
+  return ret_err;
 }
 
 

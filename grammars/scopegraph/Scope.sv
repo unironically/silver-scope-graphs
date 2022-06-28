@@ -6,8 +6,9 @@ grammar scopegraph;
 
 synthesized attribute scope_list<a>::[Decorated Scope<a>];
 synthesized attribute paths<a>::[Decorated Path<a>];
+synthesized attribute all_decls<a>::[Decorated Declaration<a>];
 
-nonterminal Graph<a> with scope_list<a>, paths<a>;
+nonterminal Graph<a> with scope_list<a>, paths<a>, all_decls<a>;
 
 @{-
  - Constructing a graph node.
@@ -19,6 +20,10 @@ top::Graph<a> ::= scope_list::[Decorated Scope<a>] paths::[Decorated Path<a>]
 {
   top.scope_list = scope_list;
   top.paths = paths;
+  top.all_decls = foldl(
+    (\all_decls::[Decorated Declaration<a>] scope::Decorated Scope<a> 
+      -> all_decls ++ map((\pair::(String, Decorated Declaration<a>) -> snd(pair)), scope.declarations)), 
+    [], scope_list);
 }
 
 

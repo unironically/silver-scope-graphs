@@ -38,7 +38,7 @@ top::Error<a> ::= usage::Usage<a>
  - @param declaration The declaration node that no references are found for. 
 -}
 abstract production declaration_unused
-top::Error<a> ::= declaration::Declaration<a>
+top::Error<a> ::= declaration::Decorated Declaration<a>
 {
   top.message = "Declaration never used: " ++ declaration.identifier ++ 
     " at line: " ++ toString(declaration.line) ++ ", col: " ++ toString(declaration.column);
