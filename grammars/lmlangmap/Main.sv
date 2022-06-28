@@ -10,7 +10,7 @@ function main
 IOVal<Integer> ::= largs::[String] ioin::IOToken
 {
   local attribute args::String;
-  args = implode(" ", largs);
+  args = head(largs);
 
   local attribute result :: ParseResult<Program_c>;
   result = parse(args, "<<args>>");
@@ -28,7 +28,8 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   print_failure = printT("Parse failure\n" ++ string_errors(r.errors) ++ "\n" ++ r.pp, ioin);
 
   local attribute print_resolution_paths :: IOToken;
-  print_resolution_paths = systemT("echo '" ++ graphviz_draw_graph(r.syn_graph, true) ++ 
+  print_resolution_paths = systemT("echo '" ++ 
+    graphviz_draw_graph(r.syn_graph, (contains("--show-resolution", largs))) ++ 
     "' | dot -Tsvg > " ++ file_output, print_success).io;
 
   return ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
