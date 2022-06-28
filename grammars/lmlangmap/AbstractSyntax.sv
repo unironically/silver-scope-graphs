@@ -91,7 +91,7 @@ top::Program ::= list::DeclList
   list.inh_scope = init_scope;
 
   -- error and path handling
-
+  {-
   -- collect all of the declarations that some reference is resolved to
   local attribute used_decls::[Decorated Decl_type] = map((\path::Decorated Path_type -> path.final), list.paths);
 
@@ -110,7 +110,8 @@ top::Program ::= list::DeclList
     \errors::[Decorated Error_type] decl_pair::(Decorated Decl_type, Boolean) 
       -> errors ++ (if !snd(decl_pair) then [decorate_err(fst(decl_pair))] else []) -- had to use decorate_err function instead of declaration_unused constructor??
   ), [], mapped);
-
+  -}
+  top.errors = list.errors;
   top.paths = list.paths;
   
   -- pretty printing
