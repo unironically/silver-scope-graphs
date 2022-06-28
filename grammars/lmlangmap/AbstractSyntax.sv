@@ -108,10 +108,10 @@ top::Program ::= list::DeclList
   -- use the above lists to generate errors where declarations exist which are not referred to
   top.errors = list.errors ++ foldl((
     \errors::[Decorated Error_type] decl_pair::(Decorated Decl_type, Boolean) 
-      -> errors ++ (if !snd(decl_pair) then [decorate_err(fst(decl_pair))] else []) -- had to use decorate_err function instead of declaration_unused constructor??
+      -> errors ++ (if !snd(decl_pair) then [  decorate_err(fst(decl_pair))  ] else []) -- had to use decorate_err function instead of declaration_unused constructor?? replace with "decorate foo() with {}"?
   ), [], mapped);
   -}
-  top.errors = list.errors;
+  top.errors = list.errors; -- make above warnings instead? (words instead of "parse failure")
   top.paths = list.paths;
   
   -- pretty printing
@@ -770,7 +770,7 @@ top::Qid ::= id::ID_t
   else
     [];
 
-  local attribute fst_path::Path_type = cons_path(init_import, head(resolved));
+  local attribute fst_path::Path_type = cons_path(init_import, head(resolved)); -- in case of errors print some paths anyway
   top.paths = [fst_path];
 
   -- pretty printing
