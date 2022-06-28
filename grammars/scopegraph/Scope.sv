@@ -5,8 +5,9 @@ grammar scopegraph;
 -- Scope Graph
 
 synthesized attribute scope_list<a>::[Decorated Scope<a>];
+synthesized attribute paths<a>::[Decorated Path<a>];
 
-nonterminal Graph<a> with scope_list<a>;
+nonterminal Graph<a> with scope_list<a>, paths<a>;
 
 @{-
  - Constructing a graph node.
@@ -14,9 +15,10 @@ nonterminal Graph<a> with scope_list<a>;
  - @param scope_list The list of scopes the graph contains.
 -}
 abstract production cons_graph
-top::Graph<a> ::= scope_list::[Decorated Scope<a>]
+top::Graph<a> ::= scope_list::[Decorated Scope<a>] paths::[Decorated Path<a>]
 {
   top.scope_list = scope_list;
+  top.paths = paths;
 }
 
 

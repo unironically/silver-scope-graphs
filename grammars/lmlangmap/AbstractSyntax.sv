@@ -11,6 +11,9 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
+global pp_line_spacing :: String = ""; 
+global pp_tab_spacing :: String = ""; 
+
 -- Types used in scope graphs for this language example
 type Target_type = Decorated Exp;
 type Graph_type = Graph<Target_type>;
@@ -84,7 +87,7 @@ top::Program ::= list::DeclList
   
   list.inh_scope = init_scope;
 
-  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_scope_list);
+  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_scope_list, list.paths);
   top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
 
   -- error and path handling

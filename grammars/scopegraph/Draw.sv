@@ -2,41 +2,24 @@ grammar scopegraph;
 
 
 ----------------
--- Resolution paths:
-
-@{-
- - Draw resolution paths in graphviz.
- -
- - @param paths The list of paths to draw.
- - @return The string with which graphviz will draw resolution paths.
--}
-function graphviz_draw_paths
-String ::= paths::[Decorated Path<a>]
-{
-  return "digraph {" ++ 
-    foldl((\acc::String path::Decorated Path<a> -> 
-      acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ 
-    "}";
-}
-
-
-----------------
 -- Scope graph:
 
 @{-
  - Draw a scope graph in graphviz.
  -
  - @param graph The scope graph to draw.
+ - @param draw_paths Indicates whether to draw the resolution paths into the graph.
  - @return The string with which graphviz will draw a graph.
 -}
 function graphviz_draw_graph
-String ::= graph::Decorated Graph<a>
+String ::= graph::Decorated Graph<a> draw_paths::Boolean
 {
   return "digraph {{ node [shape=circle fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<a> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
     "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
-    graphviz_scopes(graph.scope_list) ++ "}";
+    graphviz_scopes(graph.scope_list) ++ 
+    if draw_paths then graphviz_draw_paths(graph.paths) ++ "}" else "}";
 }
 
 @{-
@@ -55,7 +38,7 @@ String ::= scopes::[Decorated Scope<a>]
         -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ 
       graphviz_scope_refs(h, h.references) ++ 
       graphviz_scope_decls(h, h.declarations) ++ 
-      "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++ 
+      "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++
       graphviz_scopes(t)
   end;
 }
@@ -111,4 +94,17 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
       end) ++ 
       graphviz_scope_decls(scope, t)
   end;
+}
+
+@{-
+ - Draw resolution paths in graphviz.
+ -
+ - @param paths The list of paths to draw.
+ - @return The string with which graphviz will draw resolution paths.
+-}
+function graphviz_draw_paths
+String ::= paths::[Decorated Path<a>]
+{
+  return "{edge [color=blue style=dashed] " ++ foldl((\acc::String path::Decorated Path<a> -> 
+    acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ "}";
 }
