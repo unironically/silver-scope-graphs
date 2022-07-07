@@ -95,6 +95,20 @@ top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a>
   top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
 
+abstract production cons_decl_ref
+attribute line i occurs on a, attribute column i occurs on a =>
+top::Declaration<a> ::= identifier::String in_scope::Decorated Scope<a> 
+  assoc_scope::Maybe<Decorated Scope<a>> 
+  ast_node::Decorated a with i
+{
+  top.identifier = identifier;
+  top.in_scope = in_scope;
+  top.assoc_scope = assoc_scope;
+  top.line = ast_node.line;
+  top.column = ast_node.column;
+  top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
+}
+
 
 ----------------
 -- Imports/References
