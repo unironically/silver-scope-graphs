@@ -33,5 +33,32 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
     graphviz_draw_graph(r.syn_graph, (contains("--show-resolution", largs))) ++ 
     "' | dot -Tsvg > " ++ file_output, print_success).io;
 
-  return ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
+
+
+ 
+{-
+  local res::IO<Integer> = do {
+    if length(largs) < 1 then do {
+      print ("Usage: java -jar ***.jar <file name> <options>\n");
+      return 1;
+    }
+    else do {
+
+
+    if length(r.errors) > 0
+    then 
+      do { 
+        print ("Errors:\n" ++ string_errors(r.errors));
+        return 1;
+      }
+    else
+      do {
+       print ("Hello!\n");
+       return 1;
+      } ;
+    } ;
+-}
+  return 
+      ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
+     -- evalIO (res, ioin) ;
 }
