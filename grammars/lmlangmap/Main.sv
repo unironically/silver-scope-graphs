@@ -21,7 +21,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute r::Program = r_cst.ast;
 
   local attribute print_success :: IOToken;
-  print_success = printT("Successful parse!\n" ++ 
+  print_success = printT(
     if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true) ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;

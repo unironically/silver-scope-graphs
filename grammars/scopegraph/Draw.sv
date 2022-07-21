@@ -14,16 +14,12 @@ grammar scopegraph;
 function graphviz_draw_graph
 String ::= graph::Decorated Graph<a> draw_paths::Boolean
 {
-  return "digraph {\n\t/*Scope list*/ {node [shape=circle style=solid fontsize=12] " ++ 
+  return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<a> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
-    "}\n\t/*Decl/ref/import format*/ node [shape=box fontsize=12] edge [arrowhead=normal]\n" ++ 
+    "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
     graphviz_scopes(graph.scope_list) ++ 
-    if draw_paths then 
-      "\t/*Edges to impored declarations*/ " ++ graphviz_draw_paths(graph.paths) ++ "\n" ++ 
-      "\t/*Edges to child scopes*/ " ++ graphviz_scope_children(graph.scope_list) ++ "\n}\n" 
-    else 
-      "\n}";
+    if draw_paths then graphviz_draw_paths(graph.paths) ++ graphviz_scope_children(graph.scope_list) ++ "}" else "}";
 }
 
 @{-
@@ -38,15 +34,11 @@ String ::= scopes::[Decorated Scope<a>]
   return case scopes of 
     | [] -> ""
     | h::t -> 
-      "\t/*Scope " ++ h.to_string ++ "*/ " ++
       h.to_string ++ (case h.parent of | nothing() 
         -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ 
       graphviz_scope_refs(h, h.references) ++ 
       graphviz_scope_decls(h, h.declarations) ++ 
-      if length(h.imports) > 0 then 
-        "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}\n" 
-      else 
-        "\n" ++
+      "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++
       graphviz_scopes(t)
   end;
 }
@@ -113,7 +105,7 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
 function graphviz_scope_children
 String ::= scopes::[Decorated Scope<a>]
 {
-  return "{edge [color=green style=dashed]" ++
+  return "{edge [color=pink style=dashed] " ++
     foldl((\accone::String h::Decorated Scope<a> ->
     accone ++ (foldl(
       (\acc::String child::Decorated Scope<a> -> acc ++ " " ++ h.to_string ++ " -> "  ++ child.to_string),
@@ -135,6 +127,6 @@ String ::= scopes::[Decorated Scope<a>]
 function graphviz_draw_paths
 String ::= paths::[Decorated Path<a>]
 {
-  return "{edge [color=blue style=dashed]" ++ foldl((\acc::String path::Decorated Path<a> -> 
+  return "{edge [color=blue style=dashed] " ++ foldl((\acc::String path::Decorated Path<a> -> 
     acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ "}";
 }
