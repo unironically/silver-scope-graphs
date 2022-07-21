@@ -1,5 +1,11 @@
 grammar scopegraph;
 
+{-
+  TODO: In the case of resolution errors - draw the problems onto the scope graph - i.e.
+  if there are multiple declarations for a reference, draw the resolution path to them in red,
+  and perhaps the reference and declarations in red. Similar thing for no declarations found,
+  just draw the reference in red?
+-}
 
 ---------------
 -- New resolution algorithm:
@@ -35,7 +41,7 @@ function resolve
   );
   
   -- recursive call on parent
-  local attribute par::[Decorated Declaration<a>] = case scope.parent of
+  local attribute par::[Decorated Declaration<a>] = case cur_scope.parent of
     | nothing() -> []
     | just(p) -> resolve(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
   end;

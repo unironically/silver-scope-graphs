@@ -12,14 +12,15 @@ grammar scopegraph;
  - @return The string with which graphviz will draw a graph.
 -}
 function graphviz_draw_graph
-String ::= graph::Decorated Graph<a> draw_paths::Boolean
+String ::= graph::Decorated Graph<a> draw_paths::Boolean draw_parents::Boolean
 {
   return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<a> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
     "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
     graphviz_scopes(graph.scope_list) ++ 
-    if draw_paths then graphviz_draw_paths(graph.paths) ++ graphviz_scope_children(graph.scope_list) ++ "}" else "}";
+    (if draw_paths then graphviz_draw_paths(graph.paths) else "") ++
+    (if draw_parents then graphviz_scope_children(graph.scope_list) else "") ++ "}";
 }
 
 @{-
@@ -112,11 +113,7 @@ String ::= scopes::[Decorated Scope<a>]
       "",
       h.child_scopes
     ))), "", scopes) ++ "}";
-
-
 }
-
---foldl(   (\acc::String scope::Decorated Scope<a> -> acc ++ " " ++ toString(scope.id))   , "", graph.scope_list)
 
 @{-
  - Draw resolution paths in graphviz.

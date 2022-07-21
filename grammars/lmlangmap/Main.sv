@@ -22,19 +22,16 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute print_success :: IOToken;
   print_success = printT(
-    if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true) ++ "\n" else "", ioin);
+    if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true, true) ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
   print_failure = printT("Failure!\n" ++ string_errors(r.errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
-    graphviz_draw_graph(r.syn_graph, (contains("--show-resolution", largs))) ++ 
+    graphviz_draw_graph(r.syn_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
     "' | dot -Tsvg > " ++ file_output, print_success).io;
 
-
-
- 
 {-
   local res::IO<Integer> = do {
     if length(largs) < 1 then do {
