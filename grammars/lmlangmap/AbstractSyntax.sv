@@ -37,7 +37,7 @@ inherited attribute inh_scope_two::Decorated Scope_type occurs on BindListPar, Q
 
 -- Information required for synthesizing a graph node at the root of an AST
 synthesized attribute syn_graph::Decorated Graph_type occurs on Program;
-synthesized attribute syn_scope_list::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_all_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Information required for constructing scope nodes with references, declarations and imports
@@ -52,6 +52,10 @@ synthesized attribute syn_imports::[(String, Decorated Usage_type)] occurs on De
 synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on BindListPar;
 synthesized attribute syn_refs_two::[(String, Decorated Usage_type)] occurs on BindListPar;
 synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs on BindListPar;
+
+-- For double-edged arrow between parent and child scopes
+synthesized attribute syn_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar;
 
 -- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
 inherited attribute inh_decls::[(String, Decorated Decl_type)] occurs on BindListSeq;
@@ -82,10 +86,11 @@ top::Program ::= list::DeclList
     nothing(),
     list.syn_decls,
     list.syn_refs,
-    list.syn_imports
+    list.syn_imports,
+    list.syn_scopes -- ADD
   );
   
-  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_scope_list, list.paths);
+  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes, list.paths);
   top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
@@ -146,7 +151,8 @@ top::DeclList ::= decl::Decl list::DeclList
   top.syn_decls = decl.syn_decls ++ list.syn_decls;
   top.syn_refs = decl.syn_refs ++ list.syn_refs;
   top.syn_imports = decl.syn_imports ++ list.syn_imports;
-  top.syn_scope_list = decl.syn_scope_list ++ list.syn_scope_list;
+  top.syn_all_scopes = decl.syn_all_scopes ++ list.syn_all_scopes;
+  top.syn_scopes = decl.syn_scopes ++ list.syn_scopes; -- ADD
 
   decl.inh_scope = top.inh_scope;
 
@@ -170,7 +176,8 @@ top::DeclList ::=
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = []; -- ADD
 
   -- error and path handling
   top.errors = [];
@@ -193,7 +200,8 @@ top::Decl ::= id::ID_t list::DeclList
     just(top.inh_scope),
     list.syn_decls,
     list.syn_refs,
-    list.syn_imports
+    list.syn_imports,
+    list.syn_scopes -- ADD
   );
 
   local attribute init_decl::Decl_type = cons_decl(
@@ -207,7 +215,8 @@ top::Decl ::= id::ID_t list::DeclList
   top.syn_decls = [(id.lexeme, init_decl)];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [init_scope] ++ list.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ list.syn_all_scopes;
+  top.syn_scopes = [init_scope]; -- ADD
 
   list.inh_scope = init_scope;
 
@@ -228,7 +237,8 @@ top::Decl ::= qid::Qid
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
-  top.syn_scope_list = qid.syn_scope_list;
+  top.syn_all_scopes = qid.syn_all_scopes;
+  top.syn_scopes = qid.syn_scopes; -- ADD
 
   qid.inh_scope = top.inh_scope;
   qid.inh_scope_two = top.inh_scope;
@@ -257,7 +267,8 @@ top::Decl ::= id::ID_t exp::Exp
   top.syn_decls = [(id.lexeme, init_decl)] ++ exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
-  top.syn_scope_list = exp.syn_scope_list;
+  top.syn_all_scopes = exp.syn_all_scopes;
+  top.syn_scopes = exp.syn_scopes; -- ADD
 
   exp.inh_scope = top.inh_scope;
 
@@ -278,7 +289,8 @@ top::Decl ::= exp::Exp
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
-  top.syn_scope_list = exp.syn_scope_list;
+  top.syn_all_scopes = exp.syn_all_scopes;
+  top.syn_scopes = exp.syn_scopes;
 
   exp.inh_scope = top.inh_scope;
 
@@ -303,7 +315,8 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.syn_decls = list.syn_decls;
   top.syn_refs = list.syn_refs;
   top.syn_imports = list.syn_imports;
-  top.syn_scope_list = list.syn_scope_list ++ exp.syn_scope_list;
+  top.syn_all_scopes = list.syn_all_scopes ++ exp.syn_all_scopes;
+  top.syn_scopes = list.syn_scopes ++ exp.syn_scopes; -- ADD
 
   list.inh_scope = top.inh_scope;
   list.inh_decls = exp.syn_decls; -- bringing up exp's decls/refs/imports to give to the final scope in the binding list
@@ -338,14 +351,16 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
     just(top.inh_scope),
     [(id.lexeme, init_decl)],
     list.syn_refs,
-    list.syn_imports
+    list.syn_imports,
+    list.syn_scopes -- ADD
   );
   
   top.syn_decls = exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
-  top.syn_scope_list = [init_scope] ++ exp.syn_scope_list ++ list.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ exp.syn_all_scopes ++ list.syn_all_scopes;
   top.ret_scope = list.ret_scope;
+  top.syn_scopes = [init_scope]; -- ADD
 
   exp.inh_scope = top.inh_scope;
 
@@ -373,7 +388,8 @@ top::BindListSeq ::=
   top.syn_decls = top.inh_decls;
   top.syn_refs = top.inh_refs;
   top.syn_imports = top.inh_imports;
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = [];
 
   -- error and path handling
   top.errors = [];
@@ -396,13 +412,14 @@ top::Exp ::= list::BindListRec exp::Exp
     just(top.inh_scope),
     list.syn_decls ++ exp.syn_decls,
     list.syn_refs ++ exp.syn_refs,
-    list.syn_imports ++ exp.syn_imports 
+    list.syn_imports ++ exp.syn_imports,
+    [] -- TODO
   );
 
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [init_scope] ++ list.syn_scope_list ++ exp.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ list.syn_all_scopes ++ exp.syn_all_scopes;
 
   list.inh_scope = init_scope;
 
@@ -434,7 +451,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   top.syn_decls = exp.syn_decls ++ list.syn_decls ++ [(id.lexeme, init_decl)];
   top.syn_refs = exp.syn_refs ++ list.syn_refs;
   top.syn_imports = exp.syn_imports ++ list.syn_imports;
-  top.syn_scope_list = exp.syn_scope_list ++ list.syn_scope_list;
+  top.syn_all_scopes = exp.syn_all_scopes ++ list.syn_all_scopes;
 
   list.inh_scope = top.inh_scope;
 
@@ -458,7 +475,7 @@ top::BindListRec ::=
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
 
   -- error and path handling
   top.errors = [];
@@ -481,13 +498,14 @@ top::Exp ::= list::BindListPar exp::Exp
     just(top.inh_scope),
     list.syn_decls_two ++ exp.syn_decls,
     list.syn_refs_two ++ exp.syn_refs,
-    list.syn_imports_two ++ exp.syn_imports 
+    list.syn_imports_two ++ exp.syn_imports,
+    [] -- TODO
   );
 
   top.syn_decls = list.syn_decls;
   top.syn_refs = list.syn_refs;
   top.syn_imports = list.syn_imports;
-  top.syn_scope_list = [init_scope] ++ list.syn_scope_list ++ exp.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ list.syn_all_scopes ++ exp.syn_all_scopes;
 
   list.inh_scope = top.inh_scope;
   list.inh_scope_two = init_scope;
@@ -523,7 +541,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   top.syn_decls_two = list.syn_decls_two ++ [(id.lexeme, init_decl)];
   top.syn_refs_two = list.syn_refs_two;
   top.syn_imports_two = list.syn_imports_two;
-  top.syn_scope_list = exp.syn_scope_list ++ list.syn_scope_list;
+  top.syn_all_scopes = exp.syn_all_scopes ++ list.syn_all_scopes;
 
   exp.inh_scope = top.inh_scope;
 
@@ -551,7 +569,7 @@ top::BindListPar ::=
   top.syn_decls_two = [];
   top.syn_refs_two = [];
   top.syn_imports_two = [];
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
 
   -- error and path handling
   top.errors = [];
@@ -582,13 +600,15 @@ top::Exp ::= id::ID_t exp::Exp
     just(top.inh_scope),
     exp.syn_decls ++ [(id.lexeme, init_decl)],
     exp.syn_refs,
-    exp.syn_imports
+    exp.syn_imports,
+    exp.syn_scopes -- ADD
   );
 
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [init_scope] ++ exp.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ exp.syn_all_scopes;
+  top.syn_scopes = [init_scope]; -- ADD
 
   exp.inh_scope = init_scope;
 
@@ -609,7 +629,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
-  top.syn_scope_list = expLeft.syn_scope_list ++ expRight.syn_scope_list;
+  top.syn_all_scopes = expLeft.syn_all_scopes ++ expRight.syn_all_scopes;
+  top.syn_scopes = expLeft.syn_scopes ++ expRight.syn_scopes;
 
   expLeft.inh_scope = top.inh_scope;
 
@@ -633,7 +654,8 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.syn_decls = expLeft.syn_decls ++ expRight.syn_decls;
   top.syn_refs = expLeft.syn_refs ++ expRight.syn_refs;
   top.syn_imports = expLeft.syn_imports ++ expRight.syn_imports;
-  top.syn_scope_list = expLeft.syn_scope_list ++ expRight.syn_scope_list;
+  top.syn_all_scopes = expLeft.syn_all_scopes ++ expRight.syn_all_scopes;
+  top.syn_scopes = expLeft.syn_scopes ++ expRight.syn_scopes;
 
   expLeft.inh_scope = top.inh_scope;
 
@@ -657,7 +679,8 @@ top::Exp ::= qid::Qid
   top.syn_decls = qid.syn_decls;
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports;
-  top.syn_scope_list = qid.syn_scope_list;
+  top.syn_all_scopes = qid.syn_all_scopes;
+  top.syn_scopes = qid.syn_scopes;
 
   qid.inh_scope = top.inh_scope;
 
@@ -677,7 +700,8 @@ top::Exp ::= val::Int_t
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = [];
 
   -- error and path handling
   top.errors = [];
@@ -710,14 +734,16 @@ top::Qid ::= id::ID_t qid::Qid
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
-    qid.syn_imports ++ [(id.lexeme, init_usage)]
+    qid.syn_imports ++ [(id.lexeme, init_usage)],
+    qid.syn_scopes -- ADD
   );
 
   top.syn_decls = [];
   top.syn_refs = [(id.lexeme, init_usage)];
   top.syn_imports = [];
-  top.syn_scope_list = [init_scope] ++ qid.syn_scope_list;
+  top.syn_all_scopes = [init_scope] ++ qid.syn_all_scopes;
   top.syn_iqid_import = qid.syn_iqid_import;
+  top.syn_scopes = []; -- ADD
   
   qid.inh_scope = init_scope;
   qid.inh_scope_two = top.inh_scope_two;
@@ -754,23 +780,24 @@ top::Qid ::= id::ID_t
   top.syn_refs = [(id.lexeme, init_import)];
   top.syn_imports = [];
   top.syn_iqid_import = (id.lexeme, init_import_two);
-  top.syn_scope_list = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = [];
 
   -- error and path handling
 
-  local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
+  --local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
 
   local attribute no_decl::Error_type = no_declaration_found(init_import);
   local attribute mul_decl::Error_type = multiple_declarations_found(init_import);
   
-  top.errors = if (length(resolved) < 1) then
+  top.errors = if (length(init_import.resolutions) < 1) then
     [no_decl]
-  else if (length(resolved) > 1) then
+  else if (length(init_import.resolutions) > 1) then
     [mul_decl]
   else
     [];
 
-  local attribute fst_path::Path_type = cons_path(init_import, head(resolved)); -- in case of errors print some paths anyway
+  local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths = [fst_path];
 
   -- pretty printing

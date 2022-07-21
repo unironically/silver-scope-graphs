@@ -22,8 +22,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute print_success :: IOToken;
   print_success = printT("Successful parse!\n" ++ 
-    (if (contains("--show-resolution", largs)) then string_paths(r.paths) else "") ++ 
-    if (contains("--pretty-print", largs)) then "Pretty print:\n" ++ r.pp ++ "\n" else "", ioin);
+    if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true) ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
   print_failure = printT("Parse failure!\n" ++ string_errors(r.errors), ioin);
