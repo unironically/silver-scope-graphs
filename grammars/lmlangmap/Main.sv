@@ -25,7 +25,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
     if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true, true) ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT("Failure!\n" ++ string_errors(r.errors), ioin);
+  print_failure = printT(string_errors(r.errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
@@ -54,7 +54,8 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
       } ;
     } ;
 -}
-  return 
-      ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
+  --return 
+      --ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
+      return if length(r.errors) <= 0 then ioval(print_resolution_paths, 0) else ioval(print_failure, -1);
      -- evalIO (res, ioin) ;
 }
