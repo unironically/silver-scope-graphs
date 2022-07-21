@@ -1,153 +1,46 @@
 grammar scopegraph;
 
 
-----------------
--- Functions corresponding to the scope graphs resolution algorithm:
+---------------
+-- New resolution algorithm:
 
 @{-
- - The entry point function for the resolution algorithm.
+ - Resolves a reference to a set of declarations by first checking the immediate scope for
+ - matching declarations, then all declarations visible through imports, then all those visible
+ - by inheriting from the scope which is the parent of cur_scope.
  -
- - @param seen_imports The list of imports and references already seen.
- - @param reference The reference to resolve.
- - @return The list of declarations found when the reference is resolved.
+ - @param ref The usage whose declarations we are trying to resolve.
+ - @param cur_scope The scope to search for valid declarations in.
+ - @return A list of all declarations that ref resolves to.
 -}
 function resolve
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] reference::Decorated Usage<a>
+[Decorated Declaration<a>] ::= ref::Decorated Usage<a> cur_scope::Decorated Scope<a>
 {
-  return filter((\s::Decorated Declaration<a> -> s.identifier == reference.identifier), 
-    env_v ([reference] ++ seen_imports, [], reference.in_scope));
-}
+  -- Check for any matching declarations in the current scope
+  local attribute decls::[Decorated Declaration<a>] = 
+    filter((\decl::Decorated Declaration<a> -> decl.identifier == ref.identifier), 
+      map((\decl::(String, Decorated Declaration<a>) -> snd(decl)), cur_scope.declarations));
 
-@{-
- - The second resolution function, where declarations are collected from calling env_l and env_p.
- - The declarations found by calling env_l shadow those found from calling env_p.
- -
- - @param seen_imports The list of imports and references already seen.
- - @param seen_scopes The list of scopes that the algorithm has already visited.
- - @param current_scope The current scope we look for declarations inside.
- - @return The combined list of delcarations from env_l and env_p.
--}
-function env_v
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] 
-  current_scope::Decorated Scope<a>
-{
-  return merge_declarations_with_shadowing(env_l (seen_imports, seen_scopes, current_scope), 
-    env_p (seen_imports, seen_scopes, current_scope));
-}
-
-@{-
- - The third resolution function, where declarations are collected from calling env_d and end_i.
- - The declarations found by calling env_d shadow those found from calling env_i.
- -
- - @param seen_imports The list of imports and references already seen.
- - @param seen_scopes The list of scopes that the algorithm has already visited.
- - @param current_scope The current scope we look for declarations inside.
- - @return The combined list of delcarations from env_d and env_l.
--}
-function env_l
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] 
-  current_scope::Decorated Scope<a>
-{
-  return merge_declarations_with_shadowing(env_d (seen_imports, seen_scopes, current_scope), 
-    env_i (seen_imports, seen_scopes, current_scope));
-}
-
-@{-
- - The fourth resolution function, where declarations are collected from the current scope.
- - The declarations found by calling env_l shadow those found from calling env_p.
- -
- - @param seen_imports The list of imports and references already seen.
- - @param seen_scopes The list of scopes that the algorithm has already visited.
- - @param current_scope The current scope we look for declarations inside.
- - @return The list of declarations for the current scope
--}
-function env_d
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] 
-  current_scope::Decorated Scope<a>
-{
-  return 
-    if containsBy((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), 
-      current_scope, seen_scopes)
-    then []
-    else map((\thing::(String, Decorated Declaration<a>) -> snd(thing)), 
-      current_scope.declarations);
-}
-
-@{-
- - The fifth resolution function, where imported declarations are found by recursively calling
- - the resolve function to resolve references which point to imports.
- -
- - @param seen_imports The list of imports and references already seen.
- - @param seen_scopes The list of scopes that the algorithm has already visited.
- - @param current_scope The current scope we look for declarations inside.
- - @return The list of imported declarations.
--}
-function env_i
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] 
-  current_scope::Decorated Scope<a>
-{
-  return 
-    if (containsBy((\left::Decorated Scope<a> right::Decorated Scope<a> -> left.id == right.id), 
-      current_scope, seen_scopes))
-    then []
-    else 
-
-      -- Get all imports of current scope, remove names already seen in seen_imports
-      let imp_list::[Decorated Usage<a>] = removeAllBy(
-        (\left_imp::Decorated Usage<a> right_imp::Decorated Usage<a> 
-          -> left_imp.identifier == right_imp.identifier), 
-        seen_imports,
-        map((\imp_pair::(String, Decorated Usage<a>) -> snd(imp_pair)), current_scope.imports)) 
-      in
-
-      -- Resolve each of the known imports in the current scope collected from the above
-      let res_list::[Decorated Declaration<a>] = foldl(
-        (\res_list::[Decorated Declaration<a>] import::Decorated Usage<a> 
-          -> res_list ++ resolve(seen_imports, import)), 
-        [],
-        imp_list)
-      in
-
-      -- Get all the 'associated scope' nodes from declarations in res_list generated above
-      let scope_list::[Decorated Scope<a>] = foldl(
-        (\scope_list::[Decorated Scope<a>] decl::Decorated Declaration<a> 
-          -> scope_list ++ (case decl.assoc_scope of | nothing() -> [] | just(p) -> [p] end)), 
-        [],
-        res_list)
-      in
-
-      -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let last_list::[Decorated Declaration<a>] = foldl(
-        (\last_list::[Decorated Declaration<a>] scope::Decorated Scope<a> 
-          -> last_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
-        [],
-        scope_list)
-      in 
-
-      last_list end end end end;
-}
-
-@{-
- - The sixth resolution function, where declarations are collected by calling env_v on the parent
- - scope of the current scope.
- -
- - @param seen_imports The list of imports and references already seen.
- - @param seen_scopes The list of scopes that the algorithm has already visited.
- - @param current_scope The current scope we look for declarations inside.
- - @return The list of declarations found by searching inside of the parent scope.
--}
-function env_p
-[Decorated Declaration<a>] ::= seen_imports::[Decorated Usage<a>] seen_scopes::[Decorated Scope<a>] 
-  current_scope::Decorated Scope<a>
-{
-  return 
-    case current_scope.parent of
-      | nothing() -> []
-      | just(p) -> if containsBy((\left::Decorated Scope<a> right::Decorated Scope<a> -> 
-        left.id == right.id), current_scope, seen_scopes)
-        then []
-        else env_v (seen_imports, current_scope::seen_scopes, p)
-    end;
+  -- Check any imports that exist, call resolve on them
+  local attribute imps::[Decorated Declaration<a>] = foldl(
+    (\acc::[Decorated Declaration<a>] cur::Decorated Declaration<a> -> 
+      case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve(ref, s) end),
+    [],
+    foldl(
+      (\acc::[Decorated Declaration<a>] cur::Decorated Usage<a> -> acc ++ cur.resolutions),
+      [],
+      filter((\imp::Decorated Usage<a> -> imp.identifier != ref.identifier),
+        map((\decl::(String, Decorated Usage<a>) -> snd(decl)), cur_scope.imports))
+    )
+  );
+  
+  -- recursive call on parent
+  local attribute par::[Decorated Declaration<a>] = case scope.parent of
+    | nothing() -> []
+    | just(p) -> resolve(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
+  end;
+  
+  return merge_declarations_with_shadowing(decls, merge_declarations_with_shadowing(imps, par));
 }
 
 @{-

@@ -25,7 +25,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
     if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(r.syn_graph, true) ++ "\n" else "", ioin);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT("Parse failure!\n" ++ string_errors(r.errors), ioin);
+  print_failure = printT("Failure!\n" ++ string_errors(r.errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
