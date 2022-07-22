@@ -1,6 +1,6 @@
 grammar lambda ;
 
-imports silver:langutil only pp, ast;
+imports silver:langutil only ast, pp, unparse;
 imports silver:langutil:pp;
 
 parser hostParse :: Root_c {
@@ -44,9 +44,9 @@ IOVal<Integer> ::= args::[String]
 
  production attribute tasks::[Task] with ++ ;
  tasks :=
-   [ printPPTask(filename, r_cst, r_ast)
-   , writePPTask(filename, r_ast) 
-   , printErrorsTask(filename, r_ast)
+   [ printPPTask(r_cst, r_ast)
+   --, writePPTask(filename, r_ast) 
+   , printErrorsTask(r_ast)
    ];
 
  local allTasks :: Task = concatTasks(tasks) ;
@@ -70,8 +70,8 @@ inherited attribute tioIn :: IOToken ;
 synthesized attribute tioOut :: IOToken ;
 
 abstract production printPPTask
-t::Task ::= filename::String r_cst::Decorated Root_c  r_ast::Decorated Root
-{ t.tioOut = printT("Pretty print of program in \"" ++ filename ++ "\":\n" ++
+t::Task ::=r_cst::Decorated Root_c  r_ast::Decorated Root
+{ t.tioOut = printT("Pretty print of program:\n" ++
                     "On CST:\n" ++ show(80,r_cst.pp) ++ "\n\n" ++ 
                     "On AST:\n" ++ show(80,r_ast.pp) ++ "\n\n", t.tioIn) ;
 }
@@ -82,18 +82,25 @@ t::Task ::= filename::String r_ast::Decorated Root
   local filenamePP::String = substring(0, length(filename)-7, filename) ++ "_pp.lambda" ;
 }
 abstract production printErrorsTask
-t::Task ::= filename::String r_ast::Decorated Root
-{ t.tioOut = if r_ast.errors == []
-             then printT ("No errors found.\n", t.tioIn)
-             else printT ("Errors of program in \"" ++ filename ++ "\":\n" ++
-                    implode ("\n", r_ast.errors) ++ "\n\n", 
-                    t.tioIn )  ;
+t::Task ::= r_ast::Decorated Root
+{ t.tioOut = case r_ast.typing of
+             | typed (typ) -> printT ("No errors found. Expression had type:\n  " ++
+                  show(80, typ.pp) ++ "\n", t.tioIn)
+             | type_errs (errs) -> printT ("Errors:\n" ++
+                    implode ("\n", map ( (.msg), errs) ) ++ "\n\n", 
+                    t.tioIn ) 
+             end ;
 }
 abstract production writeErrorsTask
 t::Task ::= filename::String r_ast::Decorated Root
 { t.tioOut = writeFileT(filenameErrors,
-                       implode ("\n", r_ast.errors) ++ "\n\n",
-                       t.tioIn) ;
+               case r_ast.typing of
+               | typed (typ) -> "No errors found. Expression had type:\n  " ++
+                  show(80, typ.pp) ++ "\n"
+               | type_errs (errs) -> "Errors:\n" ++
+                    implode ("\n", map ( (.msg), errs) ) ++ "\n\n"
+               end,
+               t.tioIn) ;
   local filenameErrors::String = substring(0, length(filename)-3, filename) ++ ".errors" ;
 }
 
