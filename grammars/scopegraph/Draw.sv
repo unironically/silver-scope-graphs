@@ -18,8 +18,8 @@ String ::= graph::Decorated Graph<a> draw_paths::Boolean draw_parents::Boolean
     foldl((\acc::String scope::Decorated Scope<a> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
     "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
+    (if draw_paths then graphviz_draw_paths(graph) else "") ++
     graphviz_scopes(graph.scope_list) ++ 
-    (if draw_paths then graphviz_draw_paths(graph.paths) else "") ++
     (if draw_parents then graphviz_scope_children(graph.scope_list) else "") ++ "}";
 }
 
@@ -91,7 +91,7 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
       scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ 
       (case h2.assoc_scope of 
         | nothing() -> "" 
-        | just(s) -> "{ edge [arrowhead=onormal] " ++ h2.to_string ++ " -> " ++ s.to_string ++ "} " 
+        | just(s) -> "{ edge [arrowhead=onormal]" ++ h2.to_string ++ " -> " ++ s.to_string ++ "} " 
       end) ++ 
       graphviz_scope_decls(scope, t)
   end;
@@ -120,10 +120,28 @@ String ::= scopes::[Decorated Scope<a>]
  -
  - @param paths The list of paths to draw.
  - @return The string with which graphviz will draw resolution paths.
--}
+
 function graphviz_draw_paths
 String ::= paths::[Decorated Path<a>]
 {
   return "{edge [color=blue style=dashed] " ++ foldl((\acc::String path::Decorated Path<a> -> 
     acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ "}";
+}
+-}
+
+function graphviz_draw_paths
+String ::= graph::Decorated Graph<a>
+{
+  return foldl(
+    (\acc::String cur_scope::Decorated Scope<a> -> acc ++ 
+      let 
+        both::Pair<[Decorated Usage<a>] [Decorated Usage<a>]> = partition((\usg::Decorated Usage<a> -> length(usg.resolutions) == 1), map((\usg::(String, Decorated Usage<a>) -> snd(usg)), cur_scope.references ++ cur_scope.imports))
+      in 
+        "{edge [arrowhead=normal color=blue style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.to_string ++ " -> " ++ head(usg.resolutions).to_string), "", fst(both)) ++ " }" ++ 
+        "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.to_string ++ " " ++ foldl((\acc::String decl::Decorated Declaration<a> -> acc ++ " " ++ usg.to_string ++ " -> " ++ decl.to_string), "", usg.resolutions)), "", snd(both)) ++ " }"
+      end ++ "\n"
+    ),
+    "",
+    graph.scope_list
+  );
 }

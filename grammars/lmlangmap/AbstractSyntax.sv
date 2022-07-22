@@ -69,8 +69,6 @@ synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on 
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 
 -- The lists of errors and paths found in scope graph resolution
-synthesized attribute errors::[Decorated Error_type] occurs on Program, DeclList, Decl, Qid, Exp, 
-  BindListSeq, BindListRec, BindListPar;
 synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
@@ -116,7 +114,6 @@ top::Program ::= list::DeclList
       -> errors ++ (if !snd(decl_pair) then [  decorate_err(fst(decl_pair))  ] else []) -- had to use decorate_err function instead of declaration_unused constructor?? replace with "decorate foo() with {}"?
   ), [], mapped);
   -}
-  top.errors = list.errors; -- make above warnings instead? (words instead of "parse failure")
   top.paths = list.paths;
   
   -- pretty printing
@@ -159,7 +156,6 @@ top::DeclList ::= decl::Decl list::DeclList
   list.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = decl.errors ++ list.errors;
   top.paths = decl.paths ++ list.paths;
 
   -- pretty printing
@@ -180,7 +176,6 @@ top::DeclList ::=
   top.syn_scopes = []; -- ADD
 
   -- error and path handling
-  top.errors = [];
   top.paths = [];
 
   -- pretty printing
@@ -221,7 +216,6 @@ top::Decl ::= id::ID_t list::DeclList
   list.inh_scope = init_scope;
 
   -- error and path handling
-  top.errors = list.errors;
   top.paths = list.paths;
 
   -- pretty printing
@@ -244,7 +238,6 @@ top::Decl ::= qid::Qid
   qid.inh_scope_two = top.inh_scope;
 
   -- error and path handling
-  top.errors = qid.errors;
   top.paths = qid.paths;
 
   -- pretty printing
@@ -273,7 +266,6 @@ top::Decl ::= id::ID_t exp::Exp
   exp.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = exp.errors;
   top.paths = exp.paths;
 
   -- pretty printing
@@ -295,7 +287,6 @@ top::Decl ::= exp::Exp
   exp.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = exp.errors;
   top.paths = exp.paths;
 
   -- pretty printing
@@ -326,7 +317,6 @@ top::Exp ::= list::BindListSeq exp::Exp
   exp.inh_scope = list.ret_scope;
   
   -- error and path handling
-  top.errors = list.errors ++ exp.errors;
   top.paths = list.paths ++ exp.paths;
 
   -- pretty printing
@@ -370,7 +360,6 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   list.inh_imports = top.inh_imports;
 
   -- error and path handling
-  top.errors = exp.errors ++ list.errors;
   top.paths = exp.paths ++ list.paths;
 
   -- pretty printing
@@ -392,7 +381,6 @@ top::BindListSeq ::=
   top.syn_scopes = [];
 
   -- error and path handling
-  top.errors = [];
   top.paths = [];
 
   -- pretty printing
@@ -426,7 +414,6 @@ top::Exp ::= list::BindListRec exp::Exp
   exp.inh_scope = init_scope;
 
   -- error and path handling
-  top.errors = list.errors ++ exp.errors;
   top.paths = list.paths ++ exp.paths;
 
   -- pretty printing
@@ -458,7 +445,6 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   exp.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = exp.errors ++ list.errors;
   top.paths = exp.paths ++ list.paths;
 
   -- pretty printing
@@ -478,7 +464,6 @@ top::BindListRec ::=
   top.syn_all_scopes = [];
 
   -- error and path handling
-  top.errors = [];
   top.paths = [];
 
   -- pretty printing
@@ -513,7 +498,6 @@ top::Exp ::= list::BindListPar exp::Exp
   exp.inh_scope = init_scope;
 
   -- error and path handling
-  top.errors = list.errors ++ exp.errors;
   top.paths = list.paths ++ exp.paths;
 
   -- pretty printing
@@ -549,7 +533,6 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   list.inh_scope_two = top.inh_scope_two;
 
   -- error and path handling
-  top.errors = exp.errors ++ list.errors;
   top.paths = exp.paths ++ list.paths;
 
   -- pretty printing
@@ -572,7 +555,6 @@ top::BindListPar ::=
   top.syn_all_scopes = [];
 
   -- error and path handling
-  top.errors = [];
   top.paths = [];
   
   -- pretty printing
@@ -613,7 +595,6 @@ top::Exp ::= id::ID_t exp::Exp
   exp.inh_scope = init_scope;
 
   -- error and path handling
-  top.errors = exp.errors;
   top.paths = exp.paths;
 
   -- pretty printing
@@ -637,7 +618,6 @@ top::Exp ::= expLeft::Exp expRight::Exp
   expRight.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = expLeft.errors ++ expRight.errors;
   top.paths = expLeft.paths ++ expRight.paths;
 
   -- pretty printing
@@ -662,7 +642,6 @@ top::Exp ::= expLeft::Exp expRight::Exp
   expRight.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = expLeft.errors ++ expRight.errors;
   top.paths = expLeft.paths ++ expRight.paths;
 
   -- pretty printing
@@ -685,7 +664,6 @@ top::Exp ::= qid::Qid
   qid.inh_scope = top.inh_scope;
 
   -- error and path handling
-  top.errors = qid.errors;
   top.paths = qid.paths;
 
   -- pretty printing
@@ -704,7 +682,6 @@ top::Exp ::= val::Int_t
   top.syn_scopes = [];
 
   -- error and path handling
-  top.errors = [];
   top.paths = [];
 
   -- pretty printing
@@ -749,7 +726,6 @@ top::Qid ::= id::ID_t qid::Qid
   qid.inh_scope_two = top.inh_scope_two;
   
   -- error and path handling
-  top.errors = qid.errors;
   top.paths = qid.paths;
 
   -- pretty printing
@@ -787,6 +763,7 @@ top::Qid ::= id::ID_t
 
   --local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
 
+  {-
   local attribute no_decl::Error_type = no_declaration_found(init_import);
   local attribute mul_decl::Error_type = multiple_declarations_found(init_import);
   
@@ -796,6 +773,7 @@ top::Qid ::= id::ID_t
     [mul_decl]
   else
     [];
+  -}
 
   local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths = [fst_path];

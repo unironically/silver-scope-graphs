@@ -3,10 +3,11 @@ grammar scopegraph;
 ----------------
 -- Errors:
 
-nonterminal Error<a> with message, all_messages;
+nonterminal Error<a> with message, all_messages, resolved_to<a>;
 
 synthesized attribute message::String;
 synthesized attribute all_messages::String;
+synthesized attribute resolved_to<a>::[Decorated Declaration<a>];
 
 @{-
  - The error constructed when multiple declaration nodes are found when resolving a reference.
@@ -14,10 +15,11 @@ synthesized attribute all_messages::String;
  - @param usage The reference node for which multiple declarations are found.
 -}
 abstract production multiple_declarations_found
-top::Error<a> ::= usage::Usage<a>
+top::Error<a> ::= usage::Decorated Usage<a> resolved_to::[Decorated Declaration<a>]
 {
   top.message = "Multiple declarations found that match reference for: " ++ usage.identifier ++ 
     " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
+  top.resolved_to = resolved_to;
 }
 
 @{-
@@ -26,10 +28,11 @@ top::Error<a> ::= usage::Usage<a>
  - @param usage The reference node for which no declarations are found.
 -}
 abstract production no_declaration_found
-top::Error<a> ::= usage::Usage<a>
+top::Error<a> ::= usage::Decorated Usage<a>
 {
   top.message = "No declaration found that matches reference for: " ++ usage.identifier ++ 
     " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
+  top.resolved_to = [];
 }
 
 @{-

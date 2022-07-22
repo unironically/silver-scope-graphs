@@ -7,8 +7,9 @@ grammar scopegraph;
 synthesized attribute scope_list<a>::[Decorated Scope<a>];
 synthesized attribute paths<a>::[Decorated Path<a>];
 synthesized attribute all_decls<a>::[Decorated Declaration<a>];
+synthesized attribute errors<a>::[Decorated Error<a>];
 
-nonterminal Graph<a> with scope_list<a>, paths<a>, all_decls<a>;
+nonterminal Graph<a> with scope_list<a>, paths<a>, all_decls<a>, errors<a>;
 
 @{-
  - Constructing a graph node.
@@ -25,6 +26,7 @@ top::Graph<a> ::= scope_list::[Decorated Scope<a>]
     (\all_decls::[Decorated Declaration<a>] scope::Decorated Scope<a> 
       -> all_decls ++ map((\pair::(String, Decorated Declaration<a>) -> snd(pair)), scope.declarations)), 
     [], scope_list);
+  top.errors = foldl((\acc::[Decorated Error<a>] scope::Decorated Scope<a> -> acc ++ scope.errors), [], scope_list);
 }
 
 
@@ -41,7 +43,7 @@ synthesized attribute to_string::String;
 synthesized attribute child_scopes<a>::[Decorated Scope<a>];
 
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string, child_scopes<a>;
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string, child_scopes<a>, errors<a>;
 
 @{-
  - Constructing a scope node.
@@ -65,6 +67,30 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>>
   top.imports = imports;
   top.to_string = toString(top.id);
   top.child_scopes = child_scopes;
+  
+  top.errors = foldl((\acc::[Decorated Error<a>] ref::Decorated Usage<a> -> 
+    if (length(ref.resolutions) < 1) then
+      [decorate_nd_error(ref)]
+    else if (length(ref.resolutions) > 1) then
+      [decorate_md_error(ref, ref.resolutions)]
+    else
+      []
+  ), [], map((\ref::(String, Decorated Usage<a>) -> snd(ref)), references ++ imports));
+
+}
+
+function decorate_nd_error
+Decorated Error<a> ::= ref::Decorated Usage<a>
+{
+  local attribute err::Error<a> = no_declaration_found(ref);
+  return err;
+}
+
+function decorate_md_error
+Decorated Error<a> ::= ref::Decorated Usage<a> resolutions::[Decorated Declaration<a>]
+{
+  local attribute err::Error<a> = multiple_declarations_found(ref, resolutions);
+  return err;
 }
 
 
