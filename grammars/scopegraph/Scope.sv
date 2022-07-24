@@ -68,7 +68,7 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>>
   top.to_string = toString(top.id);
   top.child_scopes = child_scopes;
   
-  top.errors = foldl((\acc::[Decorated Error<a>] ref::Decorated Usage<a> -> 
+  top.errors = foldl((\acc::[Decorated Error<a>] ref::Decorated Usage<a> -> acc ++ 
     if (length(ref.resolutions) < 1) then
       [decorate_nd_error(ref)]
     else if (length(ref.resolutions) > 1) then

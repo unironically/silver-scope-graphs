@@ -72,7 +72,6 @@ synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
 synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
-
 ------------------------------------------------------------
 ---- Program root
 ------------------------------------------------------------
