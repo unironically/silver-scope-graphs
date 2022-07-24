@@ -39,11 +39,12 @@ synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)]; -- 
 synthesized attribute references<a>::[(String, Decorated Usage<a>)];
 synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
 synthesized attribute to_string::String;
+synthesized attribute graphviz_name::String;
 
 synthesized attribute child_scopes<a>::[Decorated Scope<a>];
 
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string, child_scopes<a>, errors<a>;
+nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string, child_scopes<a>, errors<a>, graphviz_name;
 
 @{-
  - Constructing a scope node.
@@ -66,6 +67,7 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>>
   top.references = references;
   top.imports = imports;
   top.to_string = toString(top.id);
+  top.graphviz_name = top.to_string;
   top.child_scopes = child_scopes;
   
   top.errors = foldl((\acc::[Decorated Error<a>] ref::Decorated Usage<a> -> acc ++ 
@@ -103,7 +105,7 @@ synthesized attribute assoc_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that t
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
-nonterminal Declaration<a> with identifier, in_scope<a>, assoc_scope<a>, line, column, to_string;
+nonterminal Declaration<a> with identifier, in_scope<a>, assoc_scope<a>, line, column, to_string, graphviz_name;
 
 @{-
  - Constructing a declaration node.
@@ -125,7 +127,8 @@ top::Declaration<a> ::= identifier::String
   top.assoc_scope = assoc_scope;
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
+  top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
+  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
 
 abstract production cons_decl_ref
@@ -140,7 +143,8 @@ top::Declaration<a> ::= identifier::String
   top.assoc_scope = assoc_scope;
   top.line = ast_node.line;
   top.column = ast_node.column;
-  top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
+  top.to_string = top.identifier ++ "_[" ++ toString(ast_node.line) ++ ", " ++ toString(ast_node.column) ++ "]";
+  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
 
 
@@ -149,7 +153,7 @@ top::Declaration<a> ::= identifier::String
 
 synthesized attribute resolutions<a>::[Decorated Declaration<a>]; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage<a> with identifier, in_scope<a>, resolutions<a>, line, column, to_string;
+nonterminal Usage<a> with identifier, in_scope<a>, resolutions<a>, line, column, to_string, graphviz_name;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -170,5 +174,6 @@ top::Usage<a> ::= identifier::String
   top.resolutions = resolve(top, in_scope);
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
+  top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
+  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }

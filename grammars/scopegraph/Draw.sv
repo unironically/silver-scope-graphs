@@ -35,8 +35,8 @@ String ::= scopes::[Decorated Scope<a>]
   return case scopes of 
     | [] -> ""
     | h::t -> 
-      h.to_string ++ (case h.parent of | nothing() 
-        -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ 
+      h.graphviz_name ++ (case h.parent of | nothing() 
+        -> "" | just(p) -> " -> " ++ p.graphviz_name end) ++ " " ++ 
       graphviz_scope_refs(h, h.references) ++ 
       graphviz_scope_decls(h, h.declarations) ++ 
       "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++
@@ -55,7 +55,7 @@ String ::= scope::Decorated Scope<a> refs::[(String, Decorated Usage<a>)]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> h2.to_string ++ " -> " ++ scope.to_string ++ " " ++ 
+    | (h1, h2)::t -> h2.graphviz_name ++ " -> " ++ scope.graphviz_name ++ " " ++ 
       graphviz_scope_refs(scope, t)
   end;
 }
@@ -71,7 +71,7 @@ String ::= scope::Decorated Scope<a> refs::[(String, Decorated Usage<a>)]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ 
+    | (h1, h2)::t -> scope.graphviz_name ++ " -> " ++ h2.graphviz_name ++ " " ++ 
       graphviz_scope_imports(scope, t)
   end;
 }
@@ -88,10 +88,10 @@ String ::= scope::Decorated Scope<a> decls::[(String, Decorated Declaration<a>)]
   return case decls of 
     | [] -> ""
     | (h1, h2)::t -> 
-      scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ 
+      scope.graphviz_name ++ " -> " ++ h2.graphviz_name ++ " " ++ 
       (case h2.assoc_scope of 
         | nothing() -> "" 
-        | just(s) -> "{ edge [arrowhead=onormal]" ++ h2.to_string ++ " -> " ++ s.to_string ++ "} " 
+        | just(s) -> "{ edge [arrowhead=onormal]" ++ h2.graphviz_name ++ " -> " ++ s.graphviz_name ++ "} " 
       end) ++ 
       graphviz_scope_decls(scope, t)
   end;
@@ -109,7 +109,7 @@ String ::= scopes::[Decorated Scope<a>]
   return "{edge [color=pink style=dashed] " ++
     foldl((\accone::String h::Decorated Scope<a> ->
     accone ++ (foldl(
-      (\acc::String child::Decorated Scope<a> -> acc ++ " " ++ h.to_string ++ " -> "  ++ child.to_string),
+      (\acc::String child::Decorated Scope<a> -> acc ++ " " ++ h.graphviz_name ++ " -> "  ++ child.graphviz_name),
       "",
       h.child_scopes
     ))), "", scopes) ++ "}";
@@ -125,7 +125,7 @@ function graphviz_draw_paths
 String ::= paths::[Decorated Path<a>]
 {
   return "{edge [color=blue style=dashed] " ++ foldl((\acc::String path::Decorated Path<a> -> 
-    acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ "}";
+    acc ++ " " ++ path.start.graphviz_name ++ " -> " ++ path.final.graphviz_name), "", paths) ++ "}";
 }
 -}
 
@@ -137,8 +137,8 @@ String ::= graph::Decorated Graph<a>
       let 
         both::Pair<[Decorated Usage<a>] [Decorated Usage<a>]> = partition((\usg::Decorated Usage<a> -> length(usg.resolutions) == 1), map((\usg::(String, Decorated Usage<a>) -> snd(usg)), cur_scope.references ++ cur_scope.imports))
       in 
-        "{edge [arrowhead=normal color=blue style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.to_string ++ " -> " ++ head(usg.resolutions).to_string), "", fst(both)) ++ " }" ++ 
-        "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.to_string ++ " " ++ foldl((\acc::String decl::Decorated Declaration<a> -> acc ++ " " ++ usg.to_string ++ " -> " ++ decl.to_string), "", usg.resolutions)), "", snd(both)) ++ " }"
+        "{edge [arrowhead=normal color=blue style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.graphviz_name ++ " -> " ++ head(usg.resolutions).graphviz_name), "", fst(both)) ++ " }" ++ 
+        "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++ foldl((\acc::String usg::Decorated Usage<a> -> acc ++ " " ++ usg.graphviz_name ++ " " ++ foldl((\acc::String decl::Decorated Declaration<a> -> acc ++ " " ++ usg.graphviz_name ++ " -> " ++ decl.graphviz_name), "", usg.resolutions)), "", snd(both)) ++ " }"
       end ++ "\n"
     ),
     "",
