@@ -132,16 +132,23 @@ String ::= paths::[Decorated Path]
 function graphviz_draw_paths
 String ::= graph::Decorated Graph
 {
-  return foldl(
-    (\acc::String cur_scope::Decorated Scope -> acc ++ 
-      let 
-        both::Pair<[Decorated Usage] [Decorated Usage]> = partition((\usg::Decorated Usage -> length(usg.resolutions) == 1), map((\usg::(String, Decorated Usage) -> snd(usg)), cur_scope.references ++ cur_scope.imports))
-      in 
-        "{edge [arrowhead=normal color=blue style=dashed]" ++ foldl((\acc::String usg::Decorated Usage -> acc ++ " " ++ usg.graphviz_name ++ " -> " ++ head(usg.resolutions).graphviz_name), "", fst(both)) ++ " }" ++ 
-        "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++ foldl((\acc::String usg::Decorated Usage -> acc ++ " " ++ usg.graphviz_name ++ " " ++ foldl((\acc::String decl::Decorated Declaration -> acc ++ " " ++ usg.graphviz_name ++ " -> " ++ decl.graphviz_name), "", usg.resolutions)), "", snd(both)) ++ " }"
-      end ++ "\n"
-    ),
-    "",
-    graph.scope_list
-  );
+  return 
+
+  let all::([Decorated Usage], [Decorated Usage]) = 
+    foldl(
+      (\acc::([Decorated Usage], [Decorated Usage]) cur_scope::Decorated Scope -> let new_pair::([Decorated Usage], [Decorated Usage]) = 
+          partition((\usg::Decorated Usage -> length(usg.resolutions) == 1), nubBy((\left::Decorated Usage right::Decorated Usage -> left.to_string == right.to_string), map((\usg::(String, Decorated Usage) -> snd(usg)), cur_scope.references ++ cur_scope.imports))) in (fst(acc) ++ fst(new_pair), snd(acc) ++ snd(new_pair)) end),
+      ([],[]),
+      graph.scope_list
+    )
+  in
+    "{edge [arrowhead=normal color=blue style=dashed]" ++ 
+      foldl((\acc::String usg::Decorated Usage -> acc ++ " " ++ usg.graphviz_name ++ " -> " ++ head(usg.resolutions).graphviz_name), "", nubBy((\left::Decorated Usage right::Decorated Usage -> left.to_string == right.to_string), fst(all))) ++ "}" ++
+    "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
+      foldl((\acc::String usg::Decorated Usage -> acc ++ " " ++ usg.graphviz_name ++ " " ++ 
+        foldl((\acc::String decl::Decorated Declaration -> acc ++ " " ++ usg.graphviz_name ++ 
+          " -> " ++ decl.graphviz_name), "", usg.resolutions)), "", nubBy((\left::Decorated Usage right::Decorated Usage -> left.to_string == right.to_string), snd(all))) ++ "}"
+  end ++ "\n"
+  
+  ;
 }
