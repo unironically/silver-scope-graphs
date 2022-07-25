@@ -13,15 +13,15 @@ t::Type ::=
 
 -- Typing functions --
 function lookup_type
-Typing ::= s::String e::Decorated Expr env::[(String, Type)]
+Typing ::= s::String id::Decorated IdRef env::[(String, Type)]
 {
   return 
     case env of
-    | [] -> type_errs( [ id_not_declared (e) ] )
+    | [] -> type_errs( [ id_not_declared (id) ] )
     | (nm, t) :: rest ->
         if nm == s
         then typed(t)
-        else lookup_type (s, e, rest)
+        else lookup_type (s, id, rest)
     end;
 }
 
@@ -111,9 +111,9 @@ err::Error ::= f::Decorated Expr
 }
 
 production id_not_declared
-err::Error ::= id::Decorated Expr
--- invariant, id matches id_ref(_)
-{ err.msg = "id not declared error";
+err::Error ::= id::Decorated IdRef
+{ err.msg = "Error: " ++ id.location.unparse ++ "\n   " ++
+     "Identifier \"" ++ id.str_name ++ "\" not declared.";
 }
 
 

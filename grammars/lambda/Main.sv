@@ -25,28 +25,17 @@ IOVal<Integer> ::= args::[String]
  local attribute r_cst::Root_c = result.parseTree ;
  production attribute r_ast::Root = r_cst.ast ;
 
- local attribute print_failure::IOToken
+ local attribute parse_failure::IOToken
   = printT("parse failed.\n" ++ result.parseErrors ++ "\n", text.io);
  
- {- Display pp unless it is "turned on" by some aspect of the driver
-  - production contributing the value 'true' to the collection
-  - attribute displayPP.
-  -}
- production attribute displayPrettyPrint :: Boolean with || ;
- displayPrettyPrint := false ;
-
- {- Display errors if it is "turned on" by some aspect of the driver
-  - production contributing the value 'true' to the collection
-  - attribute displayErrors.
-  -}
- production attribute displayErrors :: Boolean with || ;
- displayErrors := true ;
-
  production attribute tasks::[Task] with ++ ;
  tasks :=
    [ printPPTask(r_cst, r_ast)
-   --, writePPTask(filename, r_ast) 
-   , printErrorsTask(r_ast)
+   , printTypingTask(r_ast)
+   , printScopeGraphTask(r_ast)
+   , writeScopeGraphTask(filename, r_ast)
+   , printErrorsTask ("Scope Graph errors:", r_ast.errors)
+   , generateSVGTask(filename)
    ];
 
  local allTasks :: Task = concatTasks(tasks) ;
@@ -61,13 +50,37 @@ IOVal<Integer> ::= args::[String]
               fileExists.io ) , 1 )
   else
   if   ! result.parseSuccess 
-  then ioval( print_failure, 1 )
+  then ioval( parse_failure, 1 )
   else ioval( allTasks.tioOut, 0 ) ;
 }
+
 
 nonterminal Task with tioIn, tioOut ;
 inherited attribute tioIn :: IOToken ;
 synthesized attribute tioOut :: IOToken ;
+
+abstract production printScopeGraphTask
+t::Task ::= r_ast::Decorated Root
+{ t.tioOut = printT("Scope Graph:\n" ++
+     sg:graphviz_draw_graph(r_ast.scope_graph, true, true) ++ "\n\n", 
+     t.tioIn) ;
+}
+
+abstract production writeScopeGraphTask
+t::Task ::= filename::String r_ast::Decorated Root
+{ t.tioOut = writeFileT (
+     dot_filename,
+     sg:graphviz_draw_graph(r_ast.scope_graph, true, true),
+     t.tioIn) ;
+  local dot_filename :: String = filename_base(filename) ++ ".dot";
+}
+
+abstract production generateSVGTask
+t::Task ::= filename::String 
+{ t.tioOut = systemT("dot -Tsvg " ++ dot_filename ++ " -o " ++ svg_filename, t.tioIn) . io ;
+  local dot_filename :: String = filename_base(filename) ++ ".dot";
+  local svg_filename :: String = filename_base(filename) ++ ".svg";
+}
 
 abstract production printPPTask
 t::Task ::=r_cst::Decorated Root_c  r_ast::Decorated Root
@@ -78,10 +91,11 @@ t::Task ::=r_cst::Decorated Root_c  r_ast::Decorated Root
 
 abstract production writePPTask
 t::Task ::= filename::String r_ast::Decorated Root
-{ t.tioOut = writeFileT(filenamePP, show(80,r_ast.pp), t.tioIn) ;
-  local filenamePP::String = substring(0, length(filename)-7, filename) ++ "_pp.lambda" ;
+{ t.tioOut = writeFileT(pp_filename, show(80,r_ast.pp), t.tioIn) ;
+  local pp_filename::String = filename_base(filename) ++ ".pp" ;
 }
-abstract production printErrorsTask
+
+abstract production printTypingTask
 t::Task ::= r_ast::Decorated Root
 { t.tioOut = case r_ast.typing of
              | typed (typ) -> printT ("No errors found. Expression had type:\n  " ++
@@ -91,18 +105,18 @@ t::Task ::= r_ast::Decorated Root
                     t.tioIn ) 
              end ;
 }
-abstract production writeErrorsTask
-t::Task ::= filename::String r_ast::Decorated Root
-{ t.tioOut = writeFileT(filenameErrors,
-               case r_ast.typing of
-               | typed (typ) -> "No errors found. Expression had type:\n  " ++
-                  show(80, typ.pp) ++ "\n"
-               | type_errs (errs) -> "Errors:\n" ++
-                    implode ("\n", map ( (.msg), errs) ) ++ "\n\n"
-               end,
-               t.tioIn) ;
-  local filenameErrors::String = substring(0, length(filename)-3, filename) ++ ".errors" ;
+
+abstract production printErrorsTask
+t::Task ::= prompt::String errs :: [ Error ]
+{ 
+  local printPrompt :: IOToken = printT(prompt ++ "\n\n", t.tioIn);
+  t.tioOut = 
+    if null(errs) 
+    then printT ("No errors found.\n\n", printPrompt)
+    else printT ("Errors:\n" ++ implode ("\n", map ( (.msg), errs) ) ++ "\n\n",
+                 printPrompt);
 }
+
 
 abstract production concatTasks
 t::Task ::= ts::[Task]
@@ -113,6 +127,13 @@ t::Task ::= ts::[Task]
 
   local rest::Task = concatTasks( tail(ts) ) ;
   rest.tioIn = first.tioOut ;
+}
+
+
+function filename_base
+String ::= filename::String
+{
+  return substring (0, lastIndexOf(".", filename), filename);
 }
 
 

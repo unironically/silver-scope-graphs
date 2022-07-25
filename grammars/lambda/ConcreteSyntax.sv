@@ -23,13 +23,15 @@ concrete productions r::Root_c
 
 -- Binding Expressions
 concrete productions e::Expr_Bnd_c
- | 'let' ic::Id_t ':' ty::Type_Arrow_c '=' e1::Expr_Bnd_c 'in' e2::Expr_Bnd_c
-   { e.pp = pp"let ${text(ic.lexeme)} : ${ty.pp} = ${e1.pp} in ${e2.pp}";
-     e.ast = let_expr(ic.lexeme, ty.ast, e1.ast, e2.ast, location = e.location); }
+ | 'let' id::Id_t ':' ty::Type_Arrow_c '=' e1::Expr_Bnd_c 'in' e2::Expr_Bnd_c
+   { e.pp = pp"let ${text(id.lexeme)} : ${ty.pp} = ${e1.pp} in ${e2.pp}";
+     e.ast = let_expr (id_dcl (id.lexeme, location = id.location), ty.ast, e1.ast, e2.ast, 
+                       location = e.location); }
 
  | 'lambda' i::Id_t ':' ty::Type_Arrow_c '.' e1::Expr_Bnd_c
    { e.pp = pp"lambda ${text(i.lexeme)} : ${ty.pp} . ${e1.pp}";
-     e.ast = lambda_expr(i.lexeme, ty.ast, e1.ast, location = e.location); }
+     e.ast = lambda_expr (id_dcl (i.lexeme, location = e.location), ty.ast, e1.ast,
+                          location = e.location); }
 
  | ea::Expr_Add_c 
    { e.pp = ea.pp;
@@ -85,7 +87,7 @@ concrete productions e::Expr_Prm_c
 
  | i::Id_t
    { e.pp = text(i.lexeme);
-     e.ast = id_ref(i.lexeme, location = e.location); }
+     e.ast = ident(id_ref (i.lexeme, location = e.location), location = e.location); }
 
  | i::IntLit_t
    { e.pp = text(i.lexeme);

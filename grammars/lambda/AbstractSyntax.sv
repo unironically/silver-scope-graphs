@@ -2,15 +2,22 @@ grammar lambda;
 
 nonterminal Root with pp, typing, location;
 nonterminal Expr with pp, typing, env, location;
+nonterminal IdDcl with pp, str_name, location;
+nonterminal IdRef with pp, str_name, location;
 nonterminal TypeExpr with pp, typerep, location;
 
 nonterminal Type with pp;
 
+-- type or type errors
 synthesized attribute typing :: Typing;
 
+-- a representation for types
 synthesized attribute typerep :: Type;
 
+synthesized attribute str_name :: String;
+
 inherited attribute env :: [ (String, Type) ];
+
 
 -- Root
 production root
@@ -24,12 +31,12 @@ r::Root ::= e::Expr
 
 -- Expr
 production let_expr
-e::Expr ::= id::String t::TypeExpr e1::Expr e2::Expr
+e::Expr ::= id::IdDcl t::TypeExpr e1::Expr e2::Expr
 {
- e.pp = pp"(let ${text(id)} : ${t.pp} = ${e1.pp} in ${e2.pp})";
+ e.pp = pp"(let ${id.pp} : ${t.pp} = ${e1.pp} in ${e2.pp})";
 
  e1.env = e.env;
- e2.env = (id, t.typerep) :: e.env;
+ e2.env = (id.str_name, t.typerep) :: e.env;
 
  e.typing = case e1.typing of
             | typed (t1) ->
@@ -42,16 +49,23 @@ e::Expr ::= id::String t::TypeExpr e1::Expr e2::Expr
 
 -- Lambda Expression
 production lambda_expr
-e::Expr ::= id::String t::TypeExpr body::Expr
+e::Expr ::= id::IdDcl t::TypeExpr body::Expr
 {
- e.pp = pp"(lambda ${text(id)} : ${t.pp} . ${body.pp})";
+ e.pp = pp"(lambda ${id.pp} : ${t.pp} . ${body.pp})";
 
- body.env = (id, t.typerep) :: e.env;
+ body.env = (id.str_name, t.typerep) :: e.env;
 
  e.typing = case body.typing of
             | typed(ty) -> typed (arrow (t.typerep, ty) )
             | errs -> errs
             end;
+}
+
+production id_dcl
+id::IdDcl ::= nm::String
+{
+  id.pp = text(nm);
+  id.str_name = nm;
 }
 
 -- Function Application
@@ -124,11 +138,11 @@ e::Expr ::= l::Expr r::Expr
 }
 
 -- Identifier Reference
-production id_ref
-e::Expr ::= id::String
+production ident
+e::Expr ::= id::IdRef
 {
- e.pp = text(id);
- e.typing = lookup_type(id, e, e.env);
+ e.pp = id.pp;
+ e.typing = lookup_type(id.str_name, id, e.env);
 }
 
 -- Integer Constant
@@ -137,6 +151,14 @@ e::Expr ::= num::Integer
 {
  e.pp = text (toString (num));
  e.typing = typed (int ());
+}
+
+-- Identifier
+production id_ref
+i::IdRef ::= nm::String
+{
+  i.pp = text(nm);
+  i.str_name = nm;
 }
 
 -- Type Expressions

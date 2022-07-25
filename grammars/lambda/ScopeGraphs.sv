@@ -42,7 +42,7 @@ I've added a `cons_decl_ref` production that fixes some of these issues
 synthesized attribute scope_graph :: Decorated sg:Graph<IdDcl IdRef> occurs on Root;
 
 monoid attribute all_scopes :: [ Decorated sg:Scope<IdDcl IdRef> ] occurs on Expr;
-monoid attribute all_paths :: [ Decorated sg:Path<IdDcl IdRef> ] occurs on Expr;
+monoid attribute all_paths :: [ Decorated sg:Path<IdDcl IdRef> ] occurs on Expr, IdRef;
 
 inherited attribute scope :: Decorated sg:Scope<IdDcl IdRef> occurs on Expr, IdDcl, IdRef;
 
@@ -196,6 +196,11 @@ i::IdRef ::= nm::String
   local attribute new_use :: sg:Usage<IdDcl IdRef> = 
     sg:mk_ref (i.scope, nothing(), i);
   i.refs := [ new_use ] ;
+
+  i.all_paths := case new_use.sg:resolutions of
+                 | [] -> []
+                 | dcl::_ -> [ decorate sg:cons_path (new_use, dcl) with {} ]
+                 end;
 
   i.errors <- if null (new_use.sg:resolutions)
               then [ id_not_declared (i) ]
