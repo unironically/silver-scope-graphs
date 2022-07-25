@@ -4,11 +4,11 @@ grammar scopegraph;
 ----------------
 -- Scope Graph
 
-synthesized attribute scope_list<a>::[Decorated Scope<a>];
-synthesized attribute paths<a>::[Decorated Path<a>];
-synthesized attribute all_decls<a>::[Decorated Declaration<a>];
+synthesized attribute scope_list<d r>::[Decorated Scope<d r>];
+synthesized attribute paths<d r>::[Decorated Path<d r>];
+synthesized attribute all_decls<d r>::[Decorated Declaration<d r>];
 
-nonterminal Graph<a> with scope_list<a>, paths<a>, all_decls<a>;
+nonterminal Graph<d r> with scope_list<d r>, paths<d r>, all_decls<d r>;
 
 @{-
  - Constructing a graph node.
@@ -16,14 +16,14 @@ nonterminal Graph<a> with scope_list<a>, paths<a>, all_decls<a>;
  - @param scope_list The list of scopes the graph contains.
 -}
 abstract production cons_graph
-top::Graph<a> ::= scope_list::[Decorated Scope<a>] 
-  paths::[Decorated Path<a>]
+top::Graph<d r> ::= scope_list::[Decorated Scope<d r>] 
+  paths::[Decorated Path<d r>]
 {
   top.scope_list = scope_list;
   top.paths = paths;
   top.all_decls = foldl(
-    (\all_decls::[Decorated Declaration<a>] scope::Decorated Scope<a> 
-      -> all_decls ++ map((\pair::(String, Decorated Declaration<a>) -> snd(pair)), scope.declarations)), 
+    (\all_decls::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
+      -> all_decls ++ map((\pair::(String, Decorated Declaration<d r>) -> snd(pair)), scope.declarations)), 
     [], scope_list);
 }
 
@@ -32,16 +32,16 @@ top::Graph<a> ::= scope_list::[Decorated Scope<a>]
 -- Scopes
 
 synthesized attribute id::Integer;
-synthesized attribute parent<a>::Maybe<Decorated Scope<a>>;
-synthesized attribute declarations<a>::[(String, Decorated Declaration<a>)]; -- pair of identifier name and node
-synthesized attribute references<a>::[(String, Decorated Usage<a>)];
-synthesized attribute imports<a>::[(String, Decorated Usage<a>)];
+synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
+synthesized attribute declarations<d r>::[(String, Decorated Declaration<d r>)]; -- pair of identifier name and node
+synthesized attribute references<d r>::[(String, Decorated Usage<d r>)];
+synthesized attribute imports<d r>::[(String, Decorated Usage<d r>)];
 synthesized attribute to_string::String;
 
-synthesized attribute child_scopes<a>::[Decorated Scope<a>];
+synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
 
 
-nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports<a>, to_string, child_scopes<a>;
+nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>;
 
 @{-
  - Constructing a scope node.
@@ -52,11 +52,11 @@ nonterminal Scope<a> with id, parent<a>, declarations<a>, references<a>, imports
  - @param imports The list of imports attached to a node.
 -}
 abstract production cons_scope
-top::Scope<a> ::= parent::Maybe<Decorated Scope<a>> 
-  declarations::[(String, Decorated Declaration<a>)] 
-  references::[(String, Decorated Usage<a>)] 
-  imports::[(String, Decorated Usage<a>)]
-  child_scopes::[Decorated Scope<a>]
+top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>> 
+  declarations::[(String, Decorated Declaration<d r>)] 
+  references::[(String, Decorated Usage<d r>)] 
+  imports::[(String, Decorated Usage<d r>)]
+  child_scopes::[Decorated Scope<d r>]
 {
   top.id = genInt();
   top.parent = parent;
@@ -72,12 +72,13 @@ top::Scope<a> ::= parent::Maybe<Decorated Scope<a>>
 -- Declarations
 
 synthesized attribute identifier::String; -- Name of the declaration
-synthesized attribute in_scope<a>::Decorated Scope<a>; -- Scope in which the declaration resides
-synthesized attribute assoc_scope<a>::Maybe<Decorated Scope<a>>; -- Scope that this declaration points to (for imports)
+synthesized attribute in_scope<d r>::Decorated Scope<d r>; -- Scope in which the declaration resides
+synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>; -- Scope that this declaration points to (for imports)
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
-nonterminal Declaration<a> with identifier, in_scope<a>, assoc_scope<a>, line, column, to_string;
+
+nonterminal Declaration<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, to_string;
 
 @{-
  - Constructing a declaration node.
@@ -89,9 +90,9 @@ nonterminal Declaration<a> with identifier, in_scope<a>, assoc_scope<a>, line, c
  - @param column The column this declaration was found on.
 -}
 abstract production cons_decl
-top::Declaration<a> ::= identifier::String 
-  in_scope::Decorated Scope<a> 
-  assoc_scope::Maybe<Decorated Scope<a>> 
+top::Declaration<d r> ::= identifier::String 
+  in_scope::Decorated Scope<d r> 
+  assoc_scope::Maybe<Decorated Scope<d r>> 
   line::Integer column::Integer
 {
   top.identifier = identifier;
@@ -102,14 +103,19 @@ top::Declaration<a> ::= identifier::String
   top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
 
-abstract production cons_decl_ref
-attribute line i occurs on a, attribute column i occurs on a =>
-top::Declaration<a> ::= identifier::String 
-  in_scope::Decorated Scope<a> 
-  assoc_scope::Maybe<Decorated Scope<a>> 
-  ast_node::Decorated a with i
+
+synthesized attribute name::String;
+
+abstract production mk_dcl
+  attribute name i occurs on d, 
+  attribute line i occurs on d, 
+  attribute column i occurs on d =>
+top::Declaration<d r> ::= 
+  ast_node::Decorated d with i
+  in_scope::Decorated Scope<d r> 
+  assoc_scope::Maybe<Decorated Scope<d r>> 
 {
-  top.identifier = identifier;
+  top.identifier = ast_node.name;
   top.in_scope = in_scope;
   top.assoc_scope = assoc_scope;
   top.line = ast_node.line;
@@ -121,9 +127,9 @@ top::Declaration<a> ::= identifier::String
 ----------------
 -- Imports/References
 
-synthesized attribute resolutions<a>::[Decorated Declaration<a>]; -- The node that this import points to with an invisible line. added to after resolution
+synthesized attribute resolutions<d r>::[Decorated Declaration<d r>]; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage<a> with identifier, in_scope<a>, resolutions<a>, line, column, to_string;
+nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -134,8 +140,8 @@ nonterminal Usage<a> with identifier, in_scope<a>, resolutions<a>, line, column,
  - @param column The column this usage was found on.
 -}
 abstract production cons_usage
-top::Usage<a> ::= identifier::String 
-  in_scope::Decorated Scope<a> 
+top::Usage<d r> ::= identifier::String 
+  in_scope::Decorated Scope<d r> 
   line::Integer 
   column::Integer
 {
@@ -145,4 +151,24 @@ top::Usage<a> ::= identifier::String
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
+}
+
+
+
+abstract production mk_ref
+  attribute name i occurs on r, 
+  attribute line i occurs on r, 
+  attribute column i occurs on r =>
+top::Usage<d r> ::= 
+  in_scope::Decorated Scope<d r> 
+  assoc_scope::Maybe<Decorated Scope<d r>> 
+  ast_node::Decorated r with i
+{
+  top.identifier = ast_node.name;
+  top.in_scope = in_scope;
+  top.resolutions = resolve(top, in_scope);
+
+  top.line = ast_node.line;
+  top.column = ast_node.column;
+  top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
 }
