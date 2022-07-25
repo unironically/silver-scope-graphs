@@ -16,12 +16,12 @@ global pp_tab_spacing :: String = "";
 
 -- Types used in scope graphs for this language example
 type Target_type = Decorated Exp;
-type Graph_type = Graph<Target_type>;
-type Scope_type = Scope<Target_type>;
-type Decl_type = Declaration<Target_type>;
-type Usage_type = Usage<Target_type>;
-type Error_type = Error<Target_type>;
-type Path_type = Path<Target_type>;
+type Graph_type = Graph;
+type Scope_type = Scope;
+type Decl_type = Declaration;
+type Usage_type = Usage;
+type Error_type = Error;
+type Path_type = Path;
 
 -- Attributes used in printing an AST
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 

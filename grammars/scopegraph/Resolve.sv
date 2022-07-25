@@ -20,28 +20,28 @@ grammar scopegraph;
  - @return A list of all declarations that ref resolves to.
 -}
 function resolve
-[Decorated Declaration<a>] ::= ref::Decorated Usage<a> cur_scope::Decorated Scope<a>
+[Decorated Declaration] ::= ref::Decorated Usage cur_scope::Decorated Scope
 {
   -- Check for any matching declarations in the current scope
-  local attribute decls::[Decorated Declaration<a>] = 
-    filter((\decl::Decorated Declaration<a> -> decl.identifier == ref.identifier), 
-      map((\decl::(String, Decorated Declaration<a>) -> snd(decl)), cur_scope.declarations));
+  local attribute decls::[Decorated Declaration] = 
+    filter((\decl::Decorated Declaration -> decl.identifier == ref.identifier), 
+      map((\decl::(String, Decorated Declaration) -> snd(decl)), cur_scope.declarations));
 
   -- Check any imports that exist, call resolve on them
-  local attribute imps::[Decorated Declaration<a>] = foldl(
-    (\acc::[Decorated Declaration<a>] cur::Decorated Declaration<a> -> 
+  local attribute imps::[Decorated Declaration] = foldl(
+    (\acc::[Decorated Declaration] cur::Decorated Declaration -> 
       case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve(ref, s) end),
     [],
     foldl(
-      (\acc::[Decorated Declaration<a>] cur::Decorated Usage<a> -> acc ++ cur.resolutions),
+      (\acc::[Decorated Declaration] cur::Decorated Usage -> acc ++ cur.resolutions),
       [],
-      filter((\imp::Decorated Usage<a> -> imp.identifier != ref.identifier),
-        map((\decl::(String, Decorated Usage<a>) -> snd(decl)), cur_scope.imports))
+      filter((\imp::Decorated Usage -> imp.identifier != ref.identifier),
+        map((\decl::(String, Decorated Usage) -> snd(decl)), cur_scope.imports))
     )
   );
   
   -- recursive call on parent
-  local attribute par::[Decorated Declaration<a>] = case cur_scope.parent of
+  local attribute par::[Decorated Declaration] = case cur_scope.parent of
     | nothing() -> []
     | just(p) -> resolve(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
   end;
@@ -57,9 +57,9 @@ function resolve
  - @return A list with all elements of the left and right lists, where the lefts shadows the rights.
 -}
 function merge_declarations_with_shadowing
-[Decorated Declaration<a>] ::= left::[Decorated Declaration<a>] right::[Decorated Declaration<a>]
+[Decorated Declaration] ::= left::[Decorated Declaration] right::[Decorated Declaration]
 {
-  return unionBy(\mem_r::Decorated Declaration<a> mem_l::Decorated Declaration<a> -> 
+  return unionBy(\mem_r::Decorated Declaration mem_l::Decorated Declaration -> 
     mem_r.identifier == mem_l.identifier, right , left);
 }
 
@@ -67,10 +67,10 @@ function merge_declarations_with_shadowing
 ----------------
 -- Resolution paths:
 
-nonterminal Path<a> with start<a>, final<a>;
+nonterminal Path with start, final;
 
-synthesized attribute start<a>::Decorated Usage<a>;
-synthesized attribute final<a>::Decorated Declaration<a>;
+synthesized attribute start::Decorated Usage;
+synthesized attribute final::Decorated Declaration;
 
 @{-
  - Constructing a path node.
@@ -79,7 +79,7 @@ synthesized attribute final<a>::Decorated Declaration<a>;
  - @param final The declaration resolved to in the path.
 -}
 abstract production cons_path
-top::Path<a> ::= start::Decorated Usage<a> final::Decorated Declaration<a>
+top::Path ::= start::Decorated Usage final::Decorated Declaration
 {
   top.start = start;
   top.final = final;
@@ -92,7 +92,7 @@ top::Path<a> ::= start::Decorated Usage<a> final::Decorated Declaration<a>
  - @return A string representing all of the resolution paths.
 -}
 function string_paths
-String ::= list::[Decorated Path<a>]
+String ::= list::[Decorated Path]
 {
   return case list of 
   | h::t -> "Found resolution: " ++ h.start.to_string ++ " --> " ++ h.final.to_string ++ "\n" ++ 
