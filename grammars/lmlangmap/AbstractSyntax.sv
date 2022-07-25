@@ -15,7 +15,6 @@ global pp_line_spcing :: String = "";
 global pp_tab_spacing :: String = ""; 
 
 -- Types used in scope graphs for this language example
-type Target_type = Decorated Exp;
 type Graph_type = Graph;
 type Scope_type = Scope;
 type Decl_type = Declaration;
