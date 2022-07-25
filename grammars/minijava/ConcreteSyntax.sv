@@ -8,6 +8,7 @@ nonterminal Decl_c with ast<Decl>;
 nonterminal Block_c with ast<Block>;
 nonterminal Extend_c with ast<Extend>;
 nonterminal Implement_c with ast<Implement>;
+nonterminal QidList_c with ast<QidList>;
 nonterminal Qid_c with ast<Qid>;
 
 ------------------------------------------------------------
@@ -51,9 +52,9 @@ top::Decl_c ::= Class_t id::ID_t extend::Extend_c implement::Implement_c block::
 ------------------------------------------------------------
 
 concrete production block_c
-top::Block_c ::= LCurly_t RCurly_t
+top::Block_c ::= LCurly_t list::DeclList_c RCurly_t
 {
-  top.ast = block();
+  top.ast = block(list.ast);
 }
 
 ------------------------------------------------------------
@@ -61,9 +62,9 @@ top::Block_c ::= LCurly_t RCurly_t
 ------------------------------------------------------------
 
 concrete production extendlist_list_c
-top::Extend_c ::= Extends_t qid::Qid_c
+top::Extend_c ::= Extends_t list::QidList_c
 {
-  top.ast = extendlist_list(qid.ast);
+  top.ast = extendlist_list(list.ast);
 }
 
 concrete production extendlist_nothing_c
@@ -77,9 +78,9 @@ top::Extend_c ::=
 ------------------------------------------------------------
 
 concrete production implementlist_list_c
-top::Implement_c ::= Implements_t qid::Qid_c
+top::Implement_c ::= Implements_t list::QidList_c
 {
-  top.ast = implementlist_list(qid.ast);
+  top.ast = implementlist_list(list.ast);
 }
 
 concrete productionimplementlist_nothing_c
@@ -89,13 +90,29 @@ top::Implement_c ::=
 }
 
 ------------------------------------------------------------
----- Implement
+---- Qid list
 ------------------------------------------------------------
 
-concrete production qid_list_c
+concrete production qidlist_list_c
+top::QidList_c ::= qid::Qid_c Comma_t list::QidList_c
+{
+  top.ast = qidlist_list(qid.ast, list.ast);
+}
+
+concrete production qidlist_single_c
+top::QidList_c ::= qid::Qid_c
+{
+  top.ast = qidlist_single(qid.ast);
+}
+
+------------------------------------------------------------
+---- Qid
+------------------------------------------------------------
+
+concrete production qid_dot_c
 top::Qid_c ::= id::ID_t Dot_t qid::Qid_c
 {
-  top.ast = qid_list(id, qid.ast);
+  top.ast = qid_dot(id, qid.ast);
 }
 
 concrete production qid_single_c
