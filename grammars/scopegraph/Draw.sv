@@ -138,9 +138,9 @@ String ::= graph::Decorated Graph
       graph.scope_list)
   in
     "{edge [arrowhead=normal color=blue style=dashed]" ++ 
-      draw_individual_paths(fst(all)) ++ "}" ++
+      graphviz_draw_individual_paths(fst(all)) ++ "}" ++
     "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
-      draw_individual_paths(snd(all)) ++ "}"
+      graphviz_draw_individual_paths(snd(all)) ++ "}"
   end ++ "\n";
 }
 

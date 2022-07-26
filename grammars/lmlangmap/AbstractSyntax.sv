@@ -757,22 +757,6 @@ top::Qid ::= id::ID_t
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  -- error and path handling
-
-  --local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
-
-  {-
-  local attribute no_decl::Error_type = no_declaration_found(init_import);
-  local attribute mul_decl::Error_type = multiple_declarations_found(init_import);
-  
-  top.errors = if (length(init_import.resolutions) < 1) then
-    [no_decl]
-  else if (length(init_import.resolutions) > 1) then
-    [mul_decl]
-  else
-    [];
-  -}
-
   local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths = [fst_path];
 

@@ -1,6 +1,6 @@
 grammar lmlangmap;
 
-global file_output::String = "scope_graph.svg";
+global file_output::String = "scope_graph_lmlangmap.svg";
 
 parser parse :: Program_c {
     lmlangmap;
