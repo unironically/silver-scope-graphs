@@ -42,27 +42,27 @@ synthesized attribute syn_all_scopes::[Decorated Scope_type] occurs on DeclList,
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
 -- Only the binding list of parrallel let expressions use two synthesized attributes for each
-synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, 
+synthesized attribute syn_decls::[Decorated Decl_type] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_refs::[(String, Decorated Usage_type)] occurs on DeclList, 
+synthesized attribute syn_refs::[Decorated Usage_type] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_imports::[(String, Decorated Usage_type)] occurs on DeclList, 
+synthesized attribute syn_imports::[Decorated Usage_type] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_decls_two::[(String, Decorated Decl_type)] occurs on BindListPar;
-synthesized attribute syn_refs_two::[(String, Decorated Usage_type)] occurs on BindListPar;
-synthesized attribute syn_imports_two::[(String, Decorated Usage_type)] occurs on BindListPar;
+synthesized attribute syn_decls_two::[Decorated Decl_type] occurs on BindListPar;
+synthesized attribute syn_refs_two::[Decorated Usage_type] occurs on BindListPar;
+synthesized attribute syn_imports_two::[Decorated Usage_type] occurs on BindListPar;
 
 -- For double-edged arrow between parent and child scopes
 synthesized attribute syn_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
-inherited attribute inh_decls::[(String, Decorated Decl_type)] occurs on BindListSeq;
-inherited attribute inh_refs::[(String, Decorated Usage_type)] occurs on BindListSeq;
-inherited attribute inh_imports::[(String, Decorated Usage_type)] occurs on BindListSeq;
+inherited attribute inh_decls::[Decorated Decl_type] occurs on BindListSeq;
+inherited attribute inh_refs::[Decorated Usage_type] occurs on BindListSeq;
+inherited attribute inh_imports::[Decorated Usage_type] occurs on BindListSeq;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
-synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
+synthesized attribute syn_iqid_import::Decorated Usage_type occurs on Qid;
 
 -- The scope returned by the binding list construct of a sequential let expression
 synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
@@ -83,15 +83,15 @@ top::Program ::= list::DeclList
     list.syn_decls,
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes -- ADD
+    list.syn_scopes
   );
   
-  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes, list.paths);
+  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes);
   top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
 
-  -- error and path handling
+  -- path handling
   {-
   -- collect all of the declarations that some reference is resolved to
   local attribute used_decls::[Decorated Decl_type] = map((\path::Decorated Path_type -> path.final), list.paths);
@@ -114,7 +114,7 @@ top::Program ::= list::DeclList
   -}
   top.paths = list.paths;
   
-  -- pretty printing
+  -- ast printing
   top.pp = "prog(" ++ list.pp ++ ")";
   list.tab_level = pp_tab_spacing;
 
@@ -147,16 +147,16 @@ top::DeclList ::= decl::Decl list::DeclList
   top.syn_refs = decl.syn_refs ++ list.syn_refs;
   top.syn_imports = decl.syn_imports ++ list.syn_imports;
   top.syn_all_scopes = decl.syn_all_scopes ++ list.syn_all_scopes;
-  top.syn_scopes = decl.syn_scopes ++ list.syn_scopes; -- ADD
+  top.syn_scopes = decl.syn_scopes ++ list.syn_scopes;
 
   decl.inh_scope = top.inh_scope;
 
   list.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = decl.paths ++ list.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decllist_list(" ++ decl.pp ++ "," 
     ++ list.pp ++ "" ++ top.tab_level ++ ")";
   decl.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -171,12 +171,12 @@ top::DeclList ::=
   top.syn_refs = [];
   top.syn_imports = [];
   top.syn_all_scopes = [];
-  top.syn_scopes = []; -- ADD
+  top.syn_scopes = [];
 
-  -- error and path handling
+  -- path handling
   top.paths = [];
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decllist_nothing()";
 
 }
@@ -194,7 +194,7 @@ top::Decl ::= id::ID_t list::DeclList
     list.syn_decls,
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes -- ADD
+    list.syn_scopes
   );
 
   local attribute init_decl::Decl_type = cons_decl(
@@ -205,18 +205,18 @@ top::Decl ::= id::ID_t list::DeclList
     id.column
   );
 
-  top.syn_decls = [(id.lexeme, init_decl)];
+  top.syn_decls = [init_decl];
   top.syn_refs = [];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ list.syn_all_scopes;
-  top.syn_scopes = [init_scope]; -- ADD
+  top.syn_scopes = [init_scope];
 
   list.inh_scope = init_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = list.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decl_module(" ++ pp_tab_spacing ++ top.tab_level ++ id.lexeme ++ "," 
     ++ list.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -230,15 +230,15 @@ top::Decl ::= qid::Qid
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
   top.syn_all_scopes = qid.syn_all_scopes;
-  top.syn_scopes = qid.syn_scopes; -- ADD
+  top.syn_scopes = qid.syn_scopes;
 
   qid.inh_scope = top.inh_scope;
   qid.inh_scope_two = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = qid.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decl_import(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = top.tab_level ++ pp_tab_spacing;
 
@@ -255,18 +255,18 @@ top::Decl ::= id::ID_t exp::Exp
     id.column
   );
 
-  top.syn_decls = [(id.lexeme, init_decl)] ++ exp.syn_decls;
+  top.syn_decls = [init_decl] ++ exp.syn_decls;
   top.syn_refs = exp.syn_refs;
   top.syn_imports = exp.syn_imports;
   top.syn_all_scopes = exp.syn_all_scopes;
-  top.syn_scopes = exp.syn_scopes; -- ADD
+  top.syn_scopes = exp.syn_scopes;
 
   exp.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decl_def(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ ","
     ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -284,10 +284,10 @@ top::Decl ::= exp::Exp
 
   exp.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "decl_exp(" ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
 
@@ -305,7 +305,7 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.syn_refs = list.syn_refs;
   top.syn_imports = list.syn_imports;
   top.syn_all_scopes = list.syn_all_scopes ++ exp.syn_all_scopes;
-  top.syn_scopes = list.syn_scopes ++ exp.syn_scopes; -- ADD
+  top.syn_scopes = list.syn_scopes ++ exp.syn_scopes;
 
   list.inh_scope = top.inh_scope;
   list.inh_decls = exp.syn_decls; -- bringing up exp's decls/refs/imports to give to the final scope in the binding list
@@ -314,10 +314,10 @@ top::Exp ::= list::BindListSeq exp::Exp
 
   exp.inh_scope = list.ret_scope;
   
-  -- error and path handling
+  -- path handling
   top.paths = list.paths ++ exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = pp_tab_spacing ++ top.tab_level;
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -337,10 +337,10 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 
   local attribute init_scope::Scope_type = cons_scope (
     just(top.inh_scope),
-    [(id.lexeme, init_decl)],
+    [init_decl],
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes -- ADD
+    list.syn_scopes
   );
   
   top.syn_decls = exp.syn_decls;
@@ -348,7 +348,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   top.syn_imports = exp.syn_imports;
   top.syn_all_scopes = [init_scope] ++ exp.syn_all_scopes ++ list.syn_all_scopes;
   top.ret_scope = list.ret_scope;
-  top.syn_scopes = [init_scope]; -- ADD
+  top.syn_scopes = [init_scope];
 
   exp.inh_scope = top.inh_scope;
 
@@ -357,10 +357,10 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   list.inh_refs = top.inh_refs;
   list.inh_imports = top.inh_imports;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths ++ list.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_list_seq(" ++ top.tab_level ++ pp_tab_spacing ++ 
     id.lexeme ++ "," ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -378,10 +378,10 @@ top::BindListSeq ::=
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  -- error and path handling
+  -- path handling
   top.paths = [];
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_nothing_seq()";
 
 }
@@ -411,10 +411,10 @@ top::Exp ::= list::BindListRec exp::Exp
 
   exp.inh_scope = init_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = list.paths ++ exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_letrec(" ++ list.pp ++ "," 
     ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -433,7 +433,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
     id.column
   );
 
-  top.syn_decls = exp.syn_decls ++ list.syn_decls ++ [(id.lexeme, init_decl)];
+  top.syn_decls = exp.syn_decls ++ list.syn_decls ++ [init_decl];
   top.syn_refs = exp.syn_refs ++ list.syn_refs;
   top.syn_imports = exp.syn_imports ++ list.syn_imports;
   top.syn_all_scopes = exp.syn_all_scopes ++ list.syn_all_scopes;
@@ -442,10 +442,10 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 
   exp.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths ++ list.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_list_rec(" ++ top.tab_level ++ pp_tab_spacing 
     ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -461,10 +461,10 @@ top::BindListRec ::=
   top.syn_imports = [];
   top.syn_all_scopes = [];
 
-  -- error and path handling
+  -- path handling
   top.paths = [];
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_nothing_rec()";
 
 }
@@ -495,10 +495,10 @@ top::Exp ::= list::BindListPar exp::Exp
 
   exp.inh_scope = init_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = list.paths ++ exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_letpar(" ++ list.pp ++ "," 
     ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   list.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -520,7 +520,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   top.syn_decls = exp.syn_decls ++ list.syn_decls;
   top.syn_refs = exp.syn_refs ++ list.syn_refs;
   top.syn_imports = exp.syn_imports ++ list.syn_imports;
-  top.syn_decls_two = list.syn_decls_two ++ [(id.lexeme, init_decl)];
+  top.syn_decls_two = list.syn_decls_two ++ [init_decl];
   top.syn_refs_two = list.syn_refs_two;
   top.syn_imports_two = list.syn_imports_two;
   top.syn_all_scopes = exp.syn_all_scopes ++ list.syn_all_scopes;
@@ -530,10 +530,10 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   list.inh_scope = top.inh_scope;
   list.inh_scope_two = top.inh_scope_two;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths ++ list.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_list_par(" ++ top.tab_level ++ pp_tab_spacing 
     ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -552,10 +552,10 @@ top::BindListPar ::=
   top.syn_imports_two = [];
   top.syn_all_scopes = [];
 
-  -- error and path handling
+  -- path handling
   top.paths = [];
   
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "bindlist_nothing_par()";
 
 }
@@ -578,24 +578,24 @@ top::Exp ::= id::ID_t exp::Exp
 
   local attribute init_scope::Scope_type = cons_scope (
     just(top.inh_scope),
-    exp.syn_decls ++ [(id.lexeme, init_decl)],
+    exp.syn_decls ++ [init_decl],
     exp.syn_refs,
     exp.syn_imports,
-    exp.syn_scopes -- ADD
+    exp.syn_scopes
   );
 
   top.syn_decls = [];
   top.syn_refs = [];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ exp.syn_all_scopes;
-  top.syn_scopes = [init_scope]; -- ADD
+  top.syn_scopes = [init_scope];
 
   exp.inh_scope = init_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = exp.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_funfix(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ ","
     ++ exp.pp ++ "" ++ top.tab_level ++ ")";
   exp.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -615,10 +615,10 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   expRight.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = expLeft.paths ++ expRight.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_plus(" ++ expLeft.pp ++ "," 
     ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
   expLeft.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -639,10 +639,10 @@ top::Exp ::= expLeft::Exp expRight::Exp
 
   expRight.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = expLeft.paths ++ expRight.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_app(" ++ expLeft.pp ++ "," 
     ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
   expLeft.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -661,10 +661,10 @@ top::Exp ::= qid::Qid
 
   qid.inh_scope = top.inh_scope;
 
-  -- error and path handling
+  -- path handling
   top.paths = qid.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_qid(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = pp_tab_spacing ++ top.tab_level;
 
@@ -679,10 +679,10 @@ top::Exp ::= val::Int_t
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  -- error and path handling
+  -- path handling
   top.paths = [];
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "exp_int(" ++ top.tab_level ++ pp_tab_spacing 
     ++ val.lexeme ++ "" ++ top.tab_level ++ ")";
 
@@ -709,24 +709,24 @@ top::Qid ::= id::ID_t qid::Qid
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
-    qid.syn_imports ++ [(id.lexeme, init_usage)],
-    qid.syn_scopes -- ADD
+    qid.syn_imports ++ [init_usage],
+    qid.syn_scopes
   );
 
   top.syn_decls = [];
-  top.syn_refs = [(id.lexeme, init_usage)];
+  top.syn_refs = [init_usage];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ qid.syn_all_scopes;
   top.syn_iqid_import = qid.syn_iqid_import;
-  top.syn_scopes = []; -- ADD
+  top.syn_scopes = [];
   
   qid.inh_scope = init_scope;
   qid.inh_scope_two = top.inh_scope_two;
   
-  -- error and path handling
+  -- path handling
   top.paths = qid.paths;
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "qid_list(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ "," 
     ++ qid.pp ++ "" ++ top.tab_level ++ ")";
   qid.tab_level = pp_tab_spacing ++ top.tab_level;
@@ -751,16 +751,16 @@ top::Qid ::= id::ID_t
   );
 
   top.syn_decls = [];
-  top.syn_refs = [(id.lexeme, init_import)];
+  top.syn_refs = [init_import];
   top.syn_imports = [];
-  top.syn_iqid_import = (id.lexeme, init_import_two);
+  top.syn_iqid_import = init_import_two;
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
   local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths = [fst_path];
 
-  -- pretty printing
+  -- ast printing
   top.pp = top.tab_level ++ "qid_single(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ "" 
     ++ top.tab_level ++ ")";
 

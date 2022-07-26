@@ -17,8 +17,7 @@ function resolve
 {
   -- Check for any matching declarations in the current scope
   local attribute decls::[Decorated Declaration] = 
-    filter((\decl::Decorated Declaration -> decl.identifier == ref.identifier), 
-      map((\decl::(String, Decorated Declaration) -> snd(decl)), cur_scope.declarations));
+    filter((\decl::Decorated Declaration -> decl.identifier == ref.identifier), cur_scope.declarations);
 
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decorated Declaration] = foldl(
@@ -28,8 +27,7 @@ function resolve
     foldl(
       (\acc::[Decorated Declaration] cur::Decorated Usage -> acc ++ cur.resolutions),
       [],
-      filter((\imp::Decorated Usage -> imp.identifier != ref.identifier),
-        map((\decl::(String, Decorated Usage) -> snd(decl)), cur_scope.imports))
+      filter((\imp::Decorated Usage -> imp.identifier != ref.identifier), cur_scope.imports)
     )
   );
   

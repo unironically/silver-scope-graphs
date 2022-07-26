@@ -25,11 +25,11 @@ synthesized attribute pp::String occurs on Program, DeclList, Decl, Block, Exten
 
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
-synthesized attribute syn_decls::[(String, Decorated Decl_type)] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_decls::[Decorated Decl_type] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
-synthesized attribute syn_refs::[(String, Decorated Usage_type)] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_refs::[Decorated Usage_type] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
-synthesized attribute syn_imports::[(String, Decorated Usage_type)] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_imports::[Decorated Usage_type] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
 
 -- Information required for synthesizing a graph node at the root of an AST
@@ -47,7 +47,7 @@ synthesized attribute syn_scopes::[Decorated Scope_type] occurs on DeclList, Dec
   Extend, Implement, QidList, Qid;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
-synthesized attribute syn_iqid_import::(String, Decorated Usage_type) occurs on Qid;
+synthesized attribute syn_iqid_import::Decorated Usage_type occurs on Qid;
 
 ------------------------------------------------------------
 ---- Program
@@ -133,7 +133,7 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
     id.column
   );
 
-  top.syn_decls = [(id.lexeme, init_decl)];
+  top.syn_decls = [init_decl];
   top.syn_refs = [];
   top.syn_imports = [];
   top.syn_all_scopes = [new_scope] ++ extend.syn_all_scopes ++ implement.syn_all_scopes ++ block.syn_all_scopes;
@@ -288,12 +288,12 @@ top::Qid ::= id::ID_t qid::Qid
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
-    qid.syn_imports ++ [(id.lexeme, init_usage)],
+    qid.syn_imports ++ [init_usage],
     qid.syn_scopes -- ADD
   );
 
   top.syn_decls = [];
-  top.syn_refs = [(id.lexeme, init_usage)];
+  top.syn_refs = [init_usage];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ qid.syn_all_scopes;
   top.syn_iqid_import = qid.syn_iqid_import;
@@ -324,9 +324,9 @@ top::Qid ::= id::ID_t
   );
 
   top.syn_decls = [];
-  top.syn_refs = [(id.lexeme, init_import)];
+  top.syn_refs = [init_import];
   top.syn_imports = [];
-  top.syn_iqid_import = (id.lexeme, init_import_two);
+  top.syn_iqid_import = init_import_two;
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 

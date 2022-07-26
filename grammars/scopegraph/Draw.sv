@@ -51,12 +51,11 @@ String ::= scopes::[Decorated Scope]
  - @return The graphviz string representing the list of references.
 -}
 function graphviz_scope_refs
-String ::= scope::Decorated Scope refs::[(String, Decorated Usage)]
+String ::= scope::Decorated Scope refs::[Decorated Usage]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> h2.graphviz_name ++ " -> " ++ scope.graphviz_name ++ " " ++ 
-      graphviz_scope_refs(scope, t)
+    | h::t -> h.graphviz_name ++ " -> " ++ scope.graphviz_name ++ " " ++ graphviz_scope_refs(scope, t)
   end;
 }
 
@@ -67,12 +66,11 @@ String ::= scope::Decorated Scope refs::[(String, Decorated Usage)]
  - @return The graphviz string representing the list of imports.
 -}
 function graphviz_scope_imports
-String ::= scope::Decorated Scope refs::[(String, Decorated Usage)]
+String ::= scope::Decorated Scope refs::[Decorated Usage]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> scope.graphviz_name ++ " -> " ++ h2.graphviz_name ++ " " ++ 
-      graphviz_scope_imports(scope, t)
+    | h::t -> scope.graphviz_name ++ " -> " ++ h.graphviz_name ++ " " ++ graphviz_scope_imports(scope, t)
   end;
 }
 
@@ -83,15 +81,15 @@ String ::= scope::Decorated Scope refs::[(String, Decorated Usage)]
  - @return The graphviz string representing the list of declarations.
 -}
 function graphviz_scope_decls
-String ::= scope::Decorated Scope decls::[(String, Decorated Declaration)]
+String ::= scope::Decorated Scope decls::[Decorated Declaration]
 {
   return case decls of 
     | [] -> ""
-    | (h1, h2)::t -> 
-      scope.graphviz_name ++ " -> " ++ h2.graphviz_name ++ " " ++ 
-      (case h2.assoc_scope of 
+    | h::t -> 
+      scope.graphviz_name ++ " -> " ++ h.graphviz_name ++ " " ++ 
+      (case h.assoc_scope of 
         | nothing() -> "" 
-        | just(s) -> "{ edge [arrowhead=onormal]" ++ h2.graphviz_name ++ " -> " ++ s.graphviz_name ++ "} " 
+        | just(s) -> "{ edge [arrowhead=onormal]" ++ h.graphviz_name ++ " -> " ++ s.graphviz_name ++ "} " 
       end) ++ 
       graphviz_scope_decls(scope, t)
   end;
@@ -129,8 +127,7 @@ String ::= graph::Decorated Graph
       (\acc::([Decorated Usage], [Decorated Usage]) cur_scope::Decorated Scope -> 
         let new_pair::([Decorated Usage], [Decorated Usage]) = 
           partition((\usg::Decorated Usage -> length(usg.resolutions) == 1), 
-            map((\usg::(String, Decorated Usage) -> snd(usg)), 
-              cur_scope.references ++ cur_scope.imports)) 
+            cur_scope.references ++ cur_scope.imports) 
         in 
           (fst(acc) ++ fst(new_pair), snd(acc) ++ snd(new_pair))
         end),

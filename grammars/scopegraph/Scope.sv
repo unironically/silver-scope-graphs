@@ -24,7 +24,7 @@ top::Graph ::= scope_list::[Decorated Scope]
   --top.paths = paths;
   top.all_decls = foldl(
     (\all_decls::[Decorated Declaration] scope::Decorated Scope 
-      -> all_decls ++ map((\pair::(String, Decorated Declaration) -> snd(pair)), scope.declarations)), 
+      -> all_decls ++ scope.declarations), 
     [], scope_list);
   top.errors = foldl((\acc::[Decorated Error] scope::Decorated Scope -> acc ++ scope.errors), [], scope_list);
 }
@@ -35,9 +35,9 @@ top::Graph ::= scope_list::[Decorated Scope]
 
 synthesized attribute id::Integer;
 synthesized attribute parent::Maybe<Decorated Scope>;
-synthesized attribute declarations::[(String, Decorated Declaration)]; -- pair of identifier name and node
-synthesized attribute references::[(String, Decorated Usage)];
-synthesized attribute imports::[(String, Decorated Usage)];
+synthesized attribute declarations::[Decorated Declaration]; -- pair of identifier name and node
+synthesized attribute references::[Decorated Usage];
+synthesized attribute imports::[Decorated Usage];
 synthesized attribute to_string::String;
 synthesized attribute graphviz_name::String;
 
@@ -56,9 +56,9 @@ nonterminal Scope with id, parent, declarations, references, imports, to_string,
 -}
 abstract production cons_scope
 top::Scope ::= parent::Maybe<Decorated Scope> 
-  declarations::[(String, Decorated Declaration)] 
-  references::[(String, Decorated Usage)] 
-  imports::[(String, Decorated Usage)]
+  declarations::[Decorated Declaration] 
+  references::[Decorated Usage] 
+  imports::[Decorated Usage]
   child_scopes::[Decorated Scope]
 {
   top.id = genInt();
@@ -77,7 +77,7 @@ top::Scope ::= parent::Maybe<Decorated Scope>
       [decorate_md_error(ref, ref.resolutions)]
     else
       []
-  ), [], map((\ref::(String, Decorated Usage) -> snd(ref)), references ++ imports));
+  ), [], references ++ imports);
 
 }
 
