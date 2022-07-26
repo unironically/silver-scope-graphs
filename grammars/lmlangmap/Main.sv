@@ -20,7 +20,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute scope_graph :: Graph_type;
+  local attribute scope_graph :: Graph;
   scope_graph = new(r.syn_graph);
 
   --local attribute print_success :: IOToken;

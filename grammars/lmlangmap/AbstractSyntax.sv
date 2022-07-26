@@ -11,64 +11,51 @@ nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
 
-global pp_line_spcing :: String = ""; 
-global pp_tab_spacing :: String = ""; 
-
--- Types used in scope graphs for this language example
-type Graph_type = Graph;
-type Scope_type = Scope;
-type Decl_type = Declaration;
-type Usage_type = Usage;
-type Error_type = Error;
-type Path_type = Path;
-
 -- Attributes used in printing an AST
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
-  BindListSeq, BindListRec, BindListPar;
-inherited attribute tab_level::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- The inherited scope passed to a node is the scope in which the corresponding construct resides
 -- Only the binding list of parrallel let expressions use two inherited scopes
-inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Qid, Exp, 
+inherited attribute inh_scope::Decorated Scope occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-inherited attribute inh_scope_two::Decorated Scope_type occurs on BindListPar, Qid;
+inherited attribute inh_scope_two::Decorated Scope occurs on BindListPar, Qid;
 
 -- Information required for synthesizing a graph node at the root of an AST
-synthesized attribute syn_graph::Decorated Graph_type occurs on Program;
-synthesized attribute syn_all_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_graph::Decorated Graph occurs on Program;
+synthesized attribute syn_all_scopes::[Decorated Scope] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
 -- Only the binding list of parrallel let expressions use two synthesized attributes for each
-synthesized attribute syn_decls::[Decorated Decl_type] occurs on DeclList, 
+synthesized attribute syn_decls::[Decorated Declaration] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_refs::[Decorated Usage_type] occurs on DeclList, 
+synthesized attribute syn_refs::[Decorated Usage] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_imports::[Decorated Usage_type] occurs on DeclList, 
+synthesized attribute syn_imports::[Decorated Usage] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute syn_decls_two::[Decorated Decl_type] occurs on BindListPar;
-synthesized attribute syn_refs_two::[Decorated Usage_type] occurs on BindListPar;
-synthesized attribute syn_imports_two::[Decorated Usage_type] occurs on BindListPar;
+synthesized attribute syn_decls_two::[Decorated Declaration] occurs on BindListPar;
+synthesized attribute syn_refs_two::[Decorated Usage] occurs on BindListPar;
+synthesized attribute syn_imports_two::[Decorated Usage] occurs on BindListPar;
 
 -- For double-edged arrow between parent and child scopes
-synthesized attribute syn_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_scopes::[Decorated Scope] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
-inherited attribute inh_decls::[Decorated Decl_type] occurs on BindListSeq;
-inherited attribute inh_refs::[Decorated Usage_type] occurs on BindListSeq;
-inherited attribute inh_imports::[Decorated Usage_type] occurs on BindListSeq;
+inherited attribute inh_decls::[Decorated Declaration] occurs on BindListSeq;
+inherited attribute inh_refs::[Decorated Usage] occurs on BindListSeq;
+inherited attribute inh_imports::[Decorated Usage] occurs on BindListSeq;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
-synthesized attribute syn_iqid_import::Decorated Usage_type occurs on Qid;
+synthesized attribute syn_iqid_import::Decorated Usage occurs on Qid;
 
 -- The scope returned by the binding list construct of a sequential let expression
-synthesized attribute ret_scope::Decorated Scope_type occurs on BindListSeq;
+synthesized attribute ret_scope::Decorated Scope occurs on BindListSeq;
 
 -- The lists of errors and paths found in scope graph resolution
-synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, Decl, Qid, Exp, 
+synthesized attribute paths::[Decorated Path] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 ------------------------------------------------------------
@@ -78,7 +65,7 @@ synthesized attribute paths::[Decorated Path_type] occurs on Program, DeclList, 
 abstract production prog 
 top::Program ::= list::DeclList
 {
-  local attribute init_scope::Scope_type = cons_scope(
+  local attribute init_scope::Scope = cons_scope(
     nothing(),
     list.syn_decls,
     list.syn_refs,
@@ -87,7 +74,7 @@ top::Program ::= list::DeclList
     nothing()
   );
   
-  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes);
+  local attribute init_graph::Graph = cons_graph(init_scope::list.syn_all_scopes);
   top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
@@ -95,21 +82,21 @@ top::Program ::= list::DeclList
   -- path handling
   {-
   -- collect all of the declarations that some reference is resolved to
-  local attribute used_decls::[Decorated Decl_type] = map((\path::Decorated Path_type -> path.final), list.paths);
+  local attribute used_decls::[Decorated Declaration] = map((\path::Decorated Path -> path.final), list.paths);
 
   -- create a list from the list of all declarations in a graph
   -- each declaration in the list is mapped to a boolean indicating whether it is ever referred to
   -- e.g. (x, false) is in 'mapped' if x is a declaration and is not referred to
-  local attribute mapped::[(Decorated Decl_type, Boolean)] = map(
-    (\decl::Decorated Decl_type 
+  local attribute mapped::[(Decorated Declaration, Boolean)] = map(
+    (\decl::Decorated Declaration 
       -> (decl, containsBy(
-        (\l::Decorated Decl_type r::Decorated Decl_type -> l.to_string == r.to_string), 
+        (\l::Decorated Declaration r::Decorated Declaration -> l.to_string == r.to_string), 
         decl, used_decls))), 
     init_graph.all_decls);
 
   -- use the above lists to generate errors where declarations exist which are not referred to
   top.errors = list.errors ++ foldl((
-    \errors::[Decorated Error_type] decl_pair::(Decorated Decl_type, Boolean) 
+    \errors::[Decorated Error] decl_pair::(Decorated Declaration, Boolean) 
       -> errors ++ (if !snd(decl_pair) then [  decorate_err(fst(decl_pair))  ] else []) -- had to use decorate_err function instead of declaration_unused constructor?? replace with "decorate foo() with {}"?
   ), [], mapped);
   -}
@@ -117,7 +104,6 @@ top::Program ::= list::DeclList
   
   -- ast printing
   top.pp = "prog(" ++ list.pp ++ ")";
-  list.tab_level = pp_tab_spacing;
 
 }
 
@@ -130,9 +116,9 @@ top::Program ::= list::DeclList
  - @return The error node corresponding to the declaration given never being used.
 -}
 function decorate_err
-Decorated Error_type ::= decl::Decorated Decl_type
+Decorated Error ::= decl::Decorated Declaration
 {
-  local attribute ret_err::Error_type = declaration_unused(decl);
+  local attribute ret_err::Error = declaration_unused(decl);
   return ret_err;
 }
 
@@ -158,10 +144,7 @@ top::DeclList ::= decl::Decl list::DeclList
   top.paths = decl.paths ++ list.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "decllist_list(" ++ decl.pp ++ "," 
-    ++ list.pp ++ "" ++ top.tab_level ++ ")";
-  decl.tab_level = pp_tab_spacing ++ top.tab_level;
-  list.tab_level = pp_tab_spacing ++ top.tab_level; 
+  top.pp = "decllist_list(" ++ decl.pp ++ "," ++ list.pp ++ ")";
 
 }
 
@@ -178,7 +161,7 @@ top::DeclList ::=
   top.paths = [];
 
   -- ast printing
-  top.pp = top.tab_level ++ "decllist_nothing()";
+  top.pp = "decllist_nothing()";
 
 }
 
@@ -190,7 +173,7 @@ top::DeclList ::=
 abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     just(top.inh_scope),
     list.syn_decls,
     list.syn_refs,
@@ -199,7 +182,7 @@ top::Decl ::= id::ID_t list::DeclList
     just(init_decl)
   );
 
-  local attribute init_decl::Decl_type = cons_decl(
+  local attribute init_decl::Declaration = cons_decl(
     id.lexeme,
     top.inh_scope,
     just(init_scope),
@@ -219,9 +202,7 @@ top::Decl ::= id::ID_t list::DeclList
   top.paths = list.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "decl_module(" ++ pp_tab_spacing ++ top.tab_level ++ id.lexeme ++ "," 
-    ++ list.pp ++ "" ++ top.tab_level ++ ")";
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "decl_module("++ id.lexeme ++ "," ++ list.pp ++ ")";
 
 }
 
@@ -241,15 +222,14 @@ top::Decl ::= qid::Qid
   top.paths = qid.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "decl_import(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
-  qid.tab_level = top.tab_level ++ pp_tab_spacing;
+  top.pp = "decl_import(" ++ qid.pp ++ ")";
 
 }
 
 abstract production decl_def
 top::Decl ::= id::ID_t exp::Exp
 {
-  local attribute init_decl::Decl_type = cons_decl (
+  local attribute init_decl::Declaration = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -269,9 +249,7 @@ top::Decl ::= id::ID_t exp::Exp
   top.paths = exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "decl_def(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ ","
-    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "decl_def(" ++ id.lexeme ++ "," ++ exp.pp ++ ")";
 
 }
 
@@ -290,8 +268,7 @@ top::Decl ::= exp::Exp
   top.paths = exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "decl_exp(" ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "decl_exp(" ++ exp.pp ++ ")";
 
 }
 
@@ -320,16 +297,14 @@ top::Exp ::= list::BindListSeq exp::Exp
   top.paths = list.paths ++ exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ ")";
 
 }
 
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     just(top.inh_scope),
     [init_decl],
     list.syn_refs,
@@ -338,7 +313,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
     nothing()
   );
 
-  local attribute init_decl::Decl_type = cons_decl (
+  local attribute init_decl::Declaration = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -364,10 +339,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
   top.paths = exp.paths ++ list.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_list_seq(" ++ top.tab_level ++ pp_tab_spacing ++ 
-    id.lexeme ++ "," ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "bindlist_list_seq("++ id.lexeme ++ "," ++ exp.pp ++ "," ++ list.pp ++ ")";
 
 }
 
@@ -385,7 +357,7 @@ top::BindListSeq ::=
   top.paths = [];
 
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_nothing_seq()";
+  top.pp = "bindlist_nothing_seq()";
 
 }
 
@@ -397,7 +369,7 @@ top::BindListSeq ::=
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     just(top.inh_scope),
     list.syn_decls ++ exp.syn_decls,
     list.syn_refs ++ exp.syn_refs,
@@ -419,17 +391,14 @@ top::Exp ::= list::BindListRec exp::Exp
   top.paths = list.paths ++ exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_letrec(" ++ list.pp ++ "," 
-    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_letrec(" ++ list.pp ++ "," ++ exp.pp ++ ")";
 
 }
 
 abstract production bindlist_list_rec
 top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 {
-  local attribute init_decl::Decl_type = cons_decl (
+  local attribute init_decl::Declaration = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -450,10 +419,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
   top.paths = exp.paths ++ list.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_list_rec(" ++ top.tab_level ++ pp_tab_spacing 
-    ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "bindlist_list_rec(" ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ ")";
 
 }
 
@@ -469,7 +435,7 @@ top::BindListRec ::=
   top.paths = [];
 
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_nothing_rec()";
+  top.pp = "bindlist_nothing_rec()";
 
 }
 
@@ -481,7 +447,7 @@ top::BindListRec ::=
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     just(top.inh_scope),
     list.syn_decls_two ++ exp.syn_decls,
     list.syn_refs_two ++ exp.syn_refs,
@@ -504,17 +470,14 @@ top::Exp ::= list::BindListPar exp::Exp
   top.paths = list.paths ++ exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_letpar(" ++ list.pp ++ "," 
-    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_letpar(" ++ list.pp ++ "," ++ exp.pp ++ ")";
 
 }
 
 abstract production bindlist_list_par
 top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 {
-  local attribute init_decl::Decl_type = cons_decl (
+  local attribute init_decl::Declaration = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -539,10 +502,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
   top.paths = exp.paths ++ list.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_list_par(" ++ top.tab_level ++ pp_tab_spacing 
-    ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
-  list.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "bindlist_list_par(" ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ ")";
 
 }
 
@@ -561,7 +521,7 @@ top::BindListPar ::=
   top.paths = [];
   
   -- ast printing
-  top.pp = top.tab_level ++ "bindlist_nothing_par()";
+  top.pp = "bindlist_nothing_par()";
 
 }
 
@@ -573,7 +533,7 @@ top::BindListPar ::=
 abstract production exp_funfix
 top::Exp ::= id::ID_t exp::Exp
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     just(top.inh_scope),
     exp.syn_decls ++ [init_decl],
     exp.syn_refs,
@@ -582,7 +542,7 @@ top::Exp ::= id::ID_t exp::Exp
     nothing()
   );
 
-  local attribute init_decl::Decl_type = cons_decl (
+  local attribute init_decl::Declaration = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -602,9 +562,7 @@ top::Exp ::= id::ID_t exp::Exp
   top.paths = exp.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_funfix(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ ","
-    ++ exp.pp ++ "" ++ top.tab_level ++ ")";
-  exp.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_funfix(" ++ id.lexeme ++ "," ++ exp.pp ++ ")";
 
 }
 
@@ -625,10 +583,7 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.paths = expLeft.paths ++ expRight.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_plus(" ++ expLeft.pp ++ "," 
-    ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
-  expLeft.tab_level = pp_tab_spacing ++ top.tab_level;
-  expRight.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_plus(" ++ expLeft.pp ++ "," ++ expRight.pp ++ ")";
 
 }
 
@@ -649,10 +604,7 @@ top::Exp ::= expLeft::Exp expRight::Exp
   top.paths = expLeft.paths ++ expRight.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_app(" ++ expLeft.pp ++ "," 
-    ++ expRight.pp ++ "" ++ top.tab_level ++ ")";
-  expLeft.tab_level = pp_tab_spacing ++ top.tab_level;
-  expRight.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "exp_app(" ++ expLeft.pp ++ "," ++ expRight.pp ++ ")";
 
 }
 
@@ -669,10 +621,9 @@ top::Exp ::= qid::Qid
 
   -- path handling
   top.paths = qid.paths;
-
+ 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_qid(" ++ qid.pp ++ "" ++ top.tab_level ++ ")";
-  qid.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp ="exp_qid(" ++ qid.pp ++ ")";
 
 }
 
@@ -689,8 +640,7 @@ top::Exp ::= val::Int_t
   top.paths = [];
 
   -- ast printing
-  top.pp = top.tab_level ++ "exp_int(" ++ top.tab_level ++ pp_tab_spacing 
-    ++ val.lexeme ++ "" ++ top.tab_level ++ ")";
+  top.pp = "exp_int(" ++ val.lexeme ++ ")";
 
 }
 
@@ -699,12 +649,12 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-synthesized attribute syn_last_ref::Decorated Usage_type occurs on Qid;
+synthesized attribute syn_last_ref::Decorated Usage occurs on Qid;
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::Scope = cons_scope (
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
@@ -712,8 +662,8 @@ top::Qid ::= id::ID_t qid::Qid
     qid.syn_scopes,
     nothing()
   );
-  
-  local attribute init_usage::Usage_type = cons_usage ( -- rqid
+
+  local attribute init_usage::Usage = cons_usage ( -- rqid
     id.lexeme,
     top.inh_scope,
     id.line,
@@ -734,23 +684,21 @@ top::Qid ::= id::ID_t qid::Qid
   top.paths = qid.paths;
 
   -- ast printing
-  top.pp = top.tab_level ++ "qid_list(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ "," 
-    ++ qid.pp ++ "" ++ top.tab_level ++ ")";
-  qid.tab_level = pp_tab_spacing ++ top.tab_level;
+  top.pp = "qid_list(" ++ id.lexeme ++ "," ++ qid.pp ++ ")";
 
 }
 
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  local attribute init_import_two::Usage_type = cons_usage (
+  local attribute init_import_two::Usage = cons_usage (
     id.lexeme,
     top.inh_scope_two,
     id.line,
     id.column
   );
 
-  local attribute init_import::Usage_type = cons_usage (
+  local attribute init_import::Usage = cons_usage (
     id.lexeme,
     top.inh_scope,
     id.line,
@@ -764,11 +712,10 @@ top::Qid ::= id::ID_t
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
+  local attribute fst_path::Path = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths = [fst_path];
 
   -- ast printing
-  top.pp = top.tab_level ++ "qid_single(" ++ top.tab_level ++ pp_tab_spacing ++ id.lexeme ++ "" 
-    ++ top.tab_level ++ ")";
+  top.pp = "qid_single(" ++ id.lexeme ++ ")";
 
 }
