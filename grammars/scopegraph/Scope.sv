@@ -40,11 +40,11 @@ synthesized attribute references::[Decorated Usage];
 synthesized attribute imports::[Decorated Usage];
 synthesized attribute to_string::String;
 synthesized attribute graphviz_name::String;
-
 synthesized attribute child_scopes::[Decorated Scope];
+synthesized attribute assoc_decl::Maybe<Decorated Declaration>;
 
 
-nonterminal Scope with id, parent, declarations, references, imports, to_string, child_scopes, errors, graphviz_name;
+nonterminal Scope with id, parent, declarations, references, imports, to_string, child_scopes, errors, graphviz_name, assoc_decl;
 
 @{-
  - Constructing a scope node.
@@ -53,6 +53,7 @@ nonterminal Scope with id, parent, declarations, references, imports, to_string,
  - @param declarations The list of declarations attached to a node.
  - @param references The list of references attached to a node.
  - @param imports The list of imports attached to a node.
+ - @param assoc_decl In the case of the declarations from a scope being imported, this points to the declarations whose associated scope is this scope.
 -}
 abstract production cons_scope
 top::Scope ::= parent::Maybe<Decorated Scope> 
@@ -60,6 +61,7 @@ top::Scope ::= parent::Maybe<Decorated Scope>
   references::[Decorated Usage] 
   imports::[Decorated Usage]
   child_scopes::[Decorated Scope]
+  assoc_decl::Maybe<Decorated Declaration>
 {
   top.id = genInt();
   top.parent = parent;
@@ -69,6 +71,7 @@ top::Scope ::= parent::Maybe<Decorated Scope>
   top.to_string = toString(top.id);
   top.graphviz_name = top.to_string;
   top.child_scopes = child_scopes;
+  top.assoc_decl = assoc_decl;
   
   top.errors = foldl((\acc::[Decorated Error] ref::Decorated Usage -> acc ++ 
     if (length(ref.resolutions) < 1) then

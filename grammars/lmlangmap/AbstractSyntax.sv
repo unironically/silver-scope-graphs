@@ -83,7 +83,8 @@ top::Program ::= list::DeclList
     list.syn_decls,
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes
+    list.syn_scopes,
+    nothing()
   );
   
   local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes);
@@ -194,7 +195,8 @@ top::Decl ::= id::ID_t list::DeclList
     list.syn_decls,
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes
+    list.syn_scopes,
+    just(init_decl)
   );
 
   local attribute init_decl::Decl_type = cons_decl(
@@ -327,20 +329,21 @@ top::Exp ::= list::BindListSeq exp::Exp
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    [init_decl],
+    list.syn_refs,
+    list.syn_imports,
+    list.syn_scopes,
+    nothing()
+  );
+
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
     id.line,
     id.column
-  );
-
-  local attribute init_scope::Scope_type = cons_scope (
-    just(top.inh_scope),
-    [init_decl],
-    list.syn_refs,
-    list.syn_imports,
-    list.syn_scopes
   );
   
   top.syn_decls = exp.syn_decls;
@@ -399,7 +402,8 @@ top::Exp ::= list::BindListRec exp::Exp
     list.syn_decls ++ exp.syn_decls,
     list.syn_refs ++ exp.syn_refs,
     list.syn_imports ++ exp.syn_imports,
-    [] -- TODO
+    [], -- TODO
+    nothing()
   );
 
   top.syn_decls = [];
@@ -482,7 +486,8 @@ top::Exp ::= list::BindListPar exp::Exp
     list.syn_decls_two ++ exp.syn_decls,
     list.syn_refs_two ++ exp.syn_refs,
     list.syn_imports_two ++ exp.syn_imports,
-    [] -- TODO
+    [], -- TODO
+    nothing()
   );
 
   top.syn_decls = list.syn_decls;
@@ -568,20 +573,21 @@ top::BindListPar ::=
 abstract production exp_funfix
 top::Exp ::= id::ID_t exp::Exp
 {
+  local attribute init_scope::Scope_type = cons_scope (
+    just(top.inh_scope),
+    exp.syn_decls ++ [init_decl],
+    exp.syn_refs,
+    exp.syn_imports,
+    exp.syn_scopes,
+    nothing()
+  );
+
   local attribute init_decl::Decl_type = cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
     id.line,
     id.column
-  );
-
-  local attribute init_scope::Scope_type = cons_scope (
-    just(top.inh_scope),
-    exp.syn_decls ++ [init_decl],
-    exp.syn_refs,
-    exp.syn_imports,
-    exp.syn_scopes
   );
 
   top.syn_decls = [];
@@ -698,19 +704,20 @@ synthesized attribute syn_last_ref::Decorated Usage_type occurs on Qid;
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
-  local attribute init_usage::Usage_type = cons_usage ( -- rqid
-    id.lexeme,
-    top.inh_scope,
-    id.line,
-    id.column
-  );
-
   local attribute init_scope::Scope_type = cons_scope (
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
     qid.syn_imports ++ [init_usage],
-    qid.syn_scopes
+    qid.syn_scopes,
+    nothing()
+  );
+  
+  local attribute init_usage::Usage_type = cons_usage ( -- rqid
+    id.lexeme,
+    top.inh_scope,
+    id.line,
+    id.column
   );
 
   top.syn_decls = [];

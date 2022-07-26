@@ -63,7 +63,8 @@ top::Program ::= list::DeclList
     list.syn_decls,
     list.syn_refs,
     list.syn_imports,
-    list.syn_scopes
+    list.syn_scopes,
+    nothing()
   );
 
   local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes);
@@ -122,7 +123,8 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
     extend.syn_decls ++ implement.syn_decls ++ block.syn_decls,
     extend.syn_refs ++ implement.syn_refs ++ block.syn_refs,
     extend.syn_refs ++ implement.syn_refs ++ block.syn_refs,
-    extend.syn_scopes ++ implement.syn_scopes ++ block.syn_scopes
+    extend.syn_scopes ++ implement.syn_scopes ++ block.syn_scopes,
+    just(init_decl)
   );
 
   local attribute init_decl::Decl_type = cons_decl(
@@ -243,7 +245,7 @@ top::QidList ::= qid::Qid list::QidList
   top.syn_refs = qid.syn_refs ++ list.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import] ++ list.syn_imports; -- rqid followed by iqid in construction rules
   top.syn_all_scopes = qid.syn_all_scopes ++ list.syn_all_scopes;
-  top.syn_scopes = qid.syn_scopes ++ list.syn_scopes; -- ADD
+  top.syn_scopes = qid.syn_scopes ++ list.syn_scopes; 
 
   qid.inh_scope = top.inh_scope;
   qid.inh_scope_two = top.inh_scope;
@@ -261,7 +263,7 @@ top::QidList ::= qid::Qid
   top.syn_refs = qid.syn_refs;
   top.syn_imports = qid.syn_imports ++ [qid.syn_iqid_import]; -- rqid followed by iqid in construction rules
   top.syn_all_scopes = qid.syn_all_scopes;
-  top.syn_scopes = qid.syn_scopes; -- ADD
+  top.syn_scopes = qid.syn_scopes; 
 
   qid.inh_scope = top.inh_scope;
   qid.inh_scope_two = top.inh_scope;
@@ -277,6 +279,15 @@ top::QidList ::= qid::Qid
 abstract production qid_dot
 top::Qid ::= id::ID_t qid::Qid
 {
+  local attribute init_scope::Scope_type = cons_scope (
+    nothing(),
+    qid.syn_decls,
+    qid.syn_refs,
+    qid.syn_imports ++ [init_usage],
+    qid.syn_scopes, 
+    nothing()
+  );
+
   local attribute init_usage::Usage_type = cons_usage ( -- rqid
     id.lexeme,
     top.inh_scope,
@@ -284,20 +295,12 @@ top::Qid ::= id::ID_t qid::Qid
     id.column
   );
 
-  local attribute init_scope::Scope_type = cons_scope (
-    nothing(),
-    qid.syn_decls,
-    qid.syn_refs,
-    qid.syn_imports ++ [init_usage],
-    qid.syn_scopes -- ADD
-  );
-
   top.syn_decls = [];
   top.syn_refs = [init_usage];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ qid.syn_all_scopes;
   top.syn_iqid_import = qid.syn_iqid_import;
-  top.syn_scopes = []; -- ADD
+  top.syn_scopes = []; 
   
   qid.inh_scope = init_scope;
   qid.inh_scope_two = top.inh_scope_two;
