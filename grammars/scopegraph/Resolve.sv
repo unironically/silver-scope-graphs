@@ -1,14 +1,7 @@
 grammar scopegraph;
 
-{-
-  TODO: In the case of resolution errors - draw the problems onto the scope graph - i.e.
-  if there are multiple declarations for a reference, draw the resolution path to them in red,
-  and perhaps the reference and declarations in red. Similar thing for no declarations found,
-  just draw the reference in red?
--}
-
 ---------------
--- New resolution algorithm:
+-- Resolution algorithm:
 
 @{-
  - Resolves a reference to a set of declarations by first checking the immediate scope for
