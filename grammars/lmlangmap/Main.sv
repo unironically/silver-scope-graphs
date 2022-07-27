@@ -23,9 +23,6 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute scope_graph :: Graph;
   scope_graph = new(r.syn_graph);
 
-  --local attribute print_success :: IOToken;
-  --print_success = ;
-
   local attribute print_failure :: IOToken;
   print_failure = printT(string_errors(scope_graph.errors), ioin);
 
@@ -58,6 +55,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 -}
   --return 
       --ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
-      return if length(scope_graph.errors) <= 0 then ioval(print_resolution_paths, 0) else ioval(print_resolution_paths, -1);
+
+  return if length(scope_graph.errors) <= 0 && result.parseSuccess then ioval(print_resolution_paths, 0) else ioval(print_resolution_paths, -1);
      -- evalIO (res, ioin) ;
 }
