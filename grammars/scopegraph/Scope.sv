@@ -160,9 +160,8 @@ abstract production mk_ref
   attribute line i occurs on r, 
   attribute column i occurs on r =>
 top::Usage<d r> ::= 
-  in_scope::Decorated Scope<d r> 
-  assoc_scope::Maybe<Decorated Scope<d r>> 
   ast_node::Decorated r with i
+  in_scope::Decorated Scope<d r> 
 {
   top.identifier = ast_node.name;
   top.in_scope = in_scope;

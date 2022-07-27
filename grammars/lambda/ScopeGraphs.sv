@@ -193,8 +193,7 @@ i::IdRef ::= nm::String
   i.sg:line = i.location.line;
   i.sg:column = i.location.column;
 
-  local attribute new_use :: sg:Usage<IdDcl IdRef> = 
-    sg:mk_ref (i.scope, nothing(), i);
+  local attribute new_use :: sg:Usage<IdDcl IdRef> = sg:mk_ref (i, i.scope);
   i.refs := [ new_use ] ;
 
   i.all_paths := case new_use.sg:resolutions of
