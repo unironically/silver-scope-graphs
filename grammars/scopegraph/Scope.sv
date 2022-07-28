@@ -174,7 +174,8 @@ top::Usage ::= identifier::String
 {
   top.identifier = identifier;
   top.in_scope = in_scope;
-  top.resolutions = resolve(top, in_scope);
+  --top.resolutions = resolve(top, in_scope);
+  top.resolutions = resolve([], top);
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";

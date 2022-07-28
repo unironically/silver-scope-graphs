@@ -656,14 +656,14 @@ top::Qid ::= id::ID_t qid::Qid
 {
   local attribute init_scope::Scope = cons_scope (
     nothing(),
-    qid.syn_decls,
+    [],
     qid.syn_refs,
     qid.syn_imports ++ [init_usage],
     qid.syn_scopes,
     nothing()
   );
 
-  local attribute init_usage::Usage = cons_usage ( -- rqid
+  local attribute init_usage::Usage = cons_usage ( -- rqid   D_4
     id.lexeme,
     top.inh_scope,
     id.line,
