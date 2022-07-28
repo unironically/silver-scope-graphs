@@ -519,13 +519,13 @@ top::Qid ::= id::ID_t qid::Qid
 
   local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
     nothing(),
-    qid.syn_decls,
+    [],
     qid.syn_refs,
     qid.syn_imports ++ [init_usage],
     qid.syn_scopes,
     nothing()
   );
-
+  
   top.syn_decls := [];
   top.syn_refs := [init_usage];
   top.syn_imports := [];
