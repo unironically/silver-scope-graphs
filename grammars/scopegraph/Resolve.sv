@@ -1,14 +1,7 @@
 grammar scopegraph;
 
-{-
-  TODO: In the case of resolution errors - draw the problems onto the scope graph - i.e.
-  if there are multiple declarations for a reference, draw the resolution path to them in red,
-  and perhaps the reference and declarations in red. Similar thing for no declarations found,
-  just draw the reference in red?
--}
-
 ---------------
--- New resolution algorithm:
+-- Resolution algorithm:
 
 @{-
  - Resolves a reference to a set of declarations by first checking the immediate scope for
@@ -20,28 +13,26 @@ grammar scopegraph;
  - @return A list of all declarations that ref resolves to.
 -}
 function resolve
-[Decorated Declaration<a b>] ::= ref::Decorated Usage<a b> cur_scope::Decorated Scope<a b>
+[Decorated Declaration<d r>] ::= ref::Decorated Usage<d r> cur_scope::Decorated Scope<d r>
 {
   -- Check for any matching declarations in the current scope
-  local attribute decls::[Decorated Declaration<a b>] = 
-    filter((\decl::Decorated Declaration<a b> -> decl.identifier == ref.identifier), 
-      map((\decl::(String, Decorated Declaration<a b>) -> snd(decl)), cur_scope.declarations));
+  local attribute decls::[Decorated Declaration<d r>] = 
+    filter((\decl::Decorated Declaration<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
 
   -- Check any imports that exist, call resolve on them
-  local attribute imps::[Decorated Declaration<a b>] = foldl(
-    (\acc::[Decorated Declaration<a b>] cur::Decorated Declaration<a b> -> 
+  local attribute imps::[Decorated Declaration<d r>] = foldl(
+    (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> 
       case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve(ref, s) end),
     [],
     foldl(
-      (\acc::[Decorated Declaration<a b>] cur::Decorated Usage<a b> -> acc ++ cur.resolutions),
+      (\acc::[Decorated Declaration<d r>] cur::Decorated Usage<d r> -> acc ++ cur.resolutions),
       [],
-      filter((\imp::Decorated Usage<a b> -> imp.identifier != ref.identifier),
-        map((\decl::(String, Decorated Usage<a b>) -> snd(decl)), cur_scope.imports))
+      filter((\imp::Decorated Usage<d r> -> imp.identifier != ref.identifier), cur_scope.imports)
     )
   );
   
   -- recursive call on parent
-  local attribute par::[Decorated Declaration<a b>] = case cur_scope.parent of
+  local attribute par::[Decorated Declaration<d r>] = case cur_scope.parent of
     | nothing() -> []
     | just(p) -> resolve(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
   end;
@@ -57,6 +48,7 @@ function resolve
  - @return A list with all elements of the left and right lists, where the lefts shadows the rights.
 -}
 function merge_declarations_with_shadowing
+
 [Decorated Declaration<a b>] ::= left::[Decorated Declaration<a b>] right::[Decorated Declaration<a b>]
 {
   return unionBy(\mem_r::Decorated Declaration<a b> mem_l::Decorated Declaration<a b> -> 
