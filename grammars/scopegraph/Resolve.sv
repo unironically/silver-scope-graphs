@@ -14,9 +14,9 @@ grammar scopegraph;
  - @return The list of declarations found when the reference is resolved.
 -}
 function resolve
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] reference::Decorated Usage
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] reference::Decorated Usage<d r>
 {
-  return filter((\s::Decorated Declaration -> s.identifier == reference.identifier), 
+  return filter((\s::Decorated Declaration<d r> -> s.identifier == reference.identifier), 
     env_v ([reference] ++ seen_imports, [], reference.in_scope));
 }
 
@@ -30,8 +30,8 @@ function resolve
  - @return The combined list of delcarations from env_l and env_p.
 -}
 function env_v
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] seen_scopes::[Decorated Scope] 
-  current_scope::Decorated Scope
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r>
 {
   return merge_declarations_with_shadowing(env_l (seen_imports, seen_scopes, current_scope), 
     env_p (seen_imports, seen_scopes, current_scope));
@@ -47,8 +47,8 @@ function env_v
  - @return The combined list of delcarations from env_d and env_l.
 -}
 function env_l
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] seen_scopes::[Decorated Scope] 
-  current_scope::Decorated Scope
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r>
 {
   return merge_declarations_with_shadowing(env_d (seen_imports, seen_scopes, current_scope), 
     env_i (seen_imports, seen_scopes, current_scope));
@@ -64,11 +64,11 @@ function env_l
  - @return The list of declarations for the current scope
 -}
 function env_d
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] seen_scopes::[Decorated Scope] 
-  current_scope::Decorated Scope
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r>
 {
   return 
-    if containsBy((\left::Decorated Scope right::Decorated Scope -> left.id == right.id), 
+    if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
       current_scope, seen_scopes)
     then []
     else current_scope.declarations;
@@ -84,42 +84,42 @@ function env_d
  - @return The list of imported declarations.
 -}
 function env_i
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] seen_scopes::[Decorated Scope] 
-  current_scope::Decorated Scope
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r>
 {
   return 
-    if (containsBy((\left::Decorated Scope right::Decorated Scope -> left.id == right.id), 
+    if (containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
       current_scope, seen_scopes))
     then []
     else 
 
       -- Get all imports of current scope, remove names already seen in seen_imports
-      let imp_list::[Decorated Usage] = removeAllBy(
-        (\left_imp::Decorated Usage right_imp::Decorated Usage 
+      let imp_list::[Decorated Usage<d r>] = removeAllBy(
+        (\left_imp::Decorated Usage<d r> right_imp::Decorated Usage<d r>
           -> left_imp.identifier == right_imp.identifier), 
         seen_imports,
         current_scope.imports) 
       in
 
       -- Resolve each of the known imports in the current scope collected from the above
-      let res_list::[Decorated Declaration] = foldl(
-        (\res_list::[Decorated Declaration] import::Decorated Usage 
+      let res_list::[Decorated Declaration<d r>] = foldl(
+        (\res_list::[Decorated Declaration<d r>] import::Decorated Usage<d r> 
           -> res_list ++ resolve(seen_imports, import)), 
         [],
         imp_list)
       in
 
       -- Get all the 'associated scope' nodes from declarations in res_list generated above
-      let scope_list::[Decorated Scope] = foldl(
-        (\scope_list::[Decorated Scope] decl::Decorated Declaration 
+      let scope_list::[Decorated Scope<d r>] = foldl(
+        (\scope_list::[Decorated Scope<d r>] decl::Decorated Declaration<d r> 
           -> scope_list ++ (case decl.assoc_scope of | nothing() -> [] | just(p) -> [p] end)), 
         [],
         res_list)
       in
 
       -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let last_list::[Decorated Declaration] = foldl(
-        (\last_list::[Decorated Declaration] scope::Decorated Scope 
+      let last_list::[Decorated Declaration<d r>] = foldl(
+        (\last_list::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
           -> last_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
         [],
         scope_list)
@@ -138,14 +138,14 @@ function env_i
  - @return The list of declarations found by searching inside of the parent scope.
 -}
 function env_p
-[Decorated Declaration] ::= seen_imports::[Decorated Usage] seen_scopes::[Decorated Scope] 
-  current_scope::Decorated Scope
+[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r>
 {
   return 
     case current_scope.parent of
       | nothing() -> []
       | just(p) -> 
-        if containsBy((\left::Decorated Scope right::Decorated Scope -> left.id == right.id), 
+        if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
           current_scope, seen_scopes)
         then 
           []
@@ -201,9 +201,9 @@ function resolve
 -}
 function merge_declarations_with_shadowing
 
-[Decorated Declaration<a b>] ::= left::[Decorated Declaration<a b>] right::[Decorated Declaration<a b>]
+[Decorated Declaration<d r>] ::= left::[Decorated Declaration<d r>] right::[Decorated Declaration<d r>]
 {
-  return unionBy(\mem_r::Decorated Declaration<a b> mem_l::Decorated Declaration<a b> -> 
+  return unionBy(\mem_r::Decorated Declaration<d r> mem_l::Decorated Declaration<d r> -> 
     mem_r.identifier == mem_l.identifier, right , left);
 }
 
@@ -211,10 +211,10 @@ function merge_declarations_with_shadowing
 ----------------
 -- Resolution paths:
 
-nonterminal Path<a b> with start<a b>, final<a b>;
+nonterminal Path<d r> with start<d r>, final<d r>;
 
-synthesized attribute start<a b>::Decorated Usage<a b>;
-synthesized attribute final<a b>::Decorated Declaration<a b>;
+synthesized attribute start<d r>::Decorated Usage<d r>;
+synthesized attribute final<d r>::Decorated Declaration<d r>;
 
 @{-
  - Constructing a path node.
@@ -223,7 +223,7 @@ synthesized attribute final<a b>::Decorated Declaration<a b>;
  - @param final The declaration resolved to in the path.
 -}
 abstract production cons_path
-top::Path<a b> ::= start::Decorated Usage<a b> final::Decorated Declaration<a b>
+top::Path<d r> ::= start::Decorated Usage<d r> final::Decorated Declaration<d r>
 {
   top.start = start;
   top.final = final;
@@ -236,7 +236,7 @@ top::Path<a b> ::= start::Decorated Usage<a b> final::Decorated Declaration<a b>
  - @return A string representing all of the resolution paths.
 -}
 function string_paths
-String ::= list::[Decorated Path<a b>]
+String ::= list::[Decorated Path<d r>]
 {
   return case list of 
   | h::t -> "Found resolution: " ++ h.start.to_string ++ " --> " ++ h.final.to_string ++ "\n" ++ 

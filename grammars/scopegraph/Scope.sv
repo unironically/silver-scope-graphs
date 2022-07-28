@@ -204,7 +204,7 @@ top::Usage<d r> ::=
 {
   top.identifier = ast_node.name;
   top.in_scope = in_scope;
-  top.resolutions = resolve(top, in_scope);
+  top.resolutions = resolve([], top);
 
   top.line = ast_node.line;
   top.column = ast_node.column;
