@@ -184,8 +184,8 @@ top::Usage<d r> ::= identifier::String
 {
   top.identifier = identifier;
   top.in_scope = in_scope;
-  --top.resolutions = resolve(top, in_scope);
-  top.resolutions = resolve([], top);
+  --top.resolutions = resolve([], top); -- visser algorithm
+  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
@@ -204,7 +204,8 @@ top::Usage<d r> ::=
 {
   top.identifier = ast_node.name;
   top.in_scope = in_scope;
-  top.resolutions = resolve([], top);
+  --top.resolutions = resolve([], top); -- visser algorithm
+  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
 
   top.line = ast_node.line;
   top.column = ast_node.column;

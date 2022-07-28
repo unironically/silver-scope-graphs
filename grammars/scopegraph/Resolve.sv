@@ -162,8 +162,8 @@ function env_p
  - @param ref The usage whose declarations we are trying to resolve.
  - @param cur_scope The scope to search for valid declarations in.
  - @return A list of all declarations that ref resolves to.
-
-function resolve
+-}
+function resolve_new
 [Decorated Declaration<d r>] ::= ref::Decorated Usage<d r> cur_scope::Decorated Scope<d r>
 {
   -- Check for any matching declarations in the current scope
@@ -173,7 +173,7 @@ function resolve
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decorated Declaration<d r>] = foldl(
     (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> 
-      case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve(ref, s) end),
+      case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve_new(ref, s) end),
     [],
     foldl(
       (\acc::[Decorated Declaration<d r>] cur::Decorated Usage<d r> -> acc ++ cur.resolutions),
@@ -185,12 +185,12 @@ function resolve
   -- recursive call on parent
   local attribute par::[Decorated Declaration<d r>] = case cur_scope.parent of
     | nothing() -> []
-    | just(p) -> resolve(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
+    | just(p) -> resolve_new(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
   end;
   
   return merge_declarations_with_shadowing(decls, merge_declarations_with_shadowing(imps, par));
 }
--}
+
 
 @{-
  - Merges two lists of declarations such that the left-hand list shadows the right.
