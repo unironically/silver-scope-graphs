@@ -56,6 +56,6 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   --return 
       --ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
 
-  return if length(scope_graph.errors) <= 0 && result.parseSuccess then ioval(print_resolution_paths, 0) else ioval(printT(string_errors(scope_graph.errors), print_resolution_paths), -1);
+  return if length(scope_graph.errors) <= 0 && result.parseSuccess then ioval(print_resolution_paths, 0) else ioval(printT(string_paths(scope_graph.paths), printT(string_errors(scope_graph.errors), print_resolution_paths)), -1);
      -- evalIO (res, ioin) ;
 }

@@ -17,9 +17,10 @@ String ::= graph::Decorated Graph<d r> draw_paths::Boolean draw_parents::Boolean
   return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<d r> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
-    "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
-    (if draw_paths then graphviz_draw_paths(graph) else "") ++
-    graphviz_scopes(graph.scope_list) ++ 
+    "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++
+    (if draw_paths then graphviz_draw_paths(graph) ++ "\n" else "") ++
+    graphviz_all_declrefs(graph) ++ "\n" ++
+    graphviz_scopes(graph.scope_list) ++ "\n" ++
     (if draw_parents then graphviz_scope_children(graph.scope_list) else "") ++ "}";
 }
 
@@ -127,17 +128,17 @@ String ::= graph::Decorated Graph<d r>
       (\acc::([Decorated Usage<d r>], [Decorated Usage<d r>]) cur_scope::Decorated Scope<d r> -> 
         let new_pair::([Decorated Usage<d r>], [Decorated Usage<d r>]) = 
           partition((\usg::Decorated Usage<d r> -> length(usg.resolutions) == 1), 
-            cur_scope.references ++ cur_scope.imports) 
+            cur_scope.references ++ cur_scope.imports)
         in 
           (fst(acc) ++ fst(new_pair), snd(acc) ++ snd(new_pair))
         end),
       ([],[]),
       graph.scope_list)
   in
-    "{edge [arrowhead=normal color=blue style=dashed]" ++ 
-      graphviz_draw_individual_paths(fst(all)) ++ "}" ++
-    "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
-      graphviz_draw_individual_paths(snd(all)) ++ "}"
+  "{node [color=red fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
+      graphviz_draw_individual_paths(snd(all)) ++ "}" ++
+  "{edge [arrowhead=normal color=blue style=dashed]" ++ 
+    graphviz_draw_individual_paths(fst(all)) ++ "}"
   end ++ "\n";
 }
 
@@ -159,4 +160,23 @@ String ::= usages::[Decorated Usage<d r>]
     "", 
     nubBy((\left::Decorated Usage<d r> right::Decorated Usage<d r> -> left.to_string == right.to_string), 
       usages));
+}
+
+function graphviz_all_declrefs
+String ::= graph::Decorated Graph<d r>
+{
+  return "{node [shape=box style=solid fontsize=12]" ++ 
+    foldl((\acc::String scope::Decorated Scope<d r> -> acc ++ " " ++ 
+      foldl(
+        (\acc::String decl::Decorated Declaration<d r> -> acc ++ " " ++ decl.graphviz_name),
+        "",
+        scope.declarations
+      ) ++
+      foldl(
+        (\acc::String ref::Decorated Usage<d r> -> acc ++ " " ++ ref.graphviz_name),
+        "",
+        scope.references ++ scope.imports
+      )
+    ), "", graph.scope_list) ++
+  "}";
 }

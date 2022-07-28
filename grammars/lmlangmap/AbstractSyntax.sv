@@ -54,10 +54,6 @@ synthesized attribute syn_iqid_import::Decorated Usage<IdDcl IdRef> occurs on Qi
 -- The scope returned by the binding list construct of a sequential let expression
 synthesized attribute ret_scope::Decorated Scope<IdDcl IdRef> occurs on BindListSeq;
 
--- The lists of paths found in scope graph resolution
-monoid attribute paths::[Decorated Path<IdDcl IdRef>] occurs on Program, DeclList, Decl, Qid, Exp, 
-  BindListSeq, BindListRec, BindListPar;
-
 ------------------------------------------------------------
 ---- Program root
 ------------------------------------------------------------
@@ -536,16 +532,19 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
+  {-
   -- IQID [[
   local attribute init_import_two::Usage<IdDcl IdRef> = cons_usage (
     id.lexeme,
     top.inh_scope_two,
     id.line,
     id.column
-  );
+  ); -- this is the one that cannot be resolved..
+  -}
 
-  top.syn_iqid_import = init_import_two;
+  --top.syn_iqid_import = init_import_two;
   -- ]]
+  top.syn_iqid_import = init_import;
 
   -- RQID [[
   local attribute init_import::Usage<IdDcl IdRef> = cons_usage (

@@ -172,13 +172,13 @@ function resolve_new
   
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decorated Declaration<d r>] = foldl(
-    (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> 
+    (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> acc ++ 
       case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve_new(ref, s) end),
     [],
     foldl(
       (\acc::[Decorated Declaration<d r>] cur::Decorated Usage<d r> -> acc ++ cur.resolutions),
       [],
-      filter((\imp::Decorated Usage<d r> -> imp.to_string != ref.to_string), cur_scope.imports)
+      removeBy((\left::Decorated Usage<d r> right::Decorated Usage<d r> -> left.to_string == right.to_string), ref, cur_scope.imports)
     )
   );
   

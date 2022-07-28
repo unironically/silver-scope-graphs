@@ -27,8 +27,10 @@ top::Graph<d r> ::= scope_list::[Decorated Scope<d r>]
     (\all_decls::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
       -> all_decls ++ scope.declarations), 
     [], scope_list);
-  top.errors = foldl((\acc::[Decorated Error<d r>] scope::Decorated Scope<d r> -> acc ++ scope.errors), [], scope_list);
-  top.paths = foldl((\acc::[Decorated Path<d r>] scope::Decorated Scope<d r> -> acc ++ scope.paths), [], scope_list);
+  top.errors = foldl((\acc::[Decorated Error<d r>] scope::Decorated Scope<d r> -> 
+    acc ++ scope.errors), [], scope_list);
+  top.paths = foldl((\acc::[Decorated Path<d r>] scope::Decorated Scope<d r> -> 
+    acc ++ scope.paths), [], scope_list);
 }
 
 
@@ -76,17 +78,11 @@ top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
   top.child_scopes = child_scopes;
   top.assoc_decl = assoc_decl;
   
-  top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Usage<d r> -> acc ++ 
-    if (length(ref.resolutions) < 1) then
-      [decorate_nd_error(ref)]
-    else if (length(ref.resolutions) > 1) then
-      [decorate_md_error(ref, ref.resolutions)]
-    else
-      []
-  ), [], references ++ imports);
+  top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Usage<d r> -> 
+    acc ++ ref.errors), [], references ++ imports);
 
-  top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Usage<d r> -> acc ++ ref.paths)
-    , [], references ++ imports);
+  top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Usage<d r> -> 
+    acc ++ ref.paths), [], references ++ imports);
 
 }
 
@@ -176,8 +172,9 @@ top::Declaration<d r> ::=
 -- Imports/References
 
 synthesized attribute resolutions<d r>::[Decorated Declaration<d r>]; -- The node that this import points to with an invisible line. added to after resolution
+synthesized attribute imported_by<d r>::Maybe<Decorated Scope<d r>>;
 
-nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>;
+nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -196,14 +193,24 @@ top::Usage<d r> ::=
 {
   top.identifier = identifier;
   top.in_scope = in_scope;
-  --top.resolutions = resolve([], top); -- visser algorithm
-  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
+  
+  top.resolutions = resolve([], top);
+  --top.resolutions = resolve_new(top, top.in_scope);
+
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 
-  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Declaration<d r> -> acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
+  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Declaration<d r> -> 
+    acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
+  
+  top.errors = if (length(top.resolutions) > 1) then
+    [decorate_md_error(top, top.resolutions)]
+  else if (length(top.resolutions) <= 0) then
+    [decorate_nd_error(top)]
+  else
+    [];
 }
 
 
