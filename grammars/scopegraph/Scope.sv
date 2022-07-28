@@ -4,29 +4,31 @@ grammar scopegraph;
 ----------------
 -- Scope Graph
 
-synthesized attribute scope_list::[Decorated Scope];
---synthesized attribute paths::[Decorated Path];
-synthesized attribute all_decls::[Decorated Declaration];
-synthesized attribute errors::[Decorated Error];
+synthesized attribute scope_list<d r>::[Decorated Scope<d r>];
+--synthesized attribute paths<d r>::[Decorated Path<d r>];
+synthesized attribute all_decls<d r>::[Decorated Declaration<d r>];
+synthesized attribute errors<d r>::[Decorated Error<d r>];
 
-nonterminal Graph with scope_list, all_decls, errors;
+nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>;
+   -- paths<d r>, 
 
 @{-
  - Constructing a graph node.
  -
- - @param scope_list The list of scopes the graph contains.
+ - @param scope_list The list of scopes the graph contains.1
+
 -}
 abstract production cons_graph
-top::Graph ::= scope_list::[Decorated Scope] 
+top::Graph<d r> ::= scope_list::[Decorated Scope<d r>] 
   --paths::[Decorated Path]
 {
   top.scope_list = scope_list;
   --top.paths = paths;
   top.all_decls = foldl(
-    (\all_decls::[Decorated Declaration] scope::Decorated Scope 
+    (\all_decls::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
       -> all_decls ++ scope.declarations), 
     [], scope_list);
-  top.errors = foldl((\acc::[Decorated Error] scope::Decorated Scope -> acc ++ scope.errors), [], scope_list);
+  top.errors = foldl((\acc::[Decorated Error<d r>] scope::Decorated Scope<d r> -> acc ++ scope.errors), [], scope_list);
 }
 
 
@@ -34,17 +36,18 @@ top::Graph ::= scope_list::[Decorated Scope]
 -- Scopes
 
 synthesized attribute id::Integer;
-synthesized attribute parent::Maybe<Decorated Scope>;
-synthesized attribute declarations::[Decorated Declaration]; -- pair of identifier name and node
-synthesized attribute references::[Decorated Usage];
-synthesized attribute imports::[Decorated Usage];
+synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
+synthesized attribute declarations<d r>::[Decorated Declaration<d r>];
+synthesized attribute references<d r>::[Decorated Usage<d r>];
+synthesized attribute imports<d r>::[Decorated Usage<d r>];
+
 synthesized attribute to_string::String;
 synthesized attribute graphviz_name::String;
-synthesized attribute child_scopes::[Decorated Scope];
-synthesized attribute assoc_decl::Maybe<Decorated Declaration>;
+synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
+synthesized attribute assoc_decl<d r>::Maybe<Decorated Declaration<d r>>;
 
 
-nonterminal Scope with id, parent, declarations, references, imports, to_string, child_scopes, errors, graphviz_name, assoc_decl;
+nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>, graphviz_name, assoc_decl<d r>, errors<d r>;
 
 @{-
  - Constructing a scope node.
@@ -56,12 +59,12 @@ nonterminal Scope with id, parent, declarations, references, imports, to_string,
  - @param assoc_decl In the case of the declarations from a scope being imported, this points to the declarations whose associated scope is this scope.
 -}
 abstract production cons_scope
-top::Scope ::= parent::Maybe<Decorated Scope> 
-  declarations::[Decorated Declaration] 
-  references::[Decorated Usage] 
-  imports::[Decorated Usage]
-  child_scopes::[Decorated Scope]
-  assoc_decl::Maybe<Decorated Declaration>
+top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>> 
+  declarations::[Decorated Declaration<d r>] 
+  references::[Decorated Usage<d r>] 
+  imports::[Decorated Usage<d r>]
+  child_scopes::[Decorated Scope<d r>]
+  assoc_decl::Maybe<Decorated Declaration<d r>>
 {
   top.id = genInt();
   top.parent = parent;
@@ -73,7 +76,7 @@ top::Scope ::= parent::Maybe<Decorated Scope>
   top.child_scopes = child_scopes;
   top.assoc_decl = assoc_decl;
   
-  top.errors = foldl((\acc::[Decorated Error] ref::Decorated Usage -> acc ++ 
+  top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Usage<d r> -> acc ++ 
     if (length(ref.resolutions) < 1) then
       [decorate_nd_error(ref)]
     else if (length(ref.resolutions) > 1) then
@@ -85,16 +88,16 @@ top::Scope ::= parent::Maybe<Decorated Scope>
 }
 
 function decorate_nd_error
-Decorated Error ::= ref::Decorated Usage
+Decorated Error<d r> ::= ref::Decorated Usage<d r>
 {
-  local attribute err::Error = no_declaration_found(ref);
+  local attribute err::Error<d r> = no_declaration_found(ref);
   return err;
 }
 
 function decorate_md_error
-Decorated Error ::= ref::Decorated Usage resolutions::[Decorated Declaration]
+Decorated Error<d r> ::= ref::Decorated Usage<d r> resolutions::[Decorated Declaration<d r>]
 {
-  local attribute err::Error = multiple_declarations_found(ref, resolutions);
+  local attribute err::Error<d r> = multiple_declarations_found(ref, resolutions);
   return err;
 }
 
@@ -103,12 +106,14 @@ Decorated Error ::= ref::Decorated Usage resolutions::[Decorated Declaration]
 -- Declarations
 
 synthesized attribute identifier::String; -- Name of the declaration
-synthesized attribute in_scope::Decorated Scope; -- Scope in which the declaration resides
-synthesized attribute assoc_scope::Maybe<Decorated Scope>; -- Scope that this declaration points to (for imports)
+
+synthesized attribute in_scope<d r>::Decorated Scope<d r>; -- Scope in which the declaration resides
+synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>; -- Scope that this declaration points to (for imports)
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
-nonterminal Declaration with identifier, in_scope, assoc_scope, line, column, to_string, graphviz_name;
+
+nonterminal Declaration<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, to_string, graphviz_name;
 
 @{-
  - Constructing a declaration node.
@@ -120,9 +125,9 @@ nonterminal Declaration with identifier, in_scope, assoc_scope, line, column, to
  - @param column The column this declaration was found on.
 -}
 abstract production cons_decl
-top::Declaration ::= identifier::String 
-  in_scope::Decorated Scope 
-  assoc_scope::Maybe<Decorated Scope> 
+top::Declaration<d r> ::= identifier::String 
+  in_scope::Decorated Scope<d r> 
+  assoc_scope::Maybe<Decorated Scope<d r>> 
   line::Integer column::Integer
 {
   top.identifier = identifier;
@@ -134,14 +139,19 @@ top::Declaration ::= identifier::String
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
 
-abstract production cons_decl_ref
-attribute line i occurs on a, attribute column i occurs on a =>
-top::Declaration ::= identifier::String 
-  in_scope::Decorated Scope 
-  assoc_scope::Maybe<Decorated Scope> 
-  ast_node::Decorated a with i
+
+synthesized attribute name::String;
+
+abstract production mk_dcl
+  attribute name i occurs on d, 
+  attribute line i occurs on d, 
+  attribute column i occurs on d =>
+top::Declaration<d r> ::= 
+  ast_node::Decorated d with i
+  in_scope::Decorated Scope<d r> 
+  assoc_scope::Maybe<Decorated Scope<d r>> 
 {
-  top.identifier = identifier;
+  top.identifier = ast_node.name;
   top.in_scope = in_scope;
   top.assoc_scope = assoc_scope;
   top.line = ast_node.line;
@@ -154,9 +164,9 @@ top::Declaration ::= identifier::String
 ----------------
 -- Imports/References
 
-synthesized attribute resolutions::[Decorated Declaration]; -- The node that this import points to with an invisible line. added to after resolution
+synthesized attribute resolutions<d r>::[Decorated Declaration<d r>]; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage with identifier, in_scope, resolutions, line, column, to_string, graphviz_name;
+nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -167,8 +177,8 @@ nonterminal Usage with identifier, in_scope, resolutions, line, column, to_strin
  - @param column The column this usage was found on.
 -}
 abstract production cons_usage
-top::Usage ::= identifier::String 
-  in_scope::Decorated Scope 
+top::Usage<d r> ::= identifier::String 
+  in_scope::Decorated Scope<d r> 
   line::Integer 
   column::Integer
 {
@@ -179,5 +189,25 @@ top::Usage ::= identifier::String
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
+  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+}
+
+
+
+abstract production mk_ref
+  attribute name i occurs on r, 
+  attribute line i occurs on r, 
+  attribute column i occurs on r =>
+top::Usage<d r> ::= 
+  ast_node::Decorated r with i
+  in_scope::Decorated Scope<d r> 
+{
+  top.identifier = ast_node.name;
+  top.in_scope = in_scope;
+  top.resolutions = resolve(top, in_scope);
+
+  top.line = ast_node.line;
+  top.column = ast_node.column;
+  top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }

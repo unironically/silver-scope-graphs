@@ -20,7 +20,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute scope_graph :: Graph;
+  local attribute scope_graph :: Graph<IdDcl IdRef>;
   scope_graph = new(r.syn_graph);
 
   local attribute print_failure :: IOToken;
@@ -28,7 +28,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
-    graphviz_draw_graph(scope_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
+    graphviz_draw_graph(r.syn_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
     "' | dot -Tsvg > " ++ file_output, printT(if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(scope_graph, true, true) ++ "\n" else "", ioin)).io;
 
 {-

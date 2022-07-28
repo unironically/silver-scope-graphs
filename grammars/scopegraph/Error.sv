@@ -3,11 +3,11 @@ grammar scopegraph;
 ----------------
 -- Errors:
 
-nonterminal Error with message, all_messages, resolved_to;
+nonterminal Error<d r> with message, all_messages, resolved_to<d r>;
 
 synthesized attribute message::String;
 synthesized attribute all_messages::String;
-synthesized attribute resolved_to::[Decorated Declaration];
+synthesized attribute resolved_to<d r>::[Decorated Declaration<d r>];
 
 @{-
  - The error constructed when multiple declaration nodes are found when resolving a reference.
@@ -15,7 +15,7 @@ synthesized attribute resolved_to::[Decorated Declaration];
  - @param usage The reference node for which multiple declarations are found.
 -}
 abstract production multiple_declarations_found
-top::Error ::= usage::Decorated Usage resolved_to::[Decorated Declaration]
+top::Error<d r> ::= usage::Decorated Usage<d r> resolved_to::[Decorated Declaration<d r>]
 {
   top.message = "Multiple declarations found that match reference for: " ++ usage.identifier ++ 
     " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
@@ -28,7 +28,7 @@ top::Error ::= usage::Decorated Usage resolved_to::[Decorated Declaration]
  - @param usage The reference node for which no declarations are found.
 -}
 abstract production no_declaration_found
-top::Error ::= usage::Decorated Usage
+top::Error<d r> ::= usage::Decorated Usage<d r>
 {
   top.message = "No declaration found that matches reference for: " ++ usage.identifier ++ 
     " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
@@ -41,7 +41,7 @@ top::Error ::= usage::Decorated Usage
  - @param declaration The declaration node that no references are found for. 
 -}
 abstract production declaration_unused
-top::Error ::= declaration::Decorated Declaration
+top::Error<d r> ::= declaration::Decorated Declaration<d r>
 {
   top.message = "Declaration never used: " ++ declaration.identifier ++ 
     " at line: " ++ toString(declaration.line) ++ ", col: " ++ toString(declaration.column);
@@ -54,7 +54,7 @@ top::Error ::= declaration::Decorated Declaration
  - @return The string representing all errors found.
 -}
 function string_errors
-String ::= list::[Decorated Error]
+String ::= list::[Decorated Error<d r>]
 {
   return case list of 
   | h::t -> "ERROR: " ++ h.message ++ "\n" ++ string_errors(t)
