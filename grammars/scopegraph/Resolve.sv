@@ -169,7 +169,7 @@ function resolve_new
   -- Check for any matching declarations in the current scope
   local attribute decls::[Decorated Declaration<d r>] = 
     filter((\decl::Decorated Declaration<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
-
+  
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decorated Declaration<d r>] = foldl(
     (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> 

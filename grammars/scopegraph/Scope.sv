@@ -139,7 +139,7 @@ top::Declaration<d r> ::= identifier::String
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
 
-
+{-
 synthesized attribute name::String;
 
 abstract production mk_dcl
@@ -159,6 +159,7 @@ top::Declaration<d r> ::=
   top.to_string = top.identifier ++ "_[" ++ toString(ast_node.line) ++ ", " ++ toString(ast_node.column) ++ "]";
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
+-}
 
 
 ----------------
@@ -177,15 +178,16 @@ nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, c
  - @param column The column this usage was found on.
 -}
 abstract production cons_usage
-top::Usage<d r> ::= identifier::String 
+top::Usage<d r> ::= 
+  identifier::String 
   in_scope::Decorated Scope<d r> 
   line::Integer 
   column::Integer
 {
   top.identifier = identifier;
   top.in_scope = in_scope;
-  --top.resolutions = resolve([], top); -- visser algorithm
-  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
+  top.resolutions = resolve([], top); -- visser algorithm
+  --top.resolutions = resolve_new(top, in_scope); -- luke algorithm
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
@@ -193,7 +195,7 @@ top::Usage<d r> ::= identifier::String
 }
 
 
-
+{-
 abstract production mk_ref
   attribute name i occurs on r, 
   attribute line i occurs on r, 
@@ -212,3 +214,4 @@ top::Usage<d r> ::=
   top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 }
+-}

@@ -131,7 +131,6 @@ abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 { propagate syn_decls, syn_refs, syn_imports, syn_all_scopes, syn_scopes,
             inh_scope, paths;
-
   -- ast printing
   top.pp = "decllist_list(" ++ decl.pp ++ "," ++ list.pp ++ ")";
 }
@@ -140,7 +139,6 @@ abstract production decllist_nothing
 top::DeclList ::=
 { propagate syn_decls, syn_refs, syn_imports, syn_all_scopes, syn_scopes,
             paths;
-
   -- ast printing
   top.pp = "decllist_nothing()";
 }
@@ -152,7 +150,7 @@ top::DeclList ::=
 
 abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
-{ propagate inh_scope, paths;
+{ propagate paths;
 
   local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
     just(top.inh_scope),
@@ -176,6 +174,8 @@ top::Decl ::= id::ID_t list::DeclList
   top.syn_imports := [];
   top.syn_all_scopes := [init_scope] ++ list.syn_all_scopes;
   top.syn_scopes := [init_scope];
+
+  list.inh_scope = init_scope;
 
   -- ast printing
   top.pp = "decl_module("++ id.lexeme ++ "," ++ list.pp ++ ")";
@@ -291,16 +291,14 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 { propagate paths;
-
 {- Luke, I think you removed equations for these but I had them in
-   my fork. Are they no longer needed?
+   my fork. Are they no longer needed? -}
   top.ret_scope = top.inh_scope;
   top.syn_decls := top.inh_decls;
   top.syn_refs := top.inh_refs;
   top.syn_imports := top.inh_imports;
   top.syn_all_scopes := [];
   top.syn_scopes := [];
--}
 
   -- ast printing
   top.pp = "bindlist_nothing_seq()";
@@ -565,20 +563,6 @@ top::Qid ::= id::ID_t
   top.syn_scopes := [];
 
   -- error and path handling
-
-  --local attribute resolved::[Decorated Decl_type] = resolve([], init_import);
-
- -- local attribute no_decl::Error<IdDcl IdRef> = no_declaration_found(init_import);
- -- local attribute mul_decl::Error<IdDcl IdRef> = multiple_declarations_found(init_import);
-
-  {-  
-  top.errors := if null(init_import.resolutions) then
-    [no_decl]
-  else if (length(init_import.resolutions) > 1) then
-    [mul_decl]
-  else
-    [];
-  -}
   local attribute fst_path::Path<IdDcl IdRef> = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   top.paths := [fst_path];
 

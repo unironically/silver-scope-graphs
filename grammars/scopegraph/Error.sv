@@ -3,11 +3,10 @@ grammar scopegraph;
 ----------------
 -- Errors:
 
-nonterminal Error<d r> with message, all_messages, resolved_to<d r>;
+nonterminal Error<d r> with message, all_messages;
 
 synthesized attribute message::String;
 synthesized attribute all_messages::String;
-synthesized attribute resolved_to<d r>::[Decorated Declaration<d r>];
 
 @{-
  - The error constructed when multiple declaration nodes are found when resolving a reference.
@@ -17,9 +16,8 @@ synthesized attribute resolved_to<d r>::[Decorated Declaration<d r>];
 abstract production multiple_declarations_found
 top::Error<d r> ::= usage::Decorated Usage<d r> resolved_to::[Decorated Declaration<d r>]
 {
-  top.message = "Multiple declarations found that match reference for: " ++ usage.identifier ++ 
-    " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
-  top.resolved_to = resolved_to;
+  top.message = "Multiple declarations found that match reference: " ++ usage.to_string ++ ":" ++
+    foldl((\acc::String dcl::Decorated Declaration<d r> -> acc ++ "\n\t" ++ dcl.to_string), "", resolved_to);
 }
 
 @{-
@@ -30,9 +28,7 @@ top::Error<d r> ::= usage::Decorated Usage<d r> resolved_to::[Decorated Declarat
 abstract production no_declaration_found
 top::Error<d r> ::= usage::Decorated Usage<d r>
 {
-  top.message = "No declaration found that matches reference for: " ++ usage.identifier ++ 
-    " at line: " ++ toString(usage.line) ++ " col: " ++ toString(usage.column);
-  top.resolved_to = [];
+  top.message = "No declaration found that matches reference for: " ++ usage.to_string;
 }
 
 @{-
@@ -43,8 +39,7 @@ top::Error<d r> ::= usage::Decorated Usage<d r>
 abstract production declaration_unused
 top::Error<d r> ::= declaration::Decorated Declaration<d r>
 {
-  top.message = "Declaration never used: " ++ declaration.identifier ++ 
-    " at line: " ++ toString(declaration.line) ++ ", col: " ++ toString(declaration.column);
+  top.message = "Declaration never used: " ++ declaration.to_string;
 }
 
 @{-
