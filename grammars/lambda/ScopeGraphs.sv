@@ -71,11 +71,11 @@ aspect production root
 r::Root ::= e::Expr
 {
   propagate errors;
-  r.scope_graph = decorate sg:cons_graph (global_scope :: e.all_scopes, e.all_paths) with {};
+  r.scope_graph = decorate sg:cons_graph (global_scope :: e.all_scopes) with {};
   -- ToDo: not sure why this needs to be decorated.
 
   local attribute global_scope :: sg:Scope<IdDcl IdRef> =
-    sg:cons_scope (nothing(), [], [], [], []);
+    sg:cons_scope (nothing(), [], [], [], [], nothing()) ;
     -- There are no declarations, references, etc in the global scope.
 
   e.scope = global_scope;
@@ -90,10 +90,11 @@ e::Expr ::= id::IdDcl t::TypeExpr e1::Expr e2::Expr
   local attribute new_dcl :: sg:Declaration<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
 
   local attribute new_scope :: sg:Scope<IdDcl IdRef> = sg:cons_scope ( just (e.scope), 
-    map ( \d :: Decorated sg:Declaration<IdDcl IdRef> -> (d.sg:identifier, d), [ new_dcl ] ),
-    map ( \r :: Decorated sg:Usage<IdDcl IdRef> -> (r.sg:identifier, r), e2.refs),
+    [ new_dcl ],
+    e2.refs,
     [],
-    e1.all_scopes ++ e2.all_scopes );
+    e1.all_scopes ++ e2.all_scopes,
+    nothing() );
 
   e1.scope = e.scope;
   e2.scope = new_scope;
@@ -114,10 +115,11 @@ e::Expr ::= id::IdDcl t::TypeExpr body::Expr
   local attribute new_dcl :: sg:Declaration<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
 
   local attribute new_scope :: sg:Scope<IdDcl IdRef> = sg:cons_scope ( just (e.scope), 
-    map ( \d :: Decorated sg:Declaration<IdDcl IdRef> -> (d.sg:identifier, d), [ new_dcl ] ),
-    map ( \r :: Decorated sg:Usage<IdDcl IdRef> -> (r.sg:identifier, r), body.refs),
+    [ new_dcl ],
+    body.refs,
     [],
-    body.all_scopes );
+    body.all_scopes,
+    nothing() );
 
   body.scope = new_scope;
 

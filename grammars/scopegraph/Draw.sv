@@ -12,14 +12,14 @@ grammar scopegraph;
  - @return The string with which graphviz will draw a graph.
 -}
 function graphviz_draw_graph
-String ::= graph::Decorated Graph<a b> draw_paths::Boolean draw_parents::Boolean
+String ::= graph::Decorated Graph<d r> draw_paths::Boolean draw_parents::Boolean
 {
   return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
-    foldl((\acc::String scope::Decorated Scope<a b> 
+    foldl((\acc::String scope::Decorated Scope<d r> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
     "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++ 
+    (if draw_paths then graphviz_draw_paths(graph) else "") ++
     graphviz_scopes(graph.scope_list) ++ 
-    (if draw_paths then graphviz_draw_paths(graph.paths) else "") ++
     (if draw_parents then graphviz_scope_children(graph.scope_list) else "") ++ "}";
 }
 
@@ -30,13 +30,13 @@ String ::= graph::Decorated Graph<a b> draw_paths::Boolean draw_parents::Boolean
  - @return The graphviz string representing the list of scopes.
 -}
 function graphviz_scopes
-String ::= scopes::[Decorated Scope<a b>]
+String ::= scopes::[Decorated Scope<d r>]
 {
   return case scopes of 
     | [] -> ""
     | h::t -> 
-      h.to_string ++ (case h.parent of | nothing() 
-        -> "" | just(p) -> " -> " ++ p.to_string end) ++ " " ++ 
+      h.graphviz_name ++ (case h.parent of | nothing() 
+        -> "" | just(p) -> " -> " ++ p.graphviz_name end) ++ " " ++ 
       graphviz_scope_refs(h, h.references) ++ 
       graphviz_scope_decls(h, h.declarations) ++ 
       "{edge [arrowhead=onormal] " ++ graphviz_scope_imports(h, h.imports) ++ "}" ++
@@ -51,12 +51,11 @@ String ::= scopes::[Decorated Scope<a b>]
  - @return The graphviz string representing the list of references.
 -}
 function graphviz_scope_refs
-String ::= scope::Decorated Scope<a b> refs::[(String, Decorated Usage<a b>)]
+String ::= scope::Decorated Scope<d r> refs::[Decorated Usage<d r>]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> h2.to_string ++ " -> " ++ scope.to_string ++ " " ++ 
-      graphviz_scope_refs(scope, t)
+    | h::t -> h.graphviz_name ++ " -> " ++ scope.graphviz_name ++ " " ++ graphviz_scope_refs(scope, t)
   end;
 }
 
@@ -67,12 +66,11 @@ String ::= scope::Decorated Scope<a b> refs::[(String, Decorated Usage<a b>)]
  - @return The graphviz string representing the list of imports.
 -}
 function graphviz_scope_imports
-String ::= scope::Decorated Scope<a b> refs::[(String, Decorated Usage<a b>)]
+String ::= scope::Decorated Scope<d r> refs::[Decorated Usage<d r>]
 {
   return case refs of 
     | [] -> ""
-    | (h1, h2)::t -> scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ 
-      graphviz_scope_imports(scope, t)
+    | h::t -> scope.graphviz_name ++ " -> " ++ h.graphviz_name ++ " " ++ graphviz_scope_imports(scope, t)
   end;
 }
 
@@ -83,15 +81,15 @@ String ::= scope::Decorated Scope<a b> refs::[(String, Decorated Usage<a b>)]
  - @return The graphviz string representing the list of declarations.
 -}
 function graphviz_scope_decls
-String ::= scope::Decorated Scope<a b> decls::[(String, Decorated Declaration<a b>)]
+String ::= scope::Decorated Scope<d r> decls::[Decorated Declaration<d r>]
 {
   return case decls of 
     | [] -> ""
-    | (h1, h2)::t -> 
-      scope.to_string ++ " -> " ++ h2.to_string ++ " " ++ 
-      (case h2.assoc_scope of 
+    | h::t -> 
+      scope.graphviz_name ++ " -> " ++ h.graphviz_name ++ " " ++ 
+      (case h.assoc_scope of 
         | nothing() -> "" 
-        | just(s) -> "{ edge [arrowhead=onormal] " ++ h2.to_string ++ " -> " ++ s.to_string ++ "} " 
+        | just(s) -> "{ edge [arrowhead=onormal]" ++ h.graphviz_name ++ " -> " ++ s.graphviz_name ++ "} " 
       end) ++ 
       graphviz_scope_decls(scope, t)
   end;
@@ -104,12 +102,12 @@ String ::= scope::Decorated Scope<a b> decls::[(String, Decorated Declaration<a 
  - @return The graphviz string representing the list of child edges.
 -}
 function graphviz_scope_children
-String ::= scopes::[Decorated Scope<a b>]
+String ::= scopes::[Decorated Scope<d r>]
 {
   return "{edge [color=pink style=dashed] " ++
-    foldl((\accone::String h::Decorated Scope<a b> ->
+    foldl((\accone::String h::Decorated Scope<d r> ->
     accone ++ (foldl(
-      (\acc::String child::Decorated Scope<a b> -> acc ++ " " ++ h.to_string ++ " -> "  ++ child.to_string),
+      (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ h.to_string ++ " -> "  ++ child.to_string),
       "",
       h.child_scopes
     ))), "", scopes) ++ "}";
@@ -118,12 +116,48 @@ String ::= scopes::[Decorated Scope<a b>]
 @{-
  - Draw resolution paths in graphviz.
  -
- - @param paths The list of paths to draw.
+ - @param graph The graph to draw resolution edges for.
  - @return The string with which graphviz will draw resolution paths.
 -}
 function graphviz_draw_paths
-String ::= paths::[Decorated Path<a b>]
+String ::= graph::Decorated Graph<d r>
 {
-  return "{edge [color=blue style=dashed] " ++ foldl((\acc::String path::Decorated Path<a b> -> 
-    acc ++ " " ++ path.start.to_string ++ " -> " ++ path.final.to_string), "", paths) ++ "}";
+  return let all::([Decorated Usage<d r>], [Decorated Usage<d r>]) = 
+    foldl(
+      (\acc::([Decorated Usage<d r>], [Decorated Usage<d r>]) cur_scope::Decorated Scope<d r> -> 
+        let new_pair::([Decorated Usage<d r>], [Decorated Usage<d r>]) = 
+          partition((\usg::Decorated Usage<d r> -> length(usg.resolutions) == 1), 
+            cur_scope.references ++ cur_scope.imports) 
+        in 
+          (fst(acc) ++ fst(new_pair), snd(acc) ++ snd(new_pair))
+        end),
+      ([],[]),
+      graph.scope_list)
+  in
+    "{edge [arrowhead=normal color=blue style=dashed]" ++ 
+      graphviz_draw_individual_paths(fst(all)) ++ "}" ++
+    "{node [color=red shape=box fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
+      graphviz_draw_individual_paths(snd(all)) ++ "}"
+  end ++ "\n";
 }
+
+@{-
+ - Draw paths for a list of references in graphviz.
+ -
+ - @param graph The references to draw resolution edges for.
+ - @return The string with which graphviz will draw resolution paths.
+-}
+function graphviz_draw_individual_paths
+String ::= usages::[Decorated Usage<d r>]
+{
+  return foldl(
+    (\acc::String usg::Decorated Usage<d r> -> acc ++ " " ++ usg.graphviz_name ++ " " ++ 
+      foldl((\acc::String decl::Decorated Declaration<d r> -> acc ++ " " ++ usg.graphviz_name ++ 
+          " -> " ++ decl.graphviz_name), 
+        "", 
+        usg.resolutions)),
+    "", 
+    nubBy((\left::Decorated Usage<d r> right::Decorated Usage<d r> -> left.to_string == right.to_string), 
+      usages));
+}
+
