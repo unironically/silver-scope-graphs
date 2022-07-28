@@ -178,7 +178,7 @@ function resolve_new
     foldl(
       (\acc::[Decorated Declaration<d r>] cur::Decorated Usage<d r> -> acc ++ cur.resolutions),
       [],
-      filter((\imp::Decorated Usage<d r> -> imp.identifier != ref.identifier), cur_scope.imports)
+      filter((\imp::Decorated Usage<d r> -> imp.to_string != ref.to_string), cur_scope.imports)
     )
   );
   

@@ -2,7 +2,7 @@ grammar scopegraph;
 
 
 ----------------
--- Scope graph:
+-- Scope<d r> graph:
 
 @{-
  - Draw a scope graph in graphviz.
@@ -107,7 +107,7 @@ String ::= scopes::[Decorated Scope<d r>]
   return "{edge [color=pink style=dashed] " ++
     foldl((\accone::String h::Decorated Scope<d r> ->
     accone ++ (foldl(
-      (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ h.to_string ++ " -> "  ++ child.to_string),
+      (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ h.graphviz_name ++ " -> "  ++ child.graphviz_name),
       "",
       h.child_scopes
     ))), "", scopes) ++ "}";
@@ -152,12 +152,11 @@ String ::= usages::[Decorated Usage<d r>]
 {
   return foldl(
     (\acc::String usg::Decorated Usage<d r> -> acc ++ " " ++ usg.graphviz_name ++ " " ++ 
-      foldl((\acc::String decl::Decorated Declaration<d r> -> acc ++ " " ++ usg.graphviz_name ++ 
-          " -> " ++ decl.graphviz_name), 
+      foldl((\acc::String path::Decorated Path<d r> -> acc ++ " " ++ usg.graphviz_name ++ 
+          " -> " ++ path.final.graphviz_name), 
         "", 
-        usg.resolutions)),
+        usg.paths)),
     "", 
     nubBy((\left::Decorated Usage<d r> right::Decorated Usage<d r> -> left.to_string == right.to_string), 
       usages));
 }
-

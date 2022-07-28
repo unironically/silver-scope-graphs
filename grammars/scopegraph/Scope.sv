@@ -5,12 +5,11 @@ grammar scopegraph;
 -- Scope Graph
 
 synthesized attribute scope_list<d r>::[Decorated Scope<d r>];
---synthesized attribute paths<d r>::[Decorated Path<d r>];
+synthesized attribute paths<d r>::[Decorated Path<d r>];
 synthesized attribute all_decls<d r>::[Decorated Declaration<d r>];
 synthesized attribute errors<d r>::[Decorated Error<d r>];
 
-nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>;
-   -- paths<d r>, 
+nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>, paths<d r>;
 
 @{-
  - Constructing a graph node.
@@ -29,6 +28,7 @@ top::Graph<d r> ::= scope_list::[Decorated Scope<d r>]
       -> all_decls ++ scope.declarations), 
     [], scope_list);
   top.errors = foldl((\acc::[Decorated Error<d r>] scope::Decorated Scope<d r> -> acc ++ scope.errors), [], scope_list);
+  top.paths = foldl((\acc::[Decorated Path<d r>] scope::Decorated Scope<d r> -> acc ++ scope.paths), [], scope_list);
 }
 
 
@@ -47,7 +47,7 @@ synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute assoc_decl<d r>::Maybe<Decorated Declaration<d r>>;
 
 
-nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>, graphviz_name, assoc_decl<d r>, errors<d r>;
+nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>, graphviz_name, assoc_decl<d r>, errors<d r>, paths<d r>;
 
 @{-
  - Constructing a scope node.
@@ -85,6 +85,9 @@ top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
       []
   ), [], references ++ imports);
 
+  top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Usage<d r> -> acc ++ ref.paths)
+    , [], references ++ imports);
+
 }
 
 function decorate_nd_error
@@ -99,6 +102,13 @@ Decorated Error<d r> ::= ref::Decorated Usage<d r> resolutions::[Decorated Decla
 {
   local attribute err::Error<d r> = multiple_declarations_found(ref, resolutions);
   return err;
+}
+
+function decorate_cons_path
+Decorated Path<d r> ::= ref::Decorated Usage<d r> dcl::Decorated Declaration<d r>
+{
+  local attribute path::Path<d r> = cons_path(ref, dcl);
+  return path;
 }
 
 
@@ -167,7 +177,7 @@ top::Declaration<d r> ::=
 
 synthesized attribute resolutions<d r>::[Decorated Declaration<d r>]; -- The node that this import points to with an invisible line. added to after resolution
 
-nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name;
+nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -186,12 +196,14 @@ top::Usage<d r> ::=
 {
   top.identifier = identifier;
   top.in_scope = in_scope;
-  top.resolutions = resolve([], top); -- visser algorithm
-  --top.resolutions = resolve_new(top, in_scope); -- luke algorithm
+  --top.resolutions = resolve([], top); -- visser algorithm
+  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
   top.line = line;
   top.column = column;
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+
+  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Declaration<d r> -> acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
 }
 
 
