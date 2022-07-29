@@ -1,5 +1,7 @@
 grammar lmlangmap;
 
+imports scopegraph as sg;
+
 global file_output::String = "scope_graph_lmlangmap.svg";
 
 parser parse :: Program_c {
@@ -20,30 +22,30 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute scope_graph :: Graph<IdDcl IdRef>;
+  local attribute scope_graph :: sg:Graph<IdDcl IdRef>;
   scope_graph = new(r.syn_graph);
 
   local attribute print_failure :: IOToken;
-  print_failure = printT(string_errors(scope_graph.errors), ioin);
+  print_failure = printT(sg:string_errors(scope_graph.sg:errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
-    graphviz_draw_graph(r.syn_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
-    "' | dot -Tsvg > " ++ file_output, printT(if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(scope_graph, true, true) ++ "\n" else "", ioin)).io;
+    sg:graphviz_draw_graph(r.syn_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
+    "' | dot -Tsvg > " ++ file_output, printT(if (contains("--graph-print", largs)) then "Graph print:\n" ++ sg:graphviz_draw_graph(scope_graph, true, true) ++ "\n" else "", ioin)).io;
 
 {-
   local res::IO<Integer> = do {
     if length(largs) < 1 then do {
-      print ("Usage: java -jar ***.jar <file name> <options>\n");
+      print ("Ref: java -jar ***.jar <file name> <options>\n");
       return 1;
     }
     else do {
 
 
-    if length(r.errors) > 0
+    if length(scope_graph.sg:errors) > 0
     then 
       do { 
-        print ("Errors:\n" ++ string_errors(r.errors));
+        print ("Errors:\n" ++ string_errors(scope_graph.sg:errors));
         return 1;
       }
     else
@@ -53,9 +55,9 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
       } ;
     } ;
 -}
-  --return 
-      --ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
-
-  return if length(scope_graph.errors) <= 0 && result.parseSuccess then ioval(print_resolution_paths, 0) else ioval(printT(string_paths(scope_graph.paths), printT(string_errors(scope_graph.errors), print_resolution_paths)), -1);
-     -- evalIO (res, ioin) ;
+  
+  return if length(scope_graph.sg:errors) <= 0 && result.parseSuccess then 
+      ioval(print_resolution_paths, 0) 
+    else 
+      ioval(printT(sg:string_errors(scope_graph.sg:errors), print_resolution_paths), -1);
 }

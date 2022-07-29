@@ -6,7 +6,7 @@ grammar scopegraph;
 
 synthesized attribute scope_list<d r>::[Decorated Scope<d r>];
 synthesized attribute paths<d r>::[Decorated Path<d r>];
-synthesized attribute all_decls<d r>::[Decorated Declaration<d r>];
+synthesized attribute all_decls<d r>::[Decorated Decl<d r>];
 synthesized attribute errors<d r>::[Decorated Error<d r>];
 
 nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>, paths<d r>;
@@ -19,12 +19,10 @@ nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>, paths<
 -}
 abstract production cons_graph
 top::Graph<d r> ::= scope_list::[Decorated Scope<d r>] 
-  --paths::[Decorated Path]
 {
   top.scope_list = scope_list;
-  --top.paths = paths;
   top.all_decls = foldl(
-    (\all_decls::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
+    (\all_decls::[Decorated Decl<d r>] scope::Decorated Scope<d r> 
       -> all_decls ++ scope.declarations), 
     [], scope_list);
   top.errors = foldl((\acc::[Decorated Error<d r>] scope::Decorated Scope<d r> -> 
@@ -39,14 +37,14 @@ top::Graph<d r> ::= scope_list::[Decorated Scope<d r>]
 
 synthesized attribute id::Integer;
 synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
-synthesized attribute declarations<d r>::[Decorated Declaration<d r>];
-synthesized attribute references<d r>::[Decorated Usage<d r>];
-synthesized attribute imports<d r>::[Decorated Usage<d r>];
+synthesized attribute declarations<d r>::[Decorated Decl<d r>];
+synthesized attribute references<d r>::[Decorated Ref<d r>];
+synthesized attribute imports<d r>::[Decorated Ref<d r>];
 
 synthesized attribute to_string::String;
 synthesized attribute graphviz_name::String;
 synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
-synthesized attribute assoc_decl<d r>::Maybe<Decorated Declaration<d r>>;
+synthesized attribute assoc_decl<d r>::Maybe<Decorated Decl<d r>>;
 
 
 nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>, graphviz_name, assoc_decl<d r>, errors<d r>, paths<d r>;
@@ -62,11 +60,11 @@ nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>,
 -}
 abstract production cons_scope
 top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>> 
-  declarations::[Decorated Declaration<d r>] 
-  references::[Decorated Usage<d r>] 
-  imports::[Decorated Usage<d r>]
+  declarations::[Decorated Decl<d r>] 
+  references::[Decorated Ref<d r>] 
+  imports::[Decorated Ref<d r>]
   child_scopes::[Decorated Scope<d r>]
-  assoc_decl::Maybe<Decorated Declaration<d r>>
+  assoc_decl::Maybe<Decorated Decl<d r>>
 {
   top.id = genInt();
   top.parent = parent;
@@ -78,30 +76,30 @@ top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
   top.child_scopes = child_scopes;
   top.assoc_decl = assoc_decl;
   
-  top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Usage<d r> -> 
+  top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Ref<d r> -> 
     acc ++ ref.errors), [], references ++ imports);
 
-  top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Usage<d r> -> 
+  top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Ref<d r> -> 
     acc ++ ref.paths), [], references ++ imports);
 
 }
 
 function decorate_nd_error
-Decorated Error<d r> ::= ref::Decorated Usage<d r>
+Decorated Error<d r> ::= ref::Decorated Ref<d r>
 {
   local attribute err::Error<d r> = no_declaration_found(ref);
   return err;
 }
 
 function decorate_md_error
-Decorated Error<d r> ::= ref::Decorated Usage<d r> resolutions::[Decorated Declaration<d r>]
+Decorated Error<d r> ::= ref::Decorated Ref<d r> resolutions::[Decorated Decl<d r>]
 {
   local attribute err::Error<d r> = multiple_declarations_found(ref, resolutions);
   return err;
 }
 
 function decorate_cons_path
-Decorated Path<d r> ::= ref::Decorated Usage<d r> dcl::Decorated Declaration<d r>
+Decorated Path<d r> ::= ref::Decorated Ref<d r> dcl::Decorated Decl<d r>
 {
   local attribute path::Path<d r> = cons_path(ref, dcl);
   return path;
@@ -109,7 +107,7 @@ Decorated Path<d r> ::= ref::Decorated Usage<d r> dcl::Decorated Declaration<d r
 
 
 ----------------
--- Declarations
+-- Decls
 
 synthesized attribute identifier::String; -- Name of the declaration
 
@@ -119,7 +117,7 @@ synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
 
-nonterminal Declaration<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, to_string, graphviz_name;
+nonterminal Decl<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, to_string, graphviz_name;
 
 @{-
  - Constructing a declaration node.
@@ -131,7 +129,7 @@ nonterminal Declaration<d r> with identifier, in_scope<d r>, assoc_scope<d r>, l
  - @param column The column this declaration was found on.
 -}
 abstract production cons_decl
-top::Declaration<d r> ::= identifier::String 
+top::Decl<d r> ::= identifier::String 
   in_scope::Decorated Scope<d r> 
   assoc_scope::Maybe<Decorated Scope<d r>> 
   line::Integer column::Integer
@@ -152,7 +150,7 @@ abstract production mk_dcl
   attribute name i occurs on d, 
   attribute line i occurs on d, 
   attribute column i occurs on d =>
-top::Declaration<d r> ::= 
+top::Decl<d r> ::= 
   ast_node::Decorated d with i
   in_scope::Decorated Scope<d r> 
   assoc_scope::Maybe<Decorated Scope<d r>> 
@@ -171,10 +169,10 @@ top::Declaration<d r> ::=
 ----------------
 -- Imports/References
 
-synthesized attribute resolutions<d r>::[Decorated Declaration<d r>]; -- The node that this import points to with an invisible line. added to after resolution
+synthesized attribute resolutions<d r>::[Decorated Decl<d r>]; -- The node that this import points to with an invisible line. added to after resolution
 synthesized attribute imported_by<d r>::Maybe<Decorated Scope<d r>>;
 
-nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>;
+nonterminal Ref<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -185,7 +183,7 @@ nonterminal Usage<d r> with identifier, in_scope<d r>, resolutions<d r>, line, c
  - @param column The column this usage was found on.
 -}
 abstract production cons_usage
-top::Usage<d r> ::= 
+top::Ref<d r> ::= 
   identifier::String 
   in_scope::Decorated Scope<d r> 
   line::Integer 
@@ -202,7 +200,7 @@ top::Usage<d r> ::=
   top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
   top.graphviz_name = "\"" ++ top.to_string ++ "\"";
 
-  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Declaration<d r> -> 
+  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Decl<d r> -> 
     acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
   
   top.errors = if (length(top.resolutions) > 1) then
@@ -219,7 +217,7 @@ abstract production mk_ref
   attribute name i occurs on r, 
   attribute line i occurs on r, 
   attribute column i occurs on r =>
-top::Usage<d r> ::= 
+top::Ref<d r> ::= 
   ast_node::Decorated r with i
   in_scope::Decorated Scope<d r> 
 {

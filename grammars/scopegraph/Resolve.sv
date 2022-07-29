@@ -1,7 +1,5 @@
 grammar scopegraph;
 
----------------
--- Resolution algorithm:
 
 ----------------
 -- Functions corresponding to the scope graphs resolution algorithm:
@@ -14,9 +12,9 @@ grammar scopegraph;
  - @return The list of declarations found when the reference is resolved.
 -}
 function resolve
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] reference::Decorated Usage<d r>
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] reference::Decorated Ref<d r>
 {
-  return filter((\s::Decorated Declaration<d r> -> s.identifier == reference.identifier), 
+  return filter((\s::Decorated Decl<d r> -> s.identifier == reference.identifier), 
     env_v ([reference] ++ seen_imports, [], reference.in_scope));
 }
 
@@ -30,7 +28,7 @@ function resolve
  - @return The combined list of delcarations from env_l and env_p.
 -}
 function env_v
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
   return merge_declarations_with_shadowing(env_l (seen_imports, seen_scopes, current_scope), 
@@ -47,7 +45,7 @@ function env_v
  - @return The combined list of delcarations from env_d and env_l.
 -}
 function env_l
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
   return merge_declarations_with_shadowing(env_d (seen_imports, seen_scopes, current_scope), 
@@ -64,7 +62,7 @@ function env_l
  - @return The list of declarations for the current scope
 -}
 function env_d
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
   return 
@@ -84,7 +82,7 @@ function env_d
  - @return The list of imported declarations.
 -}
 function env_i
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
   return 
@@ -94,16 +92,16 @@ function env_i
     else 
 
       -- Get all imports of current scope, remove names already seen in seen_imports
-      let imp_list::[Decorated Usage<d r>] = removeAllBy(
-        (\left_imp::Decorated Usage<d r> right_imp::Decorated Usage<d r>
+      let imp_list::[Decorated Ref<d r>] = removeAllBy(
+        (\left_imp::Decorated Ref<d r> right_imp::Decorated Ref<d r>
           -> left_imp.identifier == right_imp.identifier), 
         seen_imports,
         current_scope.imports) 
       in
 
       -- Resolve each of the known imports in the current scope collected from the above
-      let res_list::[Decorated Declaration<d r>] = foldl(
-        (\res_list::[Decorated Declaration<d r>] import::Decorated Usage<d r> 
+      let res_list::[Decorated Decl<d r>] = foldl(
+        (\res_list::[Decorated Decl<d r>] import::Decorated Ref<d r> 
           -> res_list ++ resolve(seen_imports, import)), 
         [],
         imp_list)
@@ -111,15 +109,15 @@ function env_i
 
       -- Get all the 'associated scope' nodes from declarations in res_list generated above
       let scope_list::[Decorated Scope<d r>] = foldl(
-        (\scope_list::[Decorated Scope<d r>] decl::Decorated Declaration<d r> 
+        (\scope_list::[Decorated Scope<d r>] decl::Decorated Decl<d r> 
           -> scope_list ++ (case decl.assoc_scope of | nothing() -> [] | just(p) -> [p] end)), 
         [],
         res_list)
       in
 
       -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let last_list::[Decorated Declaration<d r>] = foldl(
-        (\last_list::[Decorated Declaration<d r>] scope::Decorated Scope<d r> 
+      let last_list::[Decorated Decl<d r>] = foldl(
+        (\last_list::[Decorated Decl<d r>] scope::Decorated Scope<d r> 
           -> last_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
         [],
         scope_list)
@@ -138,7 +136,7 @@ function env_i
  - @return The list of declarations found by searching inside of the parent scope.
 -}
 function env_p
-[Decorated Declaration<d r>] ::= seen_imports::[Decorated Usage<d r>] seen_scopes::[Decorated Scope<d r>] 
+[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
   return 
@@ -164,26 +162,26 @@ function env_p
  - @return A list of all declarations that ref resolves to.
 -}
 function resolve_new
-[Decorated Declaration<d r>] ::= ref::Decorated Usage<d r> cur_scope::Decorated Scope<d r>
+[Decorated Decl<d r>] ::= ref::Decorated Ref<d r> cur_scope::Decorated Scope<d r>
 {
   -- Check for any matching declarations in the current scope
-  local attribute decls::[Decorated Declaration<d r>] = 
-    filter((\decl::Decorated Declaration<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
+  local attribute decls::[Decorated Decl<d r>] = 
+    filter((\decl::Decorated Decl<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
   
   -- Check any imports that exist, call resolve on them
-  local attribute imps::[Decorated Declaration<d r>] = foldl(
-    (\acc::[Decorated Declaration<d r>] cur::Decorated Declaration<d r> -> acc ++ 
+  local attribute imps::[Decorated Decl<d r>] = foldl(
+    (\acc::[Decorated Decl<d r>] cur::Decorated Decl<d r> -> acc ++ 
       case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve_new(ref, s) end),
     [],
     foldl(
-      (\acc::[Decorated Declaration<d r>] cur::Decorated Usage<d r> -> acc ++ cur.resolutions),
+      (\acc::[Decorated Decl<d r>] cur::Decorated Ref<d r> -> acc ++ cur.resolutions),
       [],
-      removeBy((\left::Decorated Usage<d r> right::Decorated Usage<d r> -> left.to_string == right.to_string), ref, cur_scope.imports)
+      removeBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.to_string == right.to_string), ref, cur_scope.imports)
     )
   );
   
   -- recursive call on parent
-  local attribute par::[Decorated Declaration<d r>] = case cur_scope.parent of
+  local attribute par::[Decorated Decl<d r>] = case cur_scope.parent of
     | nothing() -> []
     | just(p) -> resolve_new(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
   end;
@@ -201,9 +199,9 @@ function resolve_new
 -}
 function merge_declarations_with_shadowing
 
-[Decorated Declaration<d r>] ::= left::[Decorated Declaration<d r>] right::[Decorated Declaration<d r>]
+[Decorated Decl<d r>] ::= left::[Decorated Decl<d r>] right::[Decorated Decl<d r>]
 {
-  return unionBy(\mem_r::Decorated Declaration<d r> mem_l::Decorated Declaration<d r> -> 
+  return unionBy(\mem_r::Decorated Decl<d r> mem_l::Decorated Decl<d r> -> 
     mem_r.identifier == mem_l.identifier, right , left);
 }
 
@@ -213,8 +211,8 @@ function merge_declarations_with_shadowing
 
 nonterminal Path<d r> with start<d r>, final<d r>;
 
-synthesized attribute start<d r>::Decorated Usage<d r>;
-synthesized attribute final<d r>::Decorated Declaration<d r>;
+synthesized attribute start<d r>::Decorated Ref<d r>;
+synthesized attribute final<d r>::Decorated Decl<d r>;
 
 @{-
  - Constructing a path node.
@@ -223,7 +221,7 @@ synthesized attribute final<d r>::Decorated Declaration<d r>;
  - @param final The declaration resolved to in the path.
 -}
 abstract production cons_path
-top::Path<d r> ::= start::Decorated Usage<d r> final::Decorated Declaration<d r>
+top::Path<d r> ::= start::Decorated Ref<d r> final::Decorated Decl<d r>
 {
   top.start = start;
   top.final = final;

@@ -1,7 +1,5 @@
 grammar lmlangmap;
 
-imports scopegraph;
-
 nonterminal Program;
 nonterminal DeclList;
 nonterminal Decl;
@@ -17,42 +15,42 @@ synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp,
 
 -- The inherited scope passed to a node is the scope in which the corresponding construct resides
 -- Only the binding list of parrallel let expressions use two inherited scopes
-inherited attribute inh_scope::Decorated Scope<IdDcl IdRef> occurs on DeclList, Decl, Qid, Exp, 
+inherited attribute inh_scope::Decorated sg:Scope<IdDcl IdRef> occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
-inherited attribute inh_scope_two::Decorated Scope<IdDcl IdRef> occurs on BindListPar, Qid;
+inherited attribute inh_scope_two::Decorated sg:Scope<IdDcl IdRef> occurs on BindListPar, Qid;
 
 -- Information required for synthesizing a graph node at the root of an AST
-synthesized attribute syn_graph::Decorated Graph<IdDcl IdRef> occurs on Program;
-monoid attribute syn_all_scopes::[Decorated Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
+synthesized attribute syn_graph::Decorated sg:Graph<IdDcl IdRef> occurs on Program;
+monoid attribute syn_all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
 -- Only the binding list of parrallel let expressions use two synthesized attributes for each
-monoid attribute syn_decls::[Decorated Declaration<IdDcl IdRef>] occurs on DeclList, 
+monoid attribute syn_decls::[Decorated sg:Decl<IdDcl IdRef>] occurs on DeclList, 
   Decl, Qid, Exp,BindListSeq, BindListRec, BindListPar;
-monoid attribute syn_refs::[Decorated Usage<IdDcl IdRef>] occurs on DeclList, 
+monoid attribute syn_refs::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-monoid attribute syn_imports::[Decorated Usage<IdDcl IdRef>] occurs on DeclList, 
+monoid attribute syn_imports::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, 
   Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-monoid attribute syn_decls_two::[Decorated Declaration<IdDcl IdRef>] occurs on BindListPar;
-monoid attribute syn_refs_two::[Decorated Usage<IdDcl IdRef>] occurs on BindListPar;
-monoid attribute syn_imports_two::[Decorated Usage<IdDcl IdRef>] occurs on BindListPar;
+monoid attribute syn_decls_two::[Decorated sg:Decl<IdDcl IdRef>] occurs on BindListPar;
+monoid attribute syn_refs_two::[Decorated sg:Ref<IdDcl IdRef>] occurs on BindListPar;
+monoid attribute syn_imports_two::[Decorated sg:Ref<IdDcl IdRef>] occurs on BindListPar;
 
 -- For double-edged arrow between parent and child scopes
-monoid attribute syn_scopes::[Decorated Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
+monoid attribute syn_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
-inherited attribute inh_decls::[Decorated Declaration<IdDcl IdRef>] occurs on BindListSeq;
-inherited attribute inh_refs::[Decorated Usage<IdDcl IdRef>] occurs on BindListSeq;
-inherited attribute inh_imports::[Decorated Usage<IdDcl IdRef>] occurs on BindListSeq;
+inherited attribute inh_decls::[Decorated sg:Decl<IdDcl IdRef>] occurs on BindListSeq;
+inherited attribute inh_refs::[Decorated sg:Ref<IdDcl IdRef>] occurs on BindListSeq;
+inherited attribute inh_imports::[Decorated sg:Ref<IdDcl IdRef>] occurs on BindListSeq;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
-synthesized attribute syn_iqid_import::Decorated Usage<IdDcl IdRef> occurs on Qid;
+synthesized attribute syn_iqid_import::Decorated sg:Ref<IdDcl IdRef> occurs on Qid;
 
 -- The scope returned by the binding list construct of a sequential let expression
-synthesized attribute ret_scope::Decorated Scope<IdDcl IdRef> occurs on BindListSeq;
+synthesized attribute ret_scope::Decorated sg:Scope<IdDcl IdRef> occurs on BindListSeq;
 
 ------------------------------------------------------------
 ---- Program root
@@ -61,7 +59,7 @@ synthesized attribute ret_scope::Decorated Scope<IdDcl IdRef> occurs on BindList
 abstract production prog 
 top::Program ::= list::DeclList
 {
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope(
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope(
     nothing(),
     list.syn_decls,
     list.syn_refs,
@@ -70,33 +68,11 @@ top::Program ::= list::DeclList
     nothing()
   );
   
-  local attribute init_graph::Graph<IdDcl IdRef> = cons_graph(init_scope::list.syn_all_scopes);
-  top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
+  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope::list.syn_all_scopes);
+  top.syn_graph = init_graph; -- simply substituting sg:cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
 
-  -- path handling
-  {-
-  -- collect all of the declarations that some reference is resolved to
-  local attribute used_decls::[Decorated Declaration] = map((\path::Decorated Path -> path.final), list.paths);
-
-  -- create a list from the list of all declarations in a graph
-  -- each declaration in the list is mapped to a boolean indicating whether it is ever referred to
-  -- e.g. (x, false) is in 'mapped' if x is a declaration and is not referred to
-  local attribute mapped::[(Decorated Declaration, Boolean)] = map(
-    (\decl::Decorated Declaration 
-      -> (decl, containsBy(
-        (\l::Decorated Declaration r::Decorated Declaration -> l.to_string == r.to_string), 
-        decl, used_decls))), 
-    init_graph.all_decls);
-
-  -- use the above lists to generate errors where declarations exist which are not referred to
-  top.errors = list.errors ++ foldl((
-    \errors::[Decorated Error] decl_pair::(Decorated Declaration, Boolean) 
-      -> errors ++ (if !snd(decl_pair) then [  decorate_err(fst(decl_pair))  ] else []) -- had to use decorate_err function instead of declaration_unused constructor?? replace with "decorate foo() with {}"?
-  ), [], mapped);
-  -}
-  
   -- ast printing
   top.pp = "prog(" ++ list.pp ++ ")";
 
@@ -111,15 +87,15 @@ top::Program ::= list::DeclList
  - @return The error node corresponding to the declaration given never being used.
 -}
 function decorate_err
-Decorated Error<IdDcl IdRef> ::= decl::Decorated Declaration<IdDcl IdRef>
+Decorated sg:Error<IdDcl IdRef> ::= decl::Decorated sg:Decl<IdDcl IdRef>
 {
-  local attribute ret_err::Error<IdDcl IdRef> = declaration_unused(decl);
+  local attribute ret_err::sg:Error<IdDcl IdRef> = sg:declaration_unused(decl);
   return ret_err;
 }
 
 
 ------------------------------------------------------------
----- Declaration lists
+---- sg:Decl lists
 ------------------------------------------------------------
 
 abstract production decllist_list
@@ -139,13 +115,13 @@ top::DeclList ::=
 
 
 ------------------------------------------------------------
----- Declarations
+---- sg:Decls
 ------------------------------------------------------------
 
 abstract production decl_module
 top::Decl ::= id::ID_t list::DeclList
 {
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     just(top.inh_scope),
     list.syn_decls,
     list.syn_refs,
@@ -154,7 +130,7 @@ top::Decl ::= id::ID_t list::DeclList
     just(init_decl)
   );
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl(
+  local attribute init_decl:: sg:Decl<IdDcl IdRef> = sg:cons_decl(
     id.lexeme,
     top.inh_scope,
     just(init_scope),
@@ -192,7 +168,7 @@ top::Decl ::= id::ID_t exp::Exp
 { propagate syn_refs, syn_imports, syn_all_scopes, syn_scopes,
             inh_scope;
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl (
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -243,7 +219,7 @@ top::Exp ::= list::BindListSeq exp::Exp
 abstract production bindlist_list_seq
 top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
 {
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     just(top.inh_scope),
     [init_decl],
     list.syn_refs,
@@ -252,7 +228,7 @@ top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
     nothing()
   );
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl (
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -302,7 +278,7 @@ top::BindListSeq ::=
 abstract production exp_letrec
 top::Exp ::= list::BindListRec exp::Exp
 {
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     just(top.inh_scope),
     list.syn_decls ++ exp.syn_decls,
     list.syn_refs ++ exp.syn_refs,
@@ -329,7 +305,7 @@ top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
 { propagate syn_refs, syn_imports, syn_all_scopes,
             inh_scope;
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl (
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -359,7 +335,7 @@ top::BindListRec ::=
 abstract production exp_letpar
 top::Exp ::= list::BindListPar exp::Exp
 {
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     just(top.inh_scope),
     list.syn_decls_two ++ exp.syn_decls,
     list.syn_refs_two ++ exp.syn_refs,
@@ -387,7 +363,7 @@ top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
 { propagate syn_decls, syn_refs, syn_imports, syn_all_scopes, syn_scopes, 
             inh_scope;
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl (
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -423,7 +399,7 @@ abstract production exp_funfix
 top::Exp ::= id::ID_t exp::Exp
 { propagate syn_decls, syn_refs, syn_imports, inh_scope;
 
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     just(top.inh_scope),
     exp.syn_decls ++ [init_decl],
     exp.syn_refs,
@@ -432,7 +408,7 @@ top::Exp ::= id::ID_t exp::Exp
     nothing()
   );
 
-  local attribute init_decl::Declaration<IdDcl IdRef> = cons_decl (
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl (
     id.lexeme,
     top.inh_scope,
     nothing(),
@@ -487,14 +463,14 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-synthesized attribute syn_last_ref::Decorated Usage<IdDcl IdRef> occurs on Qid;
+synthesized attribute syn_last_ref::Decorated sg:Ref<IdDcl IdRef> occurs on Qid;
 
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {
 
   -- RQID [[
-  local attribute init_scope::Scope<IdDcl IdRef> = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     nothing(),
     [],
     qid.syn_refs,
@@ -503,7 +479,7 @@ top::Qid ::= id::ID_t qid::Qid
     nothing()
   );
 
-  local attribute init_usage::Usage<IdDcl IdRef> = cons_usage (
+  local attribute init_usage::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope,
     id.line,
@@ -534,7 +510,7 @@ top::Qid ::= id::ID_t
 {
   {-
   -- IQID [[
-  local attribute init_import_two::Usage<IdDcl IdRef> = cons_usage (
+  local attribute init_import_two::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope_two,
     id.line,
@@ -547,7 +523,7 @@ top::Qid ::= id::ID_t
   top.syn_iqid_import = init_import;
 
   -- RQID [[
-  local attribute init_import::Usage<IdDcl IdRef> = cons_usage (
+  local attribute init_import::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope,
     id.line,

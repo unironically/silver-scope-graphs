@@ -14,10 +14,10 @@ synthesized attribute all_messages::String;
  - @param usage The reference node for which multiple declarations are found.
 -}
 abstract production multiple_declarations_found
-top::Error<d r> ::= usage::Decorated Usage<d r> resolved_to::[Decorated Declaration<d r>]
+top::Error<d r> ::= usage::Decorated Ref<d r> resolved_to::[Decorated Decl<d r>]
 {
   top.message = "Multiple declarations found that match reference " ++ usage.to_string ++ ":" ++
-    foldl((\acc::String dcl::Decorated Declaration<d r> -> acc ++ "\n\t" ++ dcl.to_string), "", resolved_to);
+    foldl((\acc::String dcl::Decorated Decl<d r> -> acc ++ "\n\t" ++ dcl.to_string), "", resolved_to);
 }
 
 @{-
@@ -26,7 +26,7 @@ top::Error<d r> ::= usage::Decorated Usage<d r> resolved_to::[Decorated Declarat
  - @param usage The reference node for which no declarations are found.
 -}
 abstract production no_declaration_found
-top::Error<d r> ::= usage::Decorated Usage<d r>
+top::Error<d r> ::= usage::Decorated Ref<d r>
 {
   top.message = "No declaration found that matches reference " ++ usage.to_string;
 }
@@ -37,9 +37,9 @@ top::Error<d r> ::= usage::Decorated Usage<d r>
  - @param declaration The declaration node that no references are found for. 
 -}
 abstract production declaration_unused
-top::Error<d r> ::= declaration::Decorated Declaration<d r>
+top::Error<d r> ::= declaration::Decorated Decl<d r>
 {
-  top.message = "Declaration never used: " ++ declaration.to_string;
+  top.message = "Decl never used: " ++ declaration.to_string;
 }
 
 @{-
