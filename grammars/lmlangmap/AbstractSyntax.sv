@@ -463,8 +463,6 @@ top::Exp ::= val::Int_t
 ---- Qualified identifiers
 ------------------------------------------------------------
 
-synthesized attribute syn_last_ref::Decorated sg:Ref<IdDcl IdRef> occurs on Qid;
-
 abstract production qid_list
 top::Qid ::= id::ID_t qid::Qid
 {

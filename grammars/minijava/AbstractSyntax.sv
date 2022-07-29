@@ -112,10 +112,10 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
   -- New scope for a class
   local attribute new_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope(
     just(top.inh_scope),
-    extend.syn_decls ++ implement.syn_decls ++ block.syn_decls,
-    extend.syn_refs ++ implement.syn_refs ++ block.syn_refs,
-    extend.syn_refs ++ implement.syn_refs ++ block.syn_refs,
-    extend.syn_scopes ++ implement.syn_scopes ++ block.syn_scopes,
+    block.syn_decls,
+    block.syn_refs,
+    block.syn_refs,
+    block.syn_scopes,
     just(init_decl)
   );
 
@@ -127,15 +127,15 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
     id.column
   );
 
-  top.syn_decls = [init_decl];
-  top.syn_refs = [];
-  top.syn_imports = [];
+  top.syn_decls = [init_decl] ++ extend.syn_decls ++ implement.syn_decls;
+  top.syn_refs = extend.syn_refs ++ implement.syn_refs;
+  top.syn_imports = extend.syn_imports ++ implement.syn_imports;
   top.syn_all_scopes = [new_scope] ++ extend.syn_all_scopes ++ implement.syn_all_scopes ++ block.syn_all_scopes;
   top.syn_scopes = [new_scope];
 
-  extend.inh_scope = new_scope;
+  extend.inh_scope = top.inh_scope;
 
-  implement.inh_scope = new_scope;
+  implement.inh_scope = top.inh_scope;
 
   block.inh_scope = new_scope;
 
@@ -271,46 +271,61 @@ top::QidList ::= qid::Qid
 abstract production qid_dot
 top::Qid ::= id::ID_t qid::Qid
 {
+
+  -- RQID [[
   local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     nothing(),
-    qid.syn_decls,
+    [],
     qid.syn_refs,
-    qid.syn_imports ++ [init_usage],
-    qid.syn_scopes, 
+    [init_usage],
+    [],
     nothing()
   );
 
-  local attribute init_usage::sg:Ref<IdDcl IdRef> = sg:cons_usage ( -- rqid
+  local attribute init_usage::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope,
     id.line,
     id.column
   );
-
+  
   top.syn_decls = [];
   top.syn_refs = [init_usage];
   top.syn_imports = [];
   top.syn_all_scopes = [init_scope] ++ qid.syn_all_scopes;
-  top.syn_iqid_import = qid.syn_iqid_import;
   top.syn_scopes = []; 
-  
+
   qid.inh_scope = init_scope;
+  -- ]]
+
+  -- IQID [[
+  top.syn_iqid_import = qid.syn_iqid_import;
+  
   qid.inh_scope_two = top.inh_scope_two;
+  -- ]]
   
   -- ast printing
-  top.pp = "qid_dot(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
+  top.pp = "qid_list(" ++ id.lexeme ++ "," ++ qid.pp ++ ")";
 }
 
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
+  {-
+  -- IQID [[
   local attribute init_import_two::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope_two,
     id.line,
     id.column
-  );
+  ); -- this is the one that cannot be resolved..
+  -}
 
+  --top.syn_iqid_import = init_import_two;
+  -- ]]
+  top.syn_iqid_import = init_import;
+
+  -- RQID [[
   local attribute init_import::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope,
@@ -321,15 +336,14 @@ top::Qid ::= id::ID_t
   top.syn_decls = [];
   top.syn_refs = [init_import];
   top.syn_imports = [];
-  top.syn_iqid_import = init_import_two;
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  --local attribute fst_path::sg:Path<IdDcl IdRef> = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
-  --top.paths = [fst_path];
+  -- ]]
 
   -- ast printing
   top.pp = "qid_single(" ++ id.lexeme ++ ")";
+
 }
 
 nonterminal IdDcl;
