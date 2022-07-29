@@ -21,19 +21,19 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute scope_graph :: Graph_type;
+  local attribute scope_graph :: sg:Graph<IdDcl IdRef>;
   scope_graph = new(r.syn_graph);
 
   --local attribute print_success :: IOToken;
   --print_success = ;
 
   local attribute print_failure :: IOToken;
-  print_failure = printT(string_errors(scope_graph.errors), ioin);
+  print_failure = printT(sg:string_errors(scope_graph.sg:errors), ioin);
 
   local attribute print_resolution_paths :: IOToken;
   print_resolution_paths = systemT("echo '" ++ 
-    graphviz_draw_graph(scope_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
-    "' | dot -Tsvg > " ++ file_output, printT(if (contains("--graph-print", largs)) then "Graph print:\n" ++ graphviz_draw_graph(scope_graph, true, true) ++ "\n" else "", ioin)).io;
+    sg:graphviz_draw_graph(scope_graph, (contains("--show-resolutions", largs)), (contains("--show-children", largs))) ++ 
+    "' | dot -Tsvg > " ++ file_output, printT(if (contains("--graph-print", largs)) then "Graph print:\n" ++ sg:graphviz_draw_graph(scope_graph, true, true) ++ "\n" else "", ioin)).io;
 
 {-
   local res::IO<Integer> = do {
@@ -59,6 +59,6 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 -}
   --return 
       --ioval(if length(r.errors) <= 0 then print_resolution_paths else print_failure, 0);
-      return if length(scope_graph.errors) <= 0 then ioval(print_resolution_paths, 0) else ioval(print_resolution_paths, -1);
+      return if length(scope_graph.sg:errors) <= 0 then ioval(print_resolution_paths, 0) else ioval(print_resolution_paths, -1);
      -- evalIO (res, ioin) ;
 }

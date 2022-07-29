@@ -1,6 +1,6 @@
 grammar minijava;
 
-imports scopegraph;
+imports scopegraph as sg;
 
 
 nonterminal Program;
@@ -12,42 +12,34 @@ nonterminal Implement;
 nonterminal QidList;
 nonterminal Qid;
 
--- Types used in scope graphs for this language example
-type Graph_type = Graph;
-type Scope_type = Scope;
-type Decl_type = Declaration;
-type Usage_type = Usage;
-type Error_type = Error;
-type Path_type = Path;
-
 -- Printing AST term
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Block, Extend, Implement, QidList, Qid;
 
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
-synthesized attribute syn_decls::[Decorated Decl_type] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_decls::[Decorated sg:Decl<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
-synthesized attribute syn_refs::[Decorated Usage_type] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_refs::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
-synthesized attribute syn_imports::[Decorated Usage_type] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_imports::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
 
 -- Information required for synthesizing a graph node at the root of an AST
-synthesized attribute syn_graph::Decorated Graph_type occurs on Program;
-synthesized attribute syn_all_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_graph::Decorated sg:Graph<IdDcl IdRef> occurs on Program;
+synthesized attribute syn_all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
 
 -- The inherited scope passed to a node is the scope in which the corresponding construct resides
-inherited attribute inh_scope::Decorated Scope_type occurs on DeclList, Decl, Block, 
+inherited attribute inh_scope::Decorated sg:Scope<IdDcl IdRef> occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
-  inherited attribute inh_scope_two::Decorated Scope_type occurs on Qid;
+  inherited attribute inh_scope_two::Decorated sg:Scope<IdDcl IdRef> occurs on Qid;
 
 -- For double-edged arrow between parent and child scopes
-synthesized attribute syn_scopes::[Decorated Scope_type] occurs on DeclList, Decl, Block, 
+synthesized attribute syn_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
   Extend, Implement, QidList, Qid;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
-synthesized attribute syn_iqid_import::Decorated Usage_type occurs on Qid;
+synthesized attribute syn_iqid_import::Decorated sg:Ref<IdDcl IdRef> occurs on Qid;
 
 ------------------------------------------------------------
 ---- Program
@@ -58,7 +50,7 @@ top::Program ::= list::DeclList
 {
 
   -- The root scope of the program
-  local attribute init_scope::Scope_type = cons_scope(
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope(
     nothing(),
     list.syn_decls,
     list.syn_refs,
@@ -67,8 +59,8 @@ top::Program ::= list::DeclList
     nothing()
   );
 
-  local attribute init_graph::Graph_type = cons_graph(init_scope::list.syn_all_scopes);
-  top.syn_graph = init_graph; -- simply substituting cons_graph(...) here does not work
+  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope::list.syn_all_scopes);
+  top.syn_graph = init_graph; -- simply substituting sg:cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
 
@@ -118,7 +110,7 @@ abstract production decl_class
 top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
 {
   -- New scope for a class
-  local attribute new_scope::Scope_type = cons_scope(
+  local attribute new_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope(
     just(top.inh_scope),
     extend.syn_decls ++ implement.syn_decls ++ block.syn_decls,
     extend.syn_refs ++ implement.syn_refs ++ block.syn_refs,
@@ -127,7 +119,7 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
     just(init_decl)
   );
 
-  local attribute init_decl::Decl_type = cons_decl(
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl(
     id.lexeme,
     top.inh_scope,
     just(new_scope),
@@ -279,7 +271,7 @@ top::QidList ::= qid::Qid
 abstract production qid_dot
 top::Qid ::= id::ID_t qid::Qid
 {
-  local attribute init_scope::Scope_type = cons_scope (
+  local attribute init_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope (
     nothing(),
     qid.syn_decls,
     qid.syn_refs,
@@ -288,7 +280,7 @@ top::Qid ::= id::ID_t qid::Qid
     nothing()
   );
 
-  local attribute init_usage::Usage_type = cons_usage ( -- rqid
+  local attribute init_usage::sg:Ref<IdDcl IdRef> = sg:cons_usage ( -- rqid
     id.lexeme,
     top.inh_scope,
     id.line,
@@ -312,14 +304,14 @@ top::Qid ::= id::ID_t qid::Qid
 abstract production qid_single
 top::Qid ::= id::ID_t
 {
-  local attribute init_import_two::Usage_type = cons_usage (
+  local attribute init_import_two::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope_two,
     id.line,
     id.column
   );
 
-  local attribute init_import::Usage_type = cons_usage (
+  local attribute init_import::sg:Ref<IdDcl IdRef> = sg:cons_usage (
     id.lexeme,
     top.inh_scope,
     id.line,
@@ -333,9 +325,12 @@ top::Qid ::= id::ID_t
   top.syn_all_scopes = [];
   top.syn_scopes = [];
 
-  --local attribute fst_path::Path_type = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
+  --local attribute fst_path::sg:Path<IdDcl IdRef> = cons_path(init_import, head(init_import.resolutions)); -- TODO: in case of errors print some paths anyway
   --top.paths = [fst_path];
 
   -- ast printing
   top.pp = "qid_single(" ++ id.lexeme ++ ")";
 }
+
+nonterminal IdDcl;
+nonterminal IdRef;
