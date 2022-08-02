@@ -11,32 +11,35 @@ nonterminal Extend;
 nonterminal Implement;
 nonterminal QidList;
 nonterminal Qid;
+nonterminal Expression;
+nonterminal Type;
 
 -- Printing AST term
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Block, Extend, Implement, QidList, Qid;
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Block, Extend, Implement, 
+  QidList, Qid, Expression, Type;
 
 -- Information required for constructing scope nodes with references, declarations and imports
 -- Sub-expressions can synthesize each of these, which must be given to the enclosing scope
 synthesized attribute syn_decls::[Decorated sg:Decl<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
 synthesized attribute syn_refs::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
 synthesized attribute syn_imports::[Decorated sg:Ref<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
 
 -- Information required for synthesizing a graph node at the root of an AST
 synthesized attribute syn_graph::Decorated sg:Graph<IdDcl IdRef> occurs on Program;
 synthesized attribute syn_all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
 
 -- The inherited scope passed to a node is the scope in which the corresponding construct resides
 inherited attribute inh_scope::Decorated sg:Scope<IdDcl IdRef> occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
   inherited attribute inh_scope_two::Decorated sg:Scope<IdDcl IdRef> occurs on Qid;
 
 -- For double-edged arrow between parent and child scopes
 synthesized attribute syn_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Block, 
-  Extend, Implement, QidList, Qid;
+  Extend, Implement, QidList, Qid, Expression, Type;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
 synthesized attribute syn_iqid_import::Decorated sg:Ref<IdDcl IdRef> occurs on Qid;
@@ -114,7 +117,7 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
     just(top.inh_scope),
     block.syn_decls,
     block.syn_refs,
-    block.syn_refs,
+    block.syn_imports ++ extend.syn_imports ++ implement.syn_imports,
     block.syn_scopes,
     just(init_decl)
   );
@@ -129,7 +132,7 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
 
   top.syn_decls = [init_decl] ++ extend.syn_decls ++ implement.syn_decls;
   top.syn_refs = extend.syn_refs ++ implement.syn_refs;
-  top.syn_imports = extend.syn_imports ++ implement.syn_imports;
+  top.syn_imports = [];
   top.syn_all_scopes = [new_scope] ++ extend.syn_all_scopes ++ implement.syn_all_scopes ++ block.syn_all_scopes;
   top.syn_scopes = [new_scope];
 
@@ -141,6 +144,75 @@ top::Decl ::= id::ID_t extend::Extend implement::Implement block::Block
 
   -- ast printing
   top.pp = "decl_class(" ++ id.lexeme ++ ", " ++ extend.pp ++ ", " ++ implement.pp ++ ", " ++ block.pp ++ ")";
+}
+
+abstract production decl_vardecl
+top::Decl ::= type::Type id::ID_t
+{
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl(
+    id.lexeme,
+    top.inh_scope,
+    nothing(),
+    id.line,
+    id.column
+  );
+
+  top.syn_decls = [init_decl];
+  top.syn_refs = [];
+  top.syn_imports = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = [];
+
+  -- ast printing
+  top.pp = "decl_vardecl(" ++ type.pp ++ ", " ++ id.lexeme ++ ")";
+}
+
+abstract production decl_method
+top::Decl ::= type::Type id::ID_t block::Block
+{
+  -- New scope for a method
+  local attribute new_scope::sg:Scope<IdDcl IdRef> = sg:cons_scope(
+    just(top.inh_scope),
+    block.syn_decls,
+    block.syn_refs,
+    block.syn_imports,
+    block.syn_scopes,
+    just(init_decl)
+  );
+
+  local attribute init_decl::sg:Decl<IdDcl IdRef> = sg:cons_decl(
+    id.lexeme,
+    top.inh_scope,
+    just(new_scope),
+    id.line,
+    id.column
+  );
+
+  top.syn_decls = [init_decl];
+  top.syn_refs = [];
+  top.syn_imports = [];
+  top.syn_all_scopes = [new_scope] ++ block.syn_all_scopes;
+  top.syn_scopes = [new_scope] ++ block.syn_scopes;
+
+  block.inh_scope = top.inh_scope;
+
+  -- ast printing
+  top.pp = "decl_method(" ++ type.pp ++ ", " ++ id.lexeme ++ ", " ++ block.pp ++ ")";
+}
+
+abstract production decl_expr
+top::Decl ::= expr::Expression
+{
+  top.syn_decls = expr.syn_decls;
+  top.syn_refs = expr.syn_refs;
+  top.syn_imports = expr.syn_imports;
+  top.syn_all_scopes = expr.syn_all_scopes;
+  top.syn_scopes = expr.syn_scopes;
+
+  expr.inh_scope = top.inh_scope;
+
+  -- ast printing
+  top.pp = "decl_expr(" ++ expr.pp ++ ")";
 }
 
 ------------------------------------------------------------
@@ -160,6 +232,42 @@ top::Block ::= list::DeclList
 
   -- ast printing
   top.pp = "block(" ++ list.pp ++ ")";
+}
+
+------------------------------------------------------------
+---- Expression
+------------------------------------------------------------
+
+abstract production expr_qid
+top::Expression ::= qid::Qid
+{
+  top.syn_decls = qid.syn_decls;
+  top.syn_refs = qid.syn_refs;
+  top.syn_imports = qid.syn_imports;
+  top.syn_all_scopes = qid.syn_all_scopes;
+  top.syn_scopes = qid.syn_scopes;
+
+  qid.inh_scope = top.inh_scope;
+
+  -- ast printing
+  top.pp = "expr_qid(" ++ qid.pp ++ ")";
+}
+
+------------------------------------------------------------
+---- Types
+------------------------------------------------------------
+
+abstract production type_int
+top::Type ::=
+{
+  top.syn_decls = [];
+  top.syn_refs = [];
+  top.syn_imports = [];
+  top.syn_all_scopes = [];
+  top.syn_scopes = [];
+
+  -- ast printing
+  top.pp = "type_int()";
 }
 
 ------------------------------------------------------------
@@ -288,6 +396,8 @@ top::Qid ::= id::ID_t qid::Qid
     id.line,
     id.column
   );
+
+  init_usage.sg:seen_imports = [];
   
   top.syn_decls = [];
   top.syn_refs = [init_usage];
@@ -332,6 +442,8 @@ top::Qid ::= id::ID_t
     id.line,
     id.column
   );
+
+  init_import.sg:seen_imports = [];
 
   top.syn_decls = [];
   top.syn_refs = [init_import];

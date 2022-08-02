@@ -162,31 +162,56 @@ function env_p
  - @return A list of all declarations that ref resolves to.
 -}
 function resolve_new
-[Decorated Decl<d r>] ::= ref::Decorated Ref<d r> cur_scope::Decorated Scope<d r>
+[Decorated Decl<d r>] ::= 
+  ref::Decorated Ref<d r> 
+  cur_scope::Decorated Scope<d r> 
+  seen_scopes::[Decorated Scope<d r>] 
+  seen_imports::[Decorated Ref<d r>]
 {
+
+  local attribute new_seen_scopes::[Decorated Scope<d r>] = seen_scopes ++ [cur_scope];
+  local attribute new_seen_imports::[Decorated Ref<d r>] = seen_imports ++ [ref];
+
   -- Check for any matching declarations in the current scope
-  local attribute decls::[Decorated Decl<d r>] = 
-    filter((\decl::Decorated Decl<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
+  local attribute decls::[Decorated Decl<d r>] = filter((\decl::Decorated Decl<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
   
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decorated Decl<d r>] = foldl(
     (\acc::[Decorated Decl<d r>] cur::Decorated Decl<d r> -> acc ++ 
-      case cur.assoc_scope of | nothing() -> [] | just(s) -> resolve_new(ref, s) end),
+      case cur.assoc_scope of | nothing() -> [] | just(s) -> filter((
+        \decl::Decorated Decl<d r> -> decl.identifier == ref.identifier
+      ), resolve_new(ref, s, new_seen_scopes, new_seen_imports)) end),
     [],
     foldl(
-      (\acc::[Decorated Decl<d r>] cur::Decorated Ref<d r> -> acc ++ cur.resolutions),
+      (\acc::[Decorated Decl<d r>] cur::Ref<d r> -> 
+        acc ++ (decorate cur with {seen_imports = new_seen_imports;}).resolutions),
       [],
-      removeBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.to_string == right.to_string), ref, cur_scope.imports)
+      map((\imp::Decorated Ref<d r> -> new(imp)), filter((\ref::Decorated Ref<d r> -> !containsBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.to_string == right.to_string), ref, seen_imports)), cur_scope.imports))
     )
   );
   
   -- recursive call on parent
   local attribute par::[Decorated Decl<d r>] = case cur_scope.parent of
     | nothing() -> []
-    | just(p) -> resolve_new(ref, p) -- Cases of circularity? Already seen this scope - never ending reolution?
+    | just(p) -> filter((\decl::Decorated Decl<d r> -> decl.identifier == ref.identifier), resolve_new(ref, p, new_seen_scopes, new_seen_imports))
   end;
   
-  return merge_declarations_with_shadowing(decls, merge_declarations_with_shadowing(imps, par));
+  return if check_seen_scopes(cur_scope, seen_scopes) then 
+    --merge_declarations_with_shadowing(decls, merge_declarations_with_shadowing(imps, par))
+    if (length(decls) > 0) then
+      decls
+    else if (length(imps) > 0) then
+      imps
+    else
+      par
+  else 
+    [];
+}
+
+function check_seen_scopes
+Boolean ::= cur_scope::Decorated Scope<d r> seen_scopes::[Decorated Scope<d r>]
+{
+  return containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), cur_scope, seen_scopes);
 }
 
 

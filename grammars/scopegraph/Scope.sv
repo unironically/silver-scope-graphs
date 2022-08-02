@@ -172,7 +172,9 @@ top::Decl<d r> ::=
 synthesized attribute resolutions<d r>::[Decorated Decl<d r>]; -- The node that this import points to with an invisible line. added to after resolution
 synthesized attribute imported_by<d r>::Maybe<Decorated Scope<d r>>;
 
-nonterminal Ref<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>;
+inherited attribute seen_imports<d r>::[Decorated Ref<d r>];
+
+nonterminal Ref<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>, seen_imports<d r>;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -193,7 +195,7 @@ top::Ref<d r> ::=
   top.in_scope = in_scope;
   
   top.resolutions = resolve([], top);
-  --top.resolutions = resolve_new(top, top.in_scope);
+  --top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
 
   top.line = line;
   top.column = column;
@@ -210,7 +212,6 @@ top::Ref<d r> ::=
   else
     [];
 }
-
 
 {-
 abstract production mk_ref

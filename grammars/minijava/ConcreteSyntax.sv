@@ -10,6 +10,8 @@ nonterminal Extend_c with ast<Extend>;
 nonterminal Implement_c with ast<Implement>;
 nonterminal QidList_c with ast<QidList>;
 nonterminal Qid_c with ast<Qid>;
+nonterminal Expression_c with ast<Expression>;
+nonterminal Type_c with ast<Type>;
 
 ------------------------------------------------------------
 ---- Program
@@ -47,6 +49,25 @@ top::Decl_c ::= Class_t id::ID_t extend::Extend_c implement::Implement_c block::
   top.ast = decl_class(id, extend.ast, implement.ast, block.ast);
 }
 
+concrete production decl_vardecl_c
+top::Decl_c ::= type::Type_c id::ID_t
+{
+  top.ast = decl_vardecl(type.ast, id);
+}
+
+concrete production decl_expr_c
+top::Decl_c ::= expr::Expression_c
+{
+  top.ast = decl_expr(expr.ast);
+}
+
+concrete production decl_method_c
+top::Decl_c ::= type::Type_c id::ID_t LParen_t RParen_t block::Block_c
+{
+  top.ast = decl_method(type.ast, id, block.ast);
+}
+
+
 ------------------------------------------------------------
 ---- Block
 ------------------------------------------------------------
@@ -55,6 +76,26 @@ concrete production block_c
 top::Block_c ::= LCurly_t list::DeclList_c RCurly_t
 {
   top.ast = block(list.ast);
+}
+
+------------------------------------------------------------
+---- Expression
+------------------------------------------------------------
+
+concrete production expr_qid_c
+top::Expression_c ::= qid::Qid_c
+{
+  top.ast = expr_qid(qid.ast);
+}
+
+------------------------------------------------------------
+---- Types
+------------------------------------------------------------
+
+concrete production type_int_c
+top::Type_c ::= IntType_t
+{
+  top.ast = type_int();
 }
 
 ------------------------------------------------------------
