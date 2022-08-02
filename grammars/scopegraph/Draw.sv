@@ -17,7 +17,7 @@ String ::= graph::Decorated Graph<d r> draw_paths::Boolean draw_parents::Boolean
   return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
     foldl((\acc::String scope::Decorated Scope<d r> 
       -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
-    "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++
+    " " ++ graphviz_ranks(graph.root_scope) ++ "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++
     (if draw_paths then graphviz_draw_paths(graph) ++ "\n" else "") ++
     graphviz_all_declrefs(graph) ++ "\n" ++
     graphviz_scopes(graph.scope_list) ++ "\n" ++
@@ -135,9 +135,9 @@ String ::= graph::Decorated Graph<d r>
       ([],[]),
       graph.scope_list)
   in
-  "{node [color=red fontsize=12] edge [arrowhead=normal color=red style=dashed]" ++
+  "{node [color=red fontsize=12] edge [arrowhead=normal color=red style=dashed constraint=false]" ++
       graphviz_draw_individual_paths(snd(all)) ++ "}" ++
-  "{edge [arrowhead=normal color=blue style=dashed]" ++ 
+  "{edge [arrowhead=normal color=blue style=dashed constraint=false]" ++ 
     graphviz_draw_individual_paths(fst(all)) ++ "}"
   end ++ "\n";
 }
@@ -185,4 +185,10 @@ String ::= graph::Decorated Graph<d r>
       )
     ), "", graph.scope_list) ++
   "}";
+}
+
+function graphviz_ranks
+String ::= scope::Decorated Scope<d r>
+{
+  return "";
 }

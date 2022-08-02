@@ -62,7 +62,7 @@ top::Program ::= list::DeclList
     nothing()
   );
 
-  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope::list.syn_all_scopes);
+  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope, init_scope::list.syn_all_scopes);
   top.syn_graph = init_graph; -- simply substituting sg:cons_graph(...) here does not work
 
   list.inh_scope = init_scope;

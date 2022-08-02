@@ -5,11 +5,12 @@ grammar scopegraph;
 -- Scope Graph
 
 synthesized attribute scope_list<d r>::[Decorated Scope<d r>];
+synthesized attribute root_scope<d r>::Decorated Scope<d r>;
 synthesized attribute paths<d r>::[Decorated Path<d r>];
 synthesized attribute all_decls<d r>::[Decorated Decl<d r>];
 synthesized attribute errors<d r>::[Decorated Error<d r>];
 
-nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>, paths<d r>;
+nonterminal Graph<d r> with scope_list<d r>, root_scope<d r>, all_decls<d r>, errors<d r>, paths<d r>;
 
 @{-
  - Constructing a graph node.
@@ -18,8 +19,9 @@ nonterminal Graph<d r> with scope_list<d r>, all_decls<d r>, errors<d r>, paths<
 
 -}
 abstract production cons_graph
-top::Graph<d r> ::= scope_list::[Decorated Scope<d r>] 
+top::Graph<d r> ::= root_scope::Decorated Scope<d r> scope_list::[Decorated Scope<d r>] 
 {
+  top.root_scope = root_scope;
   top.scope_list = scope_list;
   top.all_decls = foldl(
     (\all_decls::[Decorated Decl<d r>] scope::Decorated Scope<d r> 
