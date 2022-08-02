@@ -139,8 +139,8 @@ top::Decl<d r> ::= identifier::String
   top.assoc_scope = assoc_scope;
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
-  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
+  top.graphviz_name = top.to_string;
 }
 
 {-
@@ -199,8 +199,8 @@ top::Ref<d r> ::=
 
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_[" ++ toString(line) ++ ", " ++ toString(column) ++ "]";
-  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column) ++ "";
+  top.graphviz_name = top.to_string;
 
   top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Decl<d r> -> 
     acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);

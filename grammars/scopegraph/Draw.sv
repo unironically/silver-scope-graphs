@@ -56,7 +56,7 @@ String ::= scope::Decorated Scope<d r> refs::[Decorated Ref<d r>]
 {
   return case refs of 
     | [] -> ""
-    | h::t -> h.graphviz_name ++ " -> " ++ scope.graphviz_name ++ " " ++ graphviz_scope_refs(scope, t)
+    | h::t -> "<" ++ h.graphviz_name ++ ">" ++ " -> " ++ scope.graphviz_name ++ " " ++ graphviz_scope_refs(scope, t)
   end;
 }
 
@@ -168,12 +168,18 @@ String ::= graph::Decorated Graph<d r>
   return "{node [shape=box style=solid fontsize=12]" ++ 
     foldl((\acc::String scope::Decorated Scope<d r> -> acc ++ " " ++ 
       foldl(
-        (\acc::String decl::Decorated Decl<d r> -> acc ++ " " ++ decl.graphviz_name),
+        (\acc::String decl::Decorated Decl<d r> -> acc ++ " " ++ decl.graphviz_name ++ 
+          "[label=<" ++ decl.identifier ++ 
+          "<SUB>(" ++ toString(decl.line) ++ "," ++ toString(decl.column) ++ 
+          ")</SUB><SUP>R</SUP>>];"),
         "",
         scope.declarations
       ) ++
       foldl(
-        (\acc::String ref::Decorated Ref<d r> -> acc ++ " " ++ ref.graphviz_name),
+        (\acc::String ref::Decorated Ref<d r> -> acc ++ " " ++ ref.graphviz_name ++ 
+          "[label=<" ++ ref.identifier ++ 
+          "<SUB>(" ++ toString(ref.line) ++ "," ++ toString(ref.column) ++ 
+          ")</SUB><SUP>D</SUP>>];"),
         "",
         scope.references ++ scope.imports
       )

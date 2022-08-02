@@ -397,7 +397,7 @@ top::Qid ::= id::ID_t qid::Qid
     id.column
   );
 
-  init_usage.sg:seen_imports = [];
+  init_usage.sg:seen_imports = [init_usage];
   
   top.syn_decls = [];
   top.syn_refs = [init_usage];
@@ -443,7 +443,7 @@ top::Qid ::= id::ID_t
     id.column
   );
 
-  init_import.sg:seen_imports = [];
+  init_import.sg:seen_imports = [init_import];
 
   top.syn_decls = [];
   top.syn_refs = [init_import];
