@@ -1,5 +1,6 @@
 grammar scopegraph;
 
+global color_list::[String] = ["gold", "deeppink", "green", "purple", "darkorange", "blue"];
 
 ----------------
 -- Scope<d r> graph:
@@ -14,10 +15,16 @@ grammar scopegraph;
 function graphviz_draw_graph
 String ::= graph::Decorated Graph<d r> draw_paths::Boolean draw_parents::Boolean
 {
-  return "digraph {{ node [shape=circle style=solid fontsize=12] " ++ 
-    foldl((\acc::String scope::Decorated Scope<d r> 
-      -> acc ++ " " ++ toString(scope.id)), "", graph.scope_list) ++ 
-    " " ++ graphviz_ranks(graph.root_scope) ++ "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++
+  return "digraph {{ node [shape=circle style=solid fontsize=12] " ++
+    fst(foldl(
+      (\acc::(String, Integer) scope::Decorated Scope<d r> -> 
+        case scope.parent of 
+          | nothing() -> (fst(acc) ++ " " ++ graphviz_all_scopes(scope, toString(snd(acc))), snd(acc) + 1) 
+          | just(p) -> (fst(acc) ++ "", snd(acc)) 
+        end), 
+      ("", 0), 
+      graph.scope_list)) ++
+    "} node [shape=box fontsize=12] edge [arrowhead=normal] " ++
     (if draw_paths then graphviz_draw_paths(graph) ++ "\n" else "") ++
     graphviz_all_declrefs(graph) ++ "\n" ++
     graphviz_scopes(graph.scope_list) ++ "\n" ++
@@ -69,7 +76,7 @@ String ::= scope::Decorated Scope<d r> refs::[Decorated Ref<d r>]
 function graphviz_scope_imports
 String ::= scope::Decorated Scope<d r> refs::[Decorated Ref<d r>]
 {
-  return case refs of 
+  return case refs of
     | [] -> ""
     | h::t -> scope.graphviz_name ++ " -> " ++ h.graphviz_name ++ " " ++ graphviz_scope_imports(scope, t)
   end;
@@ -105,7 +112,7 @@ String ::= scope::Decorated Scope<d r> decls::[Decorated Decl<d r>]
 function graphviz_scope_children
 String ::= scopes::[Decorated Scope<d r>]
 {
-  return "{edge [color=pink style=dashed] " ++
+  return "{edge [color=gray75 constraint=false] " ++
     foldl((\accone::String h::Decorated Scope<d r> ->
     accone ++ (foldl(
       (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ h.graphviz_name ++ " -> "  ++ child.graphviz_name),
@@ -136,9 +143,9 @@ String ::= graph::Decorated Graph<d r>
       graph.scope_list)
   in
   "{node [color=red fontsize=12] edge [arrowhead=normal color=red style=dashed constraint=false]" ++
-      graphviz_draw_individual_paths(snd(all)) ++ "}" ++
-  "{edge [arrowhead=normal color=blue style=dashed constraint=false]" ++ 
-    graphviz_draw_individual_paths(fst(all)) ++ "}"
+      graphviz_draw_individual_paths(snd(all), true) ++ "}" ++
+  "{edge [arrowhead=normal style=dashed constraint=false]" ++ 
+    graphviz_draw_individual_paths(fst(all), false) ++ "}"
   end ++ "\n";
 }
 
@@ -149,12 +156,12 @@ String ::= graph::Decorated Graph<d r>
  - @return The string with which graphviz will draw resolution paths.
 -}
 function graphviz_draw_individual_paths
-String ::= usages::[Decorated Ref<d r>]
+String ::= usages::[Decorated Ref<d r>] isErrorPaths::Boolean
 {
   return foldl(
     (\acc::String usg::Decorated Ref<d r> -> acc ++ " " ++ usg.graphviz_name ++ " " ++ 
       foldl((\acc::String path::Decorated Path<d r> -> acc ++ " " ++ usg.graphviz_name ++ 
-          " -> " ++ path.final.graphviz_name), 
+          " -> " ++ path.final.graphviz_name ++ "[color=" ++ last(take((genInt()%length(color_list))+1, color_list)) ++ "]"), 
         "", 
         usg.paths)),
     "", 
@@ -171,7 +178,7 @@ String ::= graph::Decorated Graph<d r>
         (\acc::String decl::Decorated Decl<d r> -> acc ++ " " ++ decl.graphviz_name ++ 
           "[label=<" ++ decl.identifier ++ 
           "<SUB>(" ++ toString(decl.line) ++ "," ++ toString(decl.column) ++ 
-          ")</SUB><SUP>R</SUP>>];"),
+          ")</SUB><SUP>D</SUP>>];"),
         "",
         scope.declarations
       ) ++
@@ -179,7 +186,7 @@ String ::= graph::Decorated Graph<d r>
         (\acc::String ref::Decorated Ref<d r> -> acc ++ " " ++ ref.graphviz_name ++ 
           "[label=<" ++ ref.identifier ++ 
           "<SUB>(" ++ toString(ref.line) ++ "," ++ toString(ref.column) ++ 
-          ")</SUB><SUP>D</SUP>>];"),
+          ")</SUB><SUP>R</SUP>>];"),
         "",
         scope.references ++ scope.imports
       )
@@ -187,8 +194,11 @@ String ::= graph::Decorated Graph<d r>
   "}";
 }
 
-function graphviz_ranks
-String ::= scope::Decorated Scope<d r>
+function graphviz_all_scopes
+String ::= scope::Decorated Scope<d r> new_label::String
 {
-  return "";
+  return scope.graphviz_name ++ "[label=\"" ++ new_label ++ "\"];" ++ foldl(
+    (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ graphviz_all_scopes(child, new_label ++ "." ++ toString(positionOfBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), child, scope.child_scopes)))), 
+    "", 
+    scope.child_scopes);
 }
