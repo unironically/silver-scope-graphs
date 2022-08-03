@@ -112,7 +112,7 @@ String ::= scope::Decorated Scope<d r> decls::[Decorated Decl<d r>]
 function graphviz_scope_children
 String ::= scopes::[Decorated Scope<d r>]
 {
-  return "{edge [color=gray75 constraint=false] " ++
+  return "{edge [arrowhead=vee style=dashed color=gray75 constraint=false] " ++
     foldl((\accone::String h::Decorated Scope<d r> ->
     accone ++ (foldl(
       (\acc::String child::Decorated Scope<d r> -> acc ++ " " ++ h.graphviz_name ++ " -> "  ++ child.graphviz_name),
@@ -142,9 +142,9 @@ String ::= graph::Decorated Graph<d r>
       ([],[]),
       graph.scope_list)
   in
-  "{node [color=red fontsize=12] edge [arrowhead=normal color=red style=dashed constraint=false]" ++
+  "{node [color=red fontsize=12] [arrowhead=vee color=red style=dashed constraint=false]" ++
       graphviz_draw_individual_paths(snd(all), true) ++ "}" ++
-  "{edge [arrowhead=normal style=dashed constraint=false]" ++ 
+  "{edge [arrowhead=vee style=dashed constraint=false]" ++ 
     graphviz_draw_individual_paths(fst(all), false) ++ "}"
   end ++ "\n";
 }
@@ -161,7 +161,7 @@ String ::= usages::[Decorated Ref<d r>] isErrorPaths::Boolean
   return foldl(
     (\acc::String usg::Decorated Ref<d r> -> acc ++ " " ++ usg.graphviz_name ++ " " ++ 
       foldl((\acc::String path::Decorated Path<d r> -> acc ++ " " ++ usg.graphviz_name ++ 
-          " -> " ++ path.final.graphviz_name ++ "[color=" ++ last(take((genInt()%length(color_list))+1, color_list)) ++ "]"), 
+          " -> " ++ path.final.graphviz_name ++ "[color=" ++ (if isErrorPaths then "red" else last(take((genInt()%length(color_list))+1, color_list))) ++ "]"), 
         "", 
         usg.paths)),
     "", 

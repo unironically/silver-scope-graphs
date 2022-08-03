@@ -68,7 +68,7 @@ top::Program ::= list::DeclList
     nothing()
   );
   
-  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope::list.syn_all_scopes);
+  local attribute init_graph::sg:Graph<IdDcl IdRef> = sg:cons_graph(init_scope, init_scope::list.syn_all_scopes);
   top.syn_graph = init_graph; -- simply substituting sg:cons_graph(...) here does not work
 
   list.inh_scope = init_scope;
@@ -482,8 +482,7 @@ top::Qid ::= id::ID_t qid::Qid
     id.column
   );
 
-  init_usage.sg:seen_scopes = [];
-  init_usage.sg:seen_imports = [];
+  init_usage.sg:seen_imports = [init_usage];
   
   top.syn_decls := [];
   top.syn_refs := [init_usage];
@@ -509,8 +508,7 @@ top::Qid ::= id::ID_t
     id.column
   );
 
-  init_import.sg:seen_scopes = [];
-  init_import.sg:seen_imports = [];
+  init_import.sg:seen_imports = [init_import];
 
   top.syn_decls := [];
   top.syn_refs := [init_import];
