@@ -43,13 +43,12 @@ synthesized attribute declarations<d r>::[Decorated Decl<d r>];
 synthesized attribute references<d r>::[Decorated Ref<d r>];
 synthesized attribute imports<d r>::[Decorated Ref<d r>];
 
-synthesized attribute to_string::String;
-synthesized attribute graphviz_name::String;
+synthesized attribute str::String;
 synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute assoc_decl<d r>::Maybe<Decorated Decl<d r>>;
 
 
-nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, to_string, child_scopes<d r>, graphviz_name, assoc_decl<d r>, errors<d r>, paths<d r>;
+nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, str, child_scopes<d r>, assoc_decl<d r>, errors<d r>, paths<d r>;
 
 @{-
  - Constructing a scope node.
@@ -73,8 +72,7 @@ top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
   top.declarations = declarations;
   top.references = references;
   top.imports = imports;
-  top.to_string = toString(top.id);
-  top.graphviz_name = top.to_string;
+  top.str = toString(top.id);
   top.child_scopes = child_scopes;
   top.assoc_decl = assoc_decl;
   
@@ -119,7 +117,7 @@ synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
 
-nonterminal Decl<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, to_string, graphviz_name;
+nonterminal Decl<d r> with identifier, in_scope<d r>, assoc_scope<d r>, line, column, str;
 
 @{-
  - Constructing a declaration node.
@@ -141,8 +139,7 @@ top::Decl<d r> ::= identifier::String
   top.assoc_scope = assoc_scope;
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
-  top.graphviz_name = top.to_string;
+  top.str = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
 
 {-
@@ -162,8 +159,8 @@ top::Decl<d r> ::=
   top.assoc_scope = assoc_scope;
   top.line = ast_node.line;
   top.column = ast_node.column;
-  top.to_string = top.identifier ++ "_[" ++ toString(ast_node.line) ++ ", " ++ toString(ast_node.column) ++ "]";
-  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+  top.str = top.identifier ++ "_[" ++ toString(ast_node.line) ++ ", " ++ toString(ast_node.column) ++ "]";
+  top.str = "\"" ++ top.str ++ "\"";
 }
 -}
 
@@ -176,7 +173,7 @@ synthesized attribute imported_by<d r>::Maybe<Decorated Scope<d r>>;
 
 inherited attribute seen_imports<d r>::[Decorated Ref<d r>];
 
-nonterminal Ref<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, to_string, graphviz_name, paths<d r>, errors<d r>, seen_imports<d r>;
+nonterminal Ref<d r> with identifier, in_scope<d r>, resolutions<d r>, line, column, str, paths<d r>, errors<d r>, seen_imports<d r>;
 
 @{-
  - Constructing a usage (reference/import) node.
@@ -201,8 +198,7 @@ top::Ref<d r> ::=
 
   top.line = line;
   top.column = column;
-  top.to_string = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column) ++ "";
-  top.graphviz_name = top.to_string;
+  top.str = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column) ++ "";
 
   top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Decl<d r> -> 
     acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
@@ -231,7 +227,6 @@ top::Ref<d r> ::=
 
   top.line = ast_node.line;
   top.column = ast_node.column;
-  top.to_string = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
-  top.graphviz_name = "\"" ++ top.to_string ++ "\"";
+  top.str = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
 }
 -}

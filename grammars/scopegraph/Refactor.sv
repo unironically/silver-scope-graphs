@@ -17,7 +17,7 @@ Maybe<Decorated Decl<d r>> ::=
   graph::Decorated Graph<d r>
 {
   return let matching_decls::[Decorated Decl<d r>] = 
-    filter((\decl::Decorated Decl<d r> -> decl.to_string == sought_index),
+    filter((\decl::Decorated Decl<d r> -> decl.str == sought_index),
       foldl((\acc::[Decorated Decl<d r>] scope::Decorated Scope<d r> -> acc ++ scope.declarations), 
         [], graph.scope_list))
   in if length(matching_decls) >= 1 then just(head(matching_decls)) else nothing() end; -- TODO: error checking on more than 1 matching decl
@@ -53,7 +53,7 @@ function find_all_references_for_decl
     | just(de) -> case current_scope.parent of
       | nothing() -> []
       | just(s) -> filter((\child::Decorated Scope<d r> -> foldl(
-        (\acc::Boolean imp::Decorated Ref<d r> -> head(imp.resolutions).to_string == de.to_string), 
+        (\acc::Boolean imp::Decorated Ref<d r> -> head(imp.resolutions).str == de.str), 
         false, child.imports)), s.child_scopes)
     end 
   end;
@@ -63,7 +63,7 @@ function find_all_references_for_decl
     [], parent_children);
 
   return if containsBy((\left::Decorated Decl<d r> right::Decorated Decl<d r> -> 
-      left.identifier == right.identifier && left.to_string != right.to_string),
+      left.identifier == right.identifier && left.str != right.str),
     sought_decl, current_scope.declarations) -- May need to change later for type-dependency of languages
   then []
   else immediate_refs ++ child_scope_refs ++ importing_refs;

@@ -186,7 +186,7 @@ function resolve_new
       (\acc::[Decorated Decl<d r>] cur::Ref<d r> -> 
         acc ++ (decorate cur with {seen_imports = seen_imports;}).resolutions),
       [],
-      map((\imp::Decorated Ref<d r> -> new(imp)), filter((\ref::Decorated Ref<d r> -> !containsBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.to_string == right.to_string), ref, seen_imports)), cur_scope.imports))
+      map((\imp::Decorated Ref<d r> -> new(imp)), filter((\ref::Decorated Ref<d r> -> !containsBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.str == right.str), ref, seen_imports)), cur_scope.imports))
     )
   );
   
@@ -262,7 +262,7 @@ function string_paths
 String ::= list::[Decorated Path<d r>]
 {
   return case list of 
-  | h::t -> "Found resolution: " ++ h.start.to_string ++ " --> " ++ h.final.to_string ++ "\n" ++ 
+  | h::t -> "Found resolution: " ++ h.start.str ++ " --> " ++ h.final.str ++ "\n" ++ 
     string_paths(t)
   | [] -> ""
   end;
