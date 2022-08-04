@@ -169,7 +169,6 @@ top::Decl<d r> ::=
 -- Imports/References
 
 synthesized attribute resolutions<d r>::[Decorated Decl<d r>]; -- The node that this import points to with an invisible line. added to after resolution
-synthesized attribute imported_by<d r>::Maybe<Decorated Scope<d r>>;
 
 inherited attribute seen_imports<d r>::[Decorated Ref<d r>];
 
@@ -193,8 +192,8 @@ top::Ref<d r> ::=
   top.identifier = identifier;
   top.in_scope = in_scope;
   
-  top.resolutions = resolve([], top);
-  --top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
+  --top.resolutions = resolve([], top);
+  top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
 
   top.line = line;
   top.column = column;

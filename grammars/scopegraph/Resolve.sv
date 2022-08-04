@@ -169,8 +169,8 @@ function resolve_new
   seen_imports::[Decorated Ref<d r>]
 {
 
-  local attribute new_seen_scopes::[Decorated Scope<d r>] = seen_scopes ++ [cur_scope];
-  --local attribute new_seen_imports::[Decorated Ref<d r>] = seen_imports ++ [ref];
+  local attribute new_seen_scopes::[Decorated Scope<d r>] = seen_scopes;-- ++ [cur_scope];
+  local attribute new_seen_imports::[Decorated Ref<d r>] = seen_imports ++ [ref];
 
   -- Check for any matching declarations in the current scope
   local attribute decls::[Decorated Decl<d r>] = filter((\decl::Decorated Decl<d r> -> decl.identifier == ref.identifier), cur_scope.declarations);
@@ -180,13 +180,27 @@ function resolve_new
     (\acc::[Decorated Decl<d r>] cur::Decorated Decl<d r> -> acc ++ 
       case cur.assoc_scope of | nothing() -> [] | just(s) -> filter((
         \decl::Decorated Decl<d r> -> decl.identifier == ref.identifier
-      ), resolve_new(ref, s, new_seen_scopes, seen_imports)) end),
+      ), resolve_new(ref, s, new_seen_scopes, new_seen_imports)) end),
     [],
     foldl(
-      (\acc::[Decorated Decl<d r>] cur::Ref<d r> -> 
-        acc ++ (decorate cur with {seen_imports = seen_imports;}).resolutions),
+      (\acc::[Decorated Decl<d r>] cur::Decorated Ref<d r> -> 
+        acc ++ let new_cur::Ref<d r> = new(cur) in (decorate new_cur with {
+          seen_imports = new_seen_imports; 
+          in_scope = cur.in_scope;
+          line = cur.line;
+          column = cur.column;
+          str = cur.str;
+          identifier = cur.identifier;
+          resolutions = cur.resolutions; 
+          errors = cur.errors;
+          paths = cur.paths;}).resolutions end
+      ),
       [],
-      map((\imp::Decorated Ref<d r> -> new(imp)), filter((\ref::Decorated Ref<d r> -> !containsBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.str == right.str), ref, seen_imports)), cur_scope.imports))
+      removeAllBy(
+        (\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.str == right.str),
+        new_seen_imports,
+        cur_scope.imports
+      )
     )
   );
   
