@@ -192,8 +192,8 @@ top::Ref<d r> ::=
   top.identifier = identifier;
   top.in_scope = in_scope;
   
-  --top.resolutions = resolve([], top);
-  top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
+  top.resolutions = resolve([], top);
+  --top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
 
   top.line = line;
   top.column = column;
