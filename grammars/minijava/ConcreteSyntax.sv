@@ -12,6 +12,8 @@ nonterminal QidList_c with ast<QidList>;
 nonterminal Qid_c with ast<Qid>;
 nonterminal Expression_c with ast<Expression>;
 nonterminal Type_c with ast<Type>;
+nonterminal IdDcl_c with ast<IdDcl>;
+nonterminal IdRef_c with ast<IdRef>;
 
 ------------------------------------------------------------
 ---- Program
@@ -44,15 +46,15 @@ top::DeclList_c ::=
 ------------------------------------------------------------
 
 concrete production decl_class_c
-top::Decl_c ::= Class_t id::ID_t extend::Extend_c implement::Implement_c block::Block_c
+top::Decl_c ::= Class_t id::IdDcl_c extend::Extend_c implement::Implement_c block::Block_c
 {
-  top.ast = decl_class(id, extend.ast, implement.ast, block.ast);
+  top.ast = decl_class(id.ast, extend.ast, implement.ast, block.ast);
 }
 
 concrete production decl_vardecl_c
-top::Decl_c ::= type::Type_c id::ID_t
+top::Decl_c ::= type::Type_c id::IdDcl_c
 {
-  top.ast = decl_vardecl(type.ast, id);
+  top.ast = decl_vardecl(type.ast, id.ast);
 }
 
 concrete production decl_expr_c
@@ -62,9 +64,9 @@ top::Decl_c ::= expr::Expression_c
 }
 
 concrete production decl_method_c
-top::Decl_c ::= type::Type_c id::ID_t LParen_t RParen_t block::Block_c
+top::Decl_c ::= type::Type_c id::IdDcl_c LParen_t RParen_t block::Block_c
 {
-  top.ast = decl_method(type.ast, id, block.ast);
+  top.ast = decl_method(type.ast, id.ast, block.ast);
 }
 
 
@@ -151,13 +153,29 @@ top::QidList_c ::= qid::Qid_c
 ------------------------------------------------------------
 
 concrete production qid_dot_c
-top::Qid_c ::= id::ID_t Dot_t qid::Qid_c
+top::Qid_c ::= id::IdRef_c Dot_t qid::Qid_c
 {
-  top.ast = qid_dot(id, qid.ast);
+  top.ast = qid_dot(id.ast, qid.ast);
 }
 
 concrete production qid_single_c
-top::Qid_c ::= id::ID_t
+top::Qid_c ::= id::IdRef_c
 {
-  top.ast = qid_single(id);
+  top.ast = qid_single(id.ast);
+}
+
+------------------------------------------------------------
+---- IdRef / IdDecl
+------------------------------------------------------------
+
+concrete production idref_c
+top::IdRef_c ::= id::ID_t
+{
+  top.ast = idref(id);
+}
+
+concrete production iddcl_c
+top::IdDcl_c ::= id::ID_t
+{
+  top.ast = iddcl(id);
 }
