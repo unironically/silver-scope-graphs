@@ -27,14 +27,16 @@ top::Graph<d r> ::= root_scope::Decorated Scope<d r> scope_list::[Decorated Scop
 -- Scopes
 
 synthesized attribute id::Integer;
+synthesized attribute scope_name::Maybe<String>;
+synthesized attribute name::String;
 synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
 synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
 
-synthesized attribute declarations<d r>::[d];
+synthesized attribute decls<d r>::[Decorated d with {name}];
 
 synthesized attribute str::String;
 
-nonterminal Scope<d r> with id, str, parent<d r>, declarations<d r>, child_scopes<d r>;
+nonterminal Scope<d r> with id, scope_name, str, parent<d r>, decls<d r>, child_scopes<d r>;
 
 @{-
  - Constructing a scope node.
@@ -45,15 +47,19 @@ nonterminal Scope<d r> with id, str, parent<d r>, declarations<d r>, child_scope
  - @param imports The list of imports attached to a node.
  - @param assoc_decl In the case of the declarations from a scope being imported, this points to the declarations whose associated scope is this scope.
 -}
+
 abstract production mk_scope
+  attribute name i occurs on d =>
 top::Scope<d r> ::= 
   parent::Maybe<Decorated Scope<d r>> 
+  scope_name::Maybe<String>
   child_scopes::[Decorated Scope<d r>]
-  declarations::[d]
+  decls::[Decorated d with i]
 {
   top.id = genInt();
+  top.scope_name = scope_name;
   top.parent = parent;
-  top.declarations = declarations;
+  top.decls = decls;
   top.str = toString(top.id);
   top.child_scopes = child_scopes;
 }

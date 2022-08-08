@@ -1,7 +1,6 @@
 grammar minijava;
 
-global file_output::String = "scope_graph_minijava.svg";
-
+global file_output_name::String = "scope_graph_minijava.svg";
 
 parser parse :: Program_c {
     minijava;
@@ -21,5 +20,13 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  return if result.parseSuccess then ioval(printT("Success", ioin), 0) else ioval(printT("Failure", ioin), -1);
+  local attribute scope_graph :: sg:Graph<IdDcl IdRef>;
+  scope_graph = new(r.scope_graph);
+
+  local attribute print_resolution_paths :: IOToken;
+  print_resolution_paths = systemT("echo '" ++ 
+    sg:graphviz_draw_graph(scope_graph) ++ 
+    "' | dot -Tsvg > " ++ file_output_name, ioin).io;
+
+  return if result.parseSuccess then ioval(printT("Success!", print_resolution_paths), 0) else ioval(printT("Failure", ioin), -1);
 }

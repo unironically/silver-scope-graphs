@@ -20,7 +20,7 @@ nonterminal IdRef;
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Block, Extend, Implement, 
   QidList, Qid, Expression, Type, IdDcl, IdRef;
 
-monoid attribute decls::[IdDcl] occurs on DeclList, Decl, Block, Extend, Implement, 
+monoid attribute decls::[Decorated IdDcl] occurs on DeclList, Decl, Block, Extend, Implement, 
   QidList, Qid, Expression, Type, IdDcl, IdRef;
 
 -- Every scope in a scope graph
@@ -36,10 +36,18 @@ inherited attribute parent_scope::Decorated sg:Scope<IdDcl IdRef> occurs on Decl
   Extend, Implement, QidList, Qid, Expression, Type, IdDcl, IdRef;
 
 -- Entire graph synthesized by root
-synthesized attribute graph::Decorated sg:Graph<IdDcl IdRef> occurs on Program;
+synthesized attribute scope_graph::Decorated sg:Graph<IdDcl IdRef> occurs on Program;
 
 -- Identifier for references and declarations
-synthesized attribute name::String occurs on IdDcl, IdRef;
+--synthesized attribute name::String occurs on IdDcl, IdRef;
+attribute sg:name occurs on IdDcl, IdRef;
+
+-- Specify flowtype - this seems to be required by the type system
+-- This is done for each nonterminal, so object languages can decide
+-- what this is for their nonterminals. This is good.
+-- Also, defining it on `name` removes the ambiguity so that we do not
+-- need the definition for `line` or `column`.
+flowtype sg:name {} on IdDcl, IdRef;
 
 ------------------------------------------------------------
 ---- Program
@@ -57,11 +65,12 @@ top::Program ::= list::DeclList
   -- global scope
   local attribute global_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
     nothing(),
+    nothing(),
     list.child_scopes,
     list.decls
   );
 
-  top.graph = scope_graph;
+  top.scope_graph = scope_graph;
 
   list.parent_scope = global_scope;
 
@@ -101,6 +110,7 @@ top::Decl ::= dcl::IdDcl extend::Extend implement::Implement block::Block
   -- Scope for this class
   local attribute class_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
     just(top.parent_scope),
+    just(dcl.sg:name),
     block.child_scopes,
     block.decls
   );
@@ -134,6 +144,7 @@ top::Decl ::= type::Type dcl::IdDcl block::Block
   -- Scope for this method
   local attribute method_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
     just(top.parent_scope),
+    just(dcl.sg:name),
     block.child_scopes,
     block.decls
   );
@@ -291,7 +302,9 @@ top::Qid ::= dcl::IdRef
 abstract production idref
 top::IdRef ::= id::ID_t
 {
-  top.name = id.lexeme;
+  propagate decls, all_scopes, child_scopes, parent_scope;
+
+  top.sg:name = id.lexeme;
 
   -- ast printing
   top.pp = "idref(" ++ id.lexeme ++ ")";
@@ -300,7 +313,9 @@ top::IdRef ::= id::ID_t
 abstract production iddcl
 top::IdDcl ::= id::ID_t
 {
-  top.name = id.lexeme;
+  propagate decls, all_scopes, child_scopes, parent_scope;
+
+  top.sg:name = id.lexeme;
 
   -- ast printing
   top.pp = "iddcl(" ++ id.lexeme ++ ")";
