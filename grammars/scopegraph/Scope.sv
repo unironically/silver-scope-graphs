@@ -140,7 +140,6 @@ top::Decl<d r> ::= identifier::String
   top.str = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 }
 
-{-
 synthesized attribute name::String;
 
 abstract production mk_dcl
@@ -157,10 +156,8 @@ top::Decl<d r> ::=
   top.assoc_scope = assoc_scope;
   top.line = ast_node.line;
   top.column = ast_node.column;
-  top.str = top.identifier ++ "_[" ++ toString(ast_node.line) ++ ", " ++ toString(ast_node.column) ++ "]";
-  top.str = "\"" ++ top.str ++ "\"";
+  top.str = top.identifier ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
 }
--}
 
 
 ----------------
@@ -195,7 +192,7 @@ top::Ref<d r> ::=
 
   top.line = line;
   top.column = column;
-  top.str = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column) ++ "";
+  top.str = top.identifier ++ "_" ++ toString(line) ++ "_" ++ toString(column);
 
   top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Decl<d r> -> 
     acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
@@ -208,7 +205,7 @@ top::Ref<d r> ::=
     [];
 }
 
-{-
+
 abstract production mk_ref
   attribute name i occurs on r, 
   attribute line i occurs on r, 
@@ -219,11 +216,20 @@ top::Ref<d r> ::=
 {
   top.identifier = ast_node.name;
   top.in_scope = in_scope;
-  --top.resolutions = resolve([], top); -- visser algorithm
-  top.resolutions = resolve_new(top, in_scope); -- luke algorithm
+  top.resolutions = let done::(String, [Decorated Decl<d r>]) = resolve([], top, "") in unsafeTrace(snd(done), printT("-- New top-level resolution for " ++ top.str ++ ":\n" ++ fst(done), unsafeIO())) end; -- Visser algorithm
+  --top.resolutions = resolve_new(top, in_scope); -- luke algorithm
 
   top.line = ast_node.line;
   top.column = ast_node.column;
   top.str = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
+
+  top.paths = foldl((\acc::[Decorated Path<d r>] dcl::Decorated Decl<d r> -> 
+    acc ++ [decorate_cons_path(top, dcl)]), [], top.resolutions);
+
+  top.errors = if (length(top.resolutions) > 1) then
+    [decorate_md_error(top, top.resolutions)]
+  else if (length(top.resolutions) <= 0) then
+    [decorate_nd_error(top)]
+  else
+    [];
 }
--}

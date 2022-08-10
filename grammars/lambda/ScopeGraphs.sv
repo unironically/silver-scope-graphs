@@ -46,13 +46,13 @@ monoid attribute all_paths :: [ Decorated sg:Path<IdDcl IdRef> ] occurs on Expr,
 
 inherited attribute scope :: Decorated sg:Scope<IdDcl IdRef> occurs on Expr, IdDcl, IdRef;
 
-monoid attribute dcls :: [ Decorated sg:Declaration<IdDcl IdRef> ] occurs on Expr;
+monoid attribute dcls :: [ Decorated sg:Decl<IdDcl IdRef> ] occurs on Expr;
 -- In this language `dcls` is always empty since we need not collect the 
 -- declarations in a scope - they are only on productions that define a scope
 -- and thus the information is immediately available.
 
-monoid attribute refs :: [ Decorated sg:Usage<IdDcl IdRef> ] occurs on Expr, IdRef;
---ToDo - rename sg:Declaration and sg:Usage
+monoid attribute refs :: [ Decorated sg:Ref<IdDcl IdRef> ] occurs on Expr, IdRef;
+--ToDo - rename sg:Decl and sg:Ref
 
 attribute sg:name, sg:line, sg:column occurs on IdDcl, IdRef;
 
@@ -71,7 +71,7 @@ aspect production root
 r::Root ::= e::Expr
 {
   propagate errors;
-  r.scope_graph = decorate sg:cons_graph (global_scope :: e.all_scopes) with {};
+  r.scope_graph = decorate sg:cons_graph (global_scope, global_scope :: e.all_scopes) with {};
   -- ToDo: not sure why this needs to be decorated.
 
   local attribute global_scope :: sg:Scope<IdDcl IdRef> =
@@ -87,7 +87,7 @@ aspect production let_expr
 e::Expr ::= id::IdDcl t::TypeExpr e1::Expr e2::Expr
 {
   propagate errors;
-  local attribute new_dcl :: sg:Declaration<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
+  local attribute new_dcl :: sg:Decl<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
 
   local attribute new_scope :: sg:Scope<IdDcl IdRef> = sg:cons_scope ( just (e.scope), 
     [ new_dcl ],
@@ -112,7 +112,7 @@ e::Expr ::= id::IdDcl t::TypeExpr body::Expr
 {
   propagate errors;
 
-  local attribute new_dcl :: sg:Declaration<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
+  local attribute new_dcl :: sg:Decl<IdDcl IdRef> = sg:mk_dcl (id, new_scope, nothing());
 
   local attribute new_scope :: sg:Scope<IdDcl IdRef> = sg:cons_scope ( just (e.scope), 
     [ new_dcl ],
@@ -195,7 +195,7 @@ i::IdRef ::= nm::String
   i.sg:line = i.location.line;
   i.sg:column = i.location.column;
 
-  local attribute new_use :: sg:Usage<IdDcl IdRef> = sg:mk_ref (i, i.scope);
+  local attribute new_use :: sg:Ref<IdDcl IdRef> = sg:mk_ref (i, i.scope);
   i.refs := [ new_use ] ;
 
   i.all_paths := case new_use.sg:resolutions of
