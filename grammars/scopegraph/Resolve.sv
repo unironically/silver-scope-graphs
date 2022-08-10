@@ -12,10 +12,16 @@ grammar scopegraph;
  - @return The list of declarations found when the reference is resolved.
 -}
 function resolve
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] reference::Decorated Ref<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] ref::Decorated Ref<d r> tab::String
 {
-  return filter((\s::Decorated Decl<d r> -> s.identifier == reference.identifier), 
-    env_v ([reference] ++ seen_imports, [], reference.in_scope));
+  return 
+    let sub_envv::(String, [Decorated Decl<d r>]) = env_v ([ref] ++ seen_imports, [], ref.in_scope, tab ++ "\t") in
+    let decls::[Decorated Decl<d r>] = filter((\s::Decorated Decl<d r> -> s.identifier == ref.identifier), 
+      snd(sub_envv)) in
+  (
+    tab ++ "-- Trying to resolve " ++ ref.str ++ ":\n" ++ tab ++ "Res[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}](" ++ ref.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", decls) ++ "}\n" ++ fst(sub_envv) ++ tab ++ "-- Done resolving " ++ ref.str ++ "\n",
+    decls
+  ) end end;
 }
 
 @{-
@@ -28,11 +34,18 @@ function resolve
  - @return The combined list of delcarations from env_l and env_p.
 -}
 function env_v
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
-  current_scope::Decorated Scope<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r> tab::String
 {
-  return merge_declarations_with_shadowing(env_l (seen_imports, seen_scopes, current_scope), 
-    env_p (seen_imports, seen_scopes, current_scope));
+  return 
+    let sub_envl::(String, [Decorated Decl<d r>]) = env_l (seen_imports, seen_scopes, current_scope, tab ++ "\t") in
+    let sub_envp::(String, [Decorated Decl<d r>]) = env_p (seen_imports, seen_scopes, current_scope, tab ++ "\t") in
+    let decls::[Decorated Decl<d r>] = merge_declarations_with_shadowing(snd(sub_envl), 
+      snd(sub_envp)) in
+  (
+    tab ++ "Env_v[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}, {" ++ foldl((\acc::String s::Decorated Scope<d r> -> acc ++ "," ++ s.str), "", seen_scopes) ++ "}](" ++ current_scope.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", decls) ++ "}\n" ++ fst(sub_envl) ++ fst(sub_envp),
+    decls
+  ) end end end;
 }
 
 @{-
@@ -45,11 +58,18 @@ function env_v
  - @return The combined list of delcarations from env_d and env_l.
 -}
 function env_l
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
-  current_scope::Decorated Scope<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r> tab::String
 {
-  return merge_declarations_with_shadowing(env_d (seen_imports, seen_scopes, current_scope), 
-    env_i (seen_imports, seen_scopes, current_scope));
+  return
+    let sub_envd::(String, [Decorated Decl<d r>]) = env_d (seen_imports, seen_scopes, current_scope, tab ++ "\t") in 
+    let sub_envi::(String, [Decorated Decl<d r>]) = env_i (seen_imports, seen_scopes, current_scope, tab ++ "\t") in
+    let decls::[Decorated Decl<d r>] = merge_declarations_with_shadowing(snd(sub_envd), 
+      snd(sub_envi)) in
+  (
+    tab ++ "Env_l[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}, {" ++ foldl((\acc::String s::Decorated Scope<d r> -> acc ++ "," ++ s.str), "", seen_scopes) ++ "}](" ++ current_scope.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", decls) ++ "}\n" ++ fst(sub_envd) ++ fst(sub_envi),
+    decls
+  ) end end end;
 }
 
 @{-
@@ -62,14 +82,19 @@ function env_l
  - @return The list of declarations for the current scope
 -}
 function env_d
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
-  current_scope::Decorated Scope<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r> tab::String
 {
-  return 
-    if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
-      current_scope, seen_scopes)
-    then []
-    else current_scope.declarations;
+  return
+    let decls::[Decorated Decl<d r>] = 
+      if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
+        current_scope, seen_scopes)
+      then []
+      else current_scope.declarations in
+  (
+    tab ++ "Env_d[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}, {" ++ foldl((\acc::String s::Decorated Scope<d r> -> acc ++ "," ++ s.str), "", seen_scopes) ++ "}](" ++ current_scope.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", decls) ++ "}\n",
+    decls
+  ) end;
 }
 
 @{-
@@ -82,48 +107,67 @@ function env_d
  - @return The list of imported declarations.
 -}
 function env_i
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
-  current_scope::Decorated Scope<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r> tab::String
 {
-  return 
-    if (containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
-      current_scope, seen_scopes))
-    then []
-    else 
+  return
+    let decls::(String, [Decorated Decl<d r>]) = if (containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
+        current_scope, seen_scopes))
+      then (tab ++ ">> BLOCKED - SCOPE " ++ current_scope.str ++ " ALREADY SEEN\n", [])
+      else 
 
-      -- Get all imports of current scope, remove names already seen in seen_imports
-      let imp_list::[Decorated Ref<d r>] = removeAllBy(
-        (\left_imp::Decorated Ref<d r> right_imp::Decorated Ref<d r>
-          -> left_imp.identifier == right_imp.identifier), 
-        seen_imports,
-        current_scope.imports) 
-      in
+        -- Get all imports of current scope, remove names already seen in seen_imports
+        {-
+        let imp_list::[Decorated Ref<d r>] = removeAllBy(
+          (\left_imp::Decorated Ref<d r> right_imp::Decorated Ref<d r>
+            -> left_imp.str == right_imp.str), 
+          seen_imports,
+          current_scope.imports) 
+        in
+        -}
+        
+        let valid_imps::(String, [Decorated Ref<d r>]) = foldl(
+          (
+            \acc::(String, [Decorated Ref<d r>]) r::Decorated Ref<d r> -> 
+              if containsBy((\left::Decorated Ref<d r> right::Decorated Ref<d r> -> left.str == right.str), r, seen_imports) then (fst(acc) ++ tab ++ ">> IMPORT " ++ r.str ++ " ALREADY SEEN, SKIPPING\n", snd(acc)) else ("", snd(acc) ++ [r])
+          ), 
+          ("", []), 
+          current_scope.imports) 
+        in let imp_list::[Decorated Ref<d r>] = snd(valid_imps) in
+        
+        -- Resolve each of the known imports in the current scope collected from the above
+        let sub_res::(String, [Decorated Decl<d r>]) = foldl(
+          (\res_list::(String, [Decorated Decl<d r>]) import::Decorated Ref<d r> 
+            -> let sub::(String, [Decorated Decl<d r>]) = resolve(seen_imports, import, tab ++ "\t") in (fst(res_list) ++ fst(sub), snd(res_list) ++ snd(sub)) end), 
+          ("", []),
+          imp_list)
+        in
+        let res_list::[Decorated Decl<d r>] = snd(sub_res) in
 
-      -- Resolve each of the known imports in the current scope collected from the above
-      let res_list::[Decorated Decl<d r>] = foldl(
-        (\res_list::[Decorated Decl<d r>] import::Decorated Ref<d r> 
-          -> res_list ++ resolve(seen_imports, import)), 
-        [],
-        imp_list)
-      in
+        -- Get all the 'associated scope' nodes from declarations in res_list generated above
+        let scope_list::[Decorated Scope<d r>] = foldl(
+          (\scope_list::[Decorated Scope<d r>] decl::Decorated Decl<d r> 
+            -> scope_list ++ (case decl.assoc_scope of | nothing() -> [] | just(p) -> [p] end)), 
+          [],
+          res_list)
+        in
 
-      -- Get all the 'associated scope' nodes from declarations in res_list generated above
-      let scope_list::[Decorated Scope<d r>] = foldl(
-        (\scope_list::[Decorated Scope<d r>] decl::Decorated Decl<d r> 
-          -> scope_list ++ (case decl.assoc_scope of | nothing() -> [] | just(p) -> [p] end)), 
-        [],
-        res_list)
-      in
+        -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
+        let assoc_resolve::(String, [Decorated Decl<d r>]) = foldl(
+          (\last_list::(String, [Decorated Decl<d r>]) scope::Decorated Scope<d r> 
+            -> let sub::(String, [Decorated Decl<d r>]) = env_l(seen_imports, seen_scopes ++ [current_scope], scope, tab ++ "\t") in 
+              (fst(last_list) ++ fst(sub), snd(last_list) ++ snd(sub)) end), 
+          ("", []),
+          scope_list)
+        in
+        let last_list::[Decorated Decl<d r>] = snd(assoc_resolve) in
 
-      -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let last_list::[Decorated Decl<d r>] = foldl(
-        (\last_list::[Decorated Decl<d r>] scope::Decorated Scope<d r> 
-          -> last_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
-        [],
-        scope_list)
-      in 
-
-      last_list end end end end;
+        (fst(valid_imps) ++ fst(sub_res) ++ fst(assoc_resolve), last_list) end end end end end end end
+    in
+  (
+    tab ++ "Env_i[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}, {" ++ foldl((\acc::String s::Decorated Scope<d r> -> acc ++ "," ++ s.str), "", seen_scopes) ++ "}](" ++ current_scope.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", snd(decls)) ++ "}\n" ++ fst(decls),
+    snd(decls)
+  ) end;
 }
 
 @{-
@@ -136,20 +180,25 @@ function env_i
  - @return The list of declarations found by searching inside of the parent scope.
 -}
 function env_p
-[Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
-  current_scope::Decorated Scope<d r>
+(String, [Decorated Decl<d r>]) ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
+  current_scope::Decorated Scope<d r> tab::String
 {
   return 
-    case current_scope.parent of
-      | nothing() -> []
-      | just(p) -> 
-        if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
-          current_scope, seen_scopes)
-        then 
-          []
-        else 
-          env_v (seen_imports, current_scope::seen_scopes, p)
-    end;
+    let decls::(String, [Decorated Decl<d r>]) = case current_scope.parent of
+        | nothing() -> (tab ++ ">> BLOCKED - SCOPE " ++ current_scope.str ++ " HAS NO PARENT\n", [])
+        | just(p) -> 
+          if containsBy((\left::Decorated Scope<d r> right::Decorated Scope<d r> -> left.id == right.id), 
+            current_scope, seen_scopes)
+          then 
+            (tab ++ ">> BLOCKED - SCOPE " ++ current_scope.str ++ " ALREADY SEEN\n", [])
+          else 
+            env_v (seen_imports, current_scope::seen_scopes, p, tab ++ "\t")
+      end
+    in
+  (
+    tab ++ "Env_p[{" ++ foldl((\acc::String r::Decorated Ref<d r> -> acc ++ "," ++ r.str), "", seen_imports) ++ "}, {" ++ foldl((\acc::String s::Decorated Scope<d r> -> acc ++ "," ++ s.str), "", seen_scopes) ++ "}](" ++ current_scope.str ++ ") = {" ++ foldl((\acc::String d::Decorated Decl<d r> -> acc ++ "," ++ d.str), "", snd(decls)) ++ "}\n" ++ fst(decls),
+    snd(decls)
+  ) end;
 }
 
 @{-

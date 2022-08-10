@@ -18,7 +18,10 @@ function graphviz_draw_graph
 String ::= graph::Decorated Graph<d r> draw_paths::Boolean draw_children::Boolean
 {
   return "digraph {{ node [shape=circle style=solid fontsize=" ++ graphviz_font_size ++  "] " ++
-    graphviz_scope_labels(graph) ++
+    
+    --graphviz_scope_labels(graph) ++
+    foldl((\acc::String s::Decorated Scope<d r> -> acc ++ " " ++ s.str), "", graph.scope_list) ++
+
     "} node [shape=box fontsize=" ++ graphviz_font_size ++  "] edge [arrowhead=normal] " ++
     (if draw_paths then graphviz_paths(graph) ++ "\n" else "") ++
     (if draw_children then graphviz_scope_children(graph.scope_list) else "") ++

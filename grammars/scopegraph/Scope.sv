@@ -42,13 +42,14 @@ synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
 synthesized attribute declarations<d r>::[Decorated Decl<d r>];
 synthesized attribute references<d r>::[Decorated Ref<d r>];
 synthesized attribute imports<d r>::[Decorated Ref<d r>];
+inherited attribute assigned_id::String;
 
 synthesized attribute str::String;
+synthesized attribute delimited::String;
 synthesized attribute child_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute assoc_decl<d r>::Maybe<Decorated Decl<d r>>;
 
-
-nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, str, child_scopes<d r>, assoc_decl<d r>, errors<d r>, paths<d r>;
+nonterminal Scope<d r> with id, parent<d r>, declarations<d r>, references<d r>, imports<d r>, str, child_scopes<d r>, assoc_decl<d r>, errors<d r>, paths<d r>, assigned_id;
 
 @{-
  - Constructing a scope node.
@@ -72,16 +73,13 @@ top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
   top.declarations = declarations;
   top.references = references;
   top.imports = imports;
-  top.str = toString(top.id);
   top.child_scopes = child_scopes;
+  top.str = toString(top.id);
   top.assoc_decl = assoc_decl;
-  
   top.errors = foldl((\acc::[Decorated Error<d r>] ref::Decorated Ref<d r> -> 
     acc ++ ref.errors), [], references ++ imports);
-
   top.paths = foldl((\acc::[Decorated Path<d r>] ref::Decorated Ref<d r> -> 
     acc ++ ref.paths), [], references ++ imports);
-
 }
 
 function decorate_nd_error
@@ -192,7 +190,7 @@ top::Ref<d r> ::=
   top.identifier = identifier;
   top.in_scope = in_scope;
   
-  top.resolutions = resolve([], top);
+  top.resolutions = let done::(String, [Decorated Decl<d r>]) = resolve([], top, "") in unsafeTrace(snd(done), printT("-- New top-level resolution for " ++ top.str ++ ":\n" ++ fst(done), unsafeIO())) end;
   --top.resolutions = resolve_new(top, top.in_scope, [], top.seen_imports);
 
   top.line = line;

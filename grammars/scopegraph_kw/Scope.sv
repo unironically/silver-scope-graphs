@@ -210,7 +210,7 @@ top::Ref<d r> ::=
     [];
 }
 
-{-
+
 abstract production mk_ref
   attribute name i occurs on r, 
   attribute line i occurs on r, 
@@ -228,4 +228,3 @@ top::Ref<d r> ::=
   top.column = ast_node.column;
   top.str = top.identifier ++ "_" ++ toString(ast_node.line) ++ "_" ++ toString(ast_node.column);
 }
--}

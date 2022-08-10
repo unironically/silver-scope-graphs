@@ -31,7 +31,8 @@ function env_v
 [Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
-  return merge_declarations_with_shadowing(env_l (seen_imports, seen_scopes, current_scope), 
+  return merge_declarations_with_shadowing(
+    env_l (seen_imports, seen_scopes, current_scope), 
     env_p (seen_imports, seen_scopes, current_scope));
 }
 
@@ -48,7 +49,8 @@ function env_l
 [Decorated Decl<d r>] ::= seen_imports::[Decorated Ref<d r>] seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
 {
-  return merge_declarations_with_shadowing(env_d (seen_imports, seen_scopes, current_scope), 
+  return merge_declarations_with_shadowing(
+    env_d (seen_imports, seen_scopes, current_scope), 
     env_i (seen_imports, seen_scopes, current_scope));
 }
 
@@ -186,14 +188,7 @@ function resolve_new
       (\acc::[Decorated Decl<d r>] cur::Decorated Ref<d r> -> 
         acc ++ let new_cur::Ref<d r> = new(cur) in (decorate new_cur with {
           seen_imports = new_seen_imports; 
-          in_scope = cur.in_scope;
-          line = cur.line;
-          column = cur.column;
-          str = cur.str;
-          identifier = cur.identifier;
-          resolutions = cur.resolutions; 
-          errors = cur.errors;
-          paths = cur.paths;}).resolutions end
+          in_scope = cur.in_scope;}).resolutions end
       ),
       [],
       removeAllBy(

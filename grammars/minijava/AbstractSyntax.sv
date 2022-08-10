@@ -1,6 +1,6 @@
 grammar minijava;
 
-imports scopegraph_kw as sg;
+imports scopegraph as sg;
 
 
 nonterminal Program;
