@@ -7,7 +7,6 @@ function resolve_new
   seen_scopes::[Scope<d r>] 
   seen_imports::[Ref<d r>]
 {
-
   local attribute new_seen_scopes::[Scope<d r>] = seen_scopes ++ [cur_scope];
   local attribute new_seen_imports::[Ref<d r>] = seen_imports ++ [ref];
 
