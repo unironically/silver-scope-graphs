@@ -22,8 +22,15 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
+  local attribute all_scopes::[sg:Scope<IdDcl IdRef>] = r.all_scopes;
+
+  local attribute printed::String = foldl(
+    (\acc::String scope::sg:Scope<IdDcl IdRef> -> acc ++ " [" ++ foldl((\acc::String ref::sg:Ref<IdDcl IdRef> -> acc ++ " " ++ ref.sg:res_str), "", scope.sg:refs) ++ "]\n"), 
+    "", 
+    all_scopes);
+
   return if result.parseSuccess then 
-      ioval(printT("Success", ioin), 0) 
+      ioval(printT("Success: " ++ r.pp ++ "\n" ++ printed ++ "\n", ioin), 0) 
     else 
-      ioval(printT("Error", ioin), -1);
+      ioval(printT("Error\n", ioin), -1);
 }
