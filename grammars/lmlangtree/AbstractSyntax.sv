@@ -70,7 +70,8 @@ top::Program ::= list::DeclList
     list.refs,
     list.imps,
     list.children,
-    nothing()
+    nothing(),
+    "prog"
   );
 
   top.all_scopes := global_scope::list.all_scopes;
@@ -119,7 +120,8 @@ top::Decl ::= decl::IdDcl list::DeclList
     list.refs,
     list.imps,
     list.children,
-    just(module_decl)
+    just(module_decl),
+    "decl_module"
   );
 
   local attribute module_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl(
@@ -212,7 +214,8 @@ top::BindListSeq ::= decl::IdDcl exp::Exp list::BindListSeq
     list.refs,
     list.imps,
     list.children,
-    nothing()
+    nothing(),
+    "bindlist_list_seq"
   );
 
   local attribute let_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl (
@@ -319,7 +322,8 @@ top::Exp ::= decl::IdDcl exp::Exp
     exp.refs,
     exp.imps,
     exp.children,
-    nothing()
+    nothing(),
+    "exp_funfix"
   );
 
   local attribute fun_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl (
@@ -385,7 +389,8 @@ top::Qid ::= ref::IdRef qid::Qid
     qid.refs,
     [qual_ref],
     [],
-    nothing()
+    nothing(),
+    "qid_dot"
   );
 
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (

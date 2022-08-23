@@ -1,17 +1,30 @@
 grammar scopetree;
 
+nonterminal Scope<d r>;
+nonterminal Decl<d r>;
+nonterminal Ref<d r>;
+
+synthesized attribute id::Integer occurs on Scope<d r>;
+synthesized attribute parent<d r>::Maybe<Scope<d r>> occurs on Scope<d r>;
+synthesized attribute decls<d r>::[Decl<d r>] occurs on Scope<d r>;
+synthesized attribute refs<d r>::[Ref<d r>] occurs on Scope<d r>;
+synthesized attribute imps<d r>::[Ref<d r>] occurs on Scope<d r>;
+synthesized attribute children<d r>::[Scope<d r>] occurs on Scope<d r>;
+synthesized attribute assoc_decl<d r>::Maybe<Decl<d r>> occurs on Scope<d r>;
+
+synthesized attribute name::String occurs on Ref<d r>, Decl<d r>;
+synthesized attribute str::String occurs on Ref<d r>, Decl<d r>;
+synthesized attribute line::Integer occurs on Ref<d r>, Decl<d r>;
+synthesized attribute column::Integer occurs on Ref<d r>, Decl<d r>;
+synthesized attribute in_scope<d r>::Scope<d r> occurs on Ref<d r>, Decl<d r>;
+synthesized attribute assoc_scope<d r>::Maybe<Scope<d r>> occurs on Decl<d r>;
+synthesized attribute resolutions<d r>::[Decl<d r>] occurs on Ref<d r>;
+
+inherited attribute seen_imports<d r>::[Ref<d r>] occurs on Ref<d r>;
+inherited attribute seen_scopes<d r>::[Scope<d r>] occurs on Ref<d r>;
+
 --------------------
 -- Scope nodes
-
-synthesized attribute id::Integer;
-synthesized attribute parent<d r>::Maybe<Scope<d r>>;
-synthesized attribute decls<d r>::[Decl<d r>];
-synthesized attribute refs<d r>::[Ref<d r>];
-synthesized attribute imps<d r>::[Ref<d r>];
-synthesized attribute children<d r>::[Scope<d r>];
-synthesized attribute assoc_decl<d r>::Maybe<Decl<d r>>;
-
-nonterminal Scope<d r> with id, parent<d r>, decls<d r>, refs<d r>, imps<d r>, children<d r>, assoc_decl<d r>;
 
 abstract production mk_scope
 top::Scope<d r> ::= 
@@ -21,8 +34,9 @@ top::Scope<d r> ::=
   imps::[Ref<d r>] 
   children::[Scope<d r>]
   assoc_decl::Maybe<Decl<d r>>
+  at_prod::String
 {
-  top.id = genInt();
+  top.id = let i::Integer = genInt() in unsafeTrace(i, printT("Created scope with id: " ++ toString(i) ++ ", from production " ++ at_prod ++ "\n", unsafeIO())) end;
   top.parent = parent;
   top.decls = decls;
   top.refs = refs;
@@ -33,15 +47,6 @@ top::Scope<d r> ::=
 
 --------------------
 -- Declaration nodes
-
-synthesized attribute name::String;
-synthesized attribute str::String;
-synthesized attribute line::Integer;
-synthesized attribute column::Integer;
-synthesized attribute in_scope<d r>::Scope<d r>;
-synthesized attribute assoc_scope<d r>::Maybe<Scope<d r>>;
-
-nonterminal Decl<d r> with name, str, line, column, in_scope<d r>, assoc_scope<d r>;
 
 abstract production mk_decl
   attribute name i occurs on d,
@@ -62,12 +67,6 @@ top::Decl<d r> ::=
 
 --------------------
 -- Reference/import nodes
-synthesized attribute resolutions<d r>::[Decl<d r>];
-synthesized attribute res_str::String;
-inherited attribute seen_imports<d r>::[Ref<d r>];
-inherited attribute seen_scopes<d r>::[Scope<d r>];
-
-nonterminal Ref<d r> with name, str, line, column, in_scope<d r>, seen_scopes<d r>, seen_imports<d r>, resolutions<d r>, res_str;
 
 abstract production mk_ref
   attribute name i occurs on r,

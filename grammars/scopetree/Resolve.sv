@@ -25,8 +25,14 @@ function resolve_new
       (\acc::[Decl<d r>] cur::Ref<d r> -> 
         acc ++ 
         let n_decls::[Decl<d r>] = 
+          
           -- (decorate cur with {seen_imports = ref.seen_imports ++ [cur]; seen_scopes = [];}).resolutions  -- Doesn't work, loops
-          resolve_new((decorate cur with {seen_imports = ref.seen_imports ++ [cur]; seen_scopes = [];}), cur.in_scope) -- Works without looping
+
+          resolve_new( -- Works without looping
+            (decorate cur with {seen_imports = ref.seen_imports ++ [cur]; seen_scopes = [];}), 
+            cur.in_scope
+          )
+        
         in 
           n_decls
         end
