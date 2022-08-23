@@ -394,7 +394,7 @@ top::Qid ::= ref::IdRef qid::Qid
     sg:resolve_new(qual_ref, top.inh_scope)
   );
 
-  qual_ref.sg:seen_imports = [];
+  qual_ref.sg:seen_imports = [qual_ref];
   qual_ref.sg:seen_scopes = [];
   
   top.decls := [];
@@ -420,7 +420,7 @@ top::Qid ::= ref::IdRef
     sg:resolve_new(qual_ref, top.inh_scope)
   );
 
-  qual_ref.sg:seen_imports = [];
+  qual_ref.sg:seen_imports = [qual_ref];
   qual_ref.sg:seen_scopes = [];
 
   top.decls := [];
