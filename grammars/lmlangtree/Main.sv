@@ -25,7 +25,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute all_scopes::[sg:Scope<IdDcl IdRef>] = r.all_scopes;
 
   local attribute printed::String = foldl(
-    (\acc::String scope::sg:Scope<IdDcl IdRef> -> acc ++ " [" ++ foldl((\acc::String ref::sg:Ref<IdDcl IdRef> -> acc ++ " " ++ ref.sg:res_str), "", scope.sg:refs) ++ "]\n"), 
+    (\acc::String scope::sg:Scope<IdDcl IdRef> -> acc ++ toString(scope.sg:id) ++ " [" ++ foldl((\acc::String ref::sg:Ref<IdDcl IdRef> -> acc ++ ref.sg:str ++ "->{" ++ foldl((\acc::String decl::sg:Decl<d r> -> acc ++ decl.sg:str ++ ","), "", ref.sg:resolutions) ++ "}" ++ ", "), "", scope.sg:refs) ++ "]\n"), 
     "", 
     all_scopes);
 

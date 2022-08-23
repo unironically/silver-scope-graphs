@@ -23,6 +23,7 @@ top::Scope<d r> ::=
   assoc_decl::Maybe<Decl<d r>>
 {
   top.id = genInt();
+  top.parent = parent;
   top.decls = decls;
   top.refs = refs;
   top.imps = imps;
@@ -75,15 +76,12 @@ abstract production mk_ref
 top::Ref<d r> ::= 
   ast_node::Decorated r with i
   in_scope::Scope<d r>
+  resolutions::[Decl<d r>]
 {
   top.name = ast_node.name;
   top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
   top.line = ast_node.line;
   top.column = ast_node.column;
   top.in_scope = in_scope;
-
-  -- Resolving the reference:
-  top.resolutions = unsafeTrace(resolve_new(top, top.in_scope, top.seen_scopes, top.seen_imports), printlnT("owo", unsafeIO()));
-
-  top.res_str = top.str ++ "{" ++ foldl((\acc::String decl::Decl<d r> -> acc ++ " " ++ decl.str), "", top.resolutions) ++ "}";
+  top.resolutions = resolutions;
 }

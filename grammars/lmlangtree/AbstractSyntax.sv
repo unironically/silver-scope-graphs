@@ -44,7 +44,7 @@ monoid attribute children::[sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid
 -- Inherited declarations, references and imports, used by the binding lists of sequential let expressions
 inherited attribute inh_decls::[sg:Decl<IdDcl IdRef>] occurs on BindListSeq;
 inherited attribute inh_refs::[sg:Ref<IdDcl IdRef>] occurs on BindListSeq;
-inherited attribute inh_imports::[sg:Ref<IdDcl IdRef>] occurs on BindListSeq;
+inherited attribute inh_imps::[sg:Ref<IdDcl IdRef>] occurs on BindListSeq;
 
 -- The import synthesized in the "iqid" construct of the scope graph construction algorithm for this language example
 synthesized attribute iqid_import::sg:Ref<IdDcl IdRef> occurs on Qid;
@@ -55,6 +55,7 @@ synthesized attribute ret_scope::sg:Scope<IdDcl IdRef> occurs on BindListSeq;
 -- Identifiers for references and declarations
 attribute sg:name, sg:line, sg:column occurs on IdDcl, IdRef;
 flowtype sg:name {} on IdDcl, IdRef;
+
 
 ------------------------------------------------------------
 ---- Program root
@@ -194,7 +195,7 @@ top::Exp ::= list::BindListSeq exp::Exp
   list.inh_scope = top.inh_scope;
   list.inh_decls = exp.decls; -- bringing up exp's decls/refs/imports to give to the final scope in the binding list
   list.inh_refs = exp.refs;
-  list.inh_imports = exp.imps;
+  list.inh_imps = exp.imps;
 
   exp.inh_scope = list.ret_scope;
 
@@ -232,7 +233,7 @@ top::BindListSeq ::= decl::IdDcl exp::Exp list::BindListSeq
   list.inh_scope = let_scope;
   list.inh_decls = top.inh_decls;
   list.inh_refs = top.inh_refs;
-  list.inh_imports = top.inh_imports;
+  list.inh_imps = top.inh_imps;
 
   -- ast printing
   top.pp = "bindlist_list_seq("++ decl.sg:name ++ "," ++ exp.pp ++ "," ++ list.pp ++ ")";
@@ -242,16 +243,15 @@ abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 {
   top.ret_scope = top.inh_scope;
-  top.decls := top.decls;
-  top.refs := top.refs;
-  top.imps := top.imps;
+  top.decls := top.inh_decls;
+  top.refs := top.inh_refs;
+  top.imps := top.inh_imps;
   top.all_scopes := [];
   top.children := [];
 
   -- ast printing
   top.pp = "bindlist_nothing_seq()";
 }
-
 
 ------------------------------------------------------------
 ---- Recursive let expressions
@@ -390,11 +390,12 @@ top::Qid ::= ref::IdRef qid::Qid
 
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
-    top.inh_scope
+    top.inh_scope,
+    sg:resolve_new(qual_ref, top.inh_scope)
   );
 
-  qual_ref.sg:seen_imports = [qual_ref];
-  qual_ref.sg:seen_scopes = [];  
+  qual_ref.sg:seen_imports = [];
+  qual_ref.sg:seen_scopes = [];
   
   top.decls := [];
   top.refs := [qual_ref];
@@ -415,10 +416,11 @@ top::Qid ::= ref::IdRef
 {
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
-    top.inh_scope
+    top.inh_scope,
+    sg:resolve_new(qual_ref, top.inh_scope)
   );
 
-  qual_ref.sg:seen_imports = [qual_ref];
+  qual_ref.sg:seen_imports = [];
   qual_ref.sg:seen_scopes = [];
 
   top.decls := [];
