@@ -20,8 +20,8 @@ synthesized attribute in_scope<d r>::Scope<d r> occurs on Ref<d r>, Decl<d r>;
 synthesized attribute assoc_scope<d r>::Maybe<Scope<d r>> occurs on Decl<d r>;
 synthesized attribute resolutions<d r>::[Decl<d r>] occurs on Ref<d r>;
 
-inherited attribute seen_imports<d r>::[Ref<d r>] occurs on Ref<d r>;
-inherited attribute seen_scopes<d r>::[Scope<d r>] occurs on Ref<d r>;
+--inherited attribute seen_imports<d r>::[Ref<d r>] occurs on Ref<d r>;
+--inherited attribute seen_scopes<d r>::[Scope<d r>] occurs on Ref<d r>;
 
 --------------------
 -- Scope nodes
@@ -68,6 +68,8 @@ top::Decl<d r> ::=
 --------------------
 -- Reference/import nodes
 
+synthesized attribute lam_resolutions<d r>::([Decl<d r>] ::= [Ref<d r>] [Scope<d r>]) occurs on Ref<d r>;
+
 abstract production mk_ref
   attribute name i occurs on r,
   attribute line i occurs on r,
@@ -82,5 +84,8 @@ top::Ref<d r> ::=
   top.line = ast_node.line;
   top.column = ast_node.column;
   top.in_scope = in_scope;
+
+  -- seen_imports as lambda?
   top.resolutions = resolutions;
+  top.lam_resolutions = (\seen_imports::[Ref<d r>] seen_scopes::[Scope<d r>] -> lam_resolve_new(top, top.in_scope, seen_imports, seen_scopes));
 }

@@ -396,11 +396,13 @@ top::Qid ::= ref::IdRef qid::Qid
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
     top.inh_scope,
-    sg:resolve_new(qual_ref, top.inh_scope)
+    resolved_decls
   );
 
-  qual_ref.sg:seen_imports = [qual_ref];
-  qual_ref.sg:seen_scopes = [];
+  --qual_ref.sg:seen_imports = [qual_ref];
+  --qual_ref.sg:seen_scopes = [];
+
+  local attribute resolved_decls::[sg:Decl<IdDcl IdRef>] = qual_ref.sg:lam_resolutions([], []);
   
   top.decls := [];
   top.refs := [qual_ref];
@@ -422,11 +424,13 @@ top::Qid ::= ref::IdRef
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
     top.inh_scope,
-    sg:resolve_new(qual_ref, top.inh_scope)
+    resolved_decls
   );
 
-  qual_ref.sg:seen_imports = [qual_ref];
-  qual_ref.sg:seen_scopes = [];
+  --qual_ref.sg:seen_imports = [qual_ref];
+  --qual_ref.sg:seen_scopes = [];
+
+  local attribute resolved_decls::[sg:Decl<IdDcl IdRef>] = qual_ref.sg:lam_resolutions([], []);
 
   top.decls := [];
   top.refs := [qual_ref];
