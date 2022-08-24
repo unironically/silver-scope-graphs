@@ -13,7 +13,7 @@ synthesized attribute children<d r>::[Scope<d r>] occurs on Scope<d r>;
 synthesized attribute assoc_decl<d r>::Maybe<Decl<d r>> occurs on Scope<d r>;
 
 synthesized attribute name::String occurs on Ref<d r>, Decl<d r>;
-synthesized attribute str::String occurs on Ref<d r>, Decl<d r>;
+synthesized attribute str::String occurs on Scope<d r>, Ref<d r>, Decl<d r>;
 synthesized attribute line::Integer occurs on Ref<d r>, Decl<d r>;
 synthesized attribute column::Integer occurs on Ref<d r>, Decl<d r>;
 synthesized attribute in_scope<d r>::Scope<d r> occurs on Ref<d r>, Decl<d r>;
@@ -37,12 +37,14 @@ top::Scope<d r> ::=
   at_prod::String
 {
   top.id = let i::Integer = genInt() in unsafeTrace(i, printT("Created scope with id: " ++ toString(i) ++ ", from production " ++ at_prod ++ "\n", unsafeIO())) end;
+  --top.id = genInt();
   top.parent = parent;
   top.decls = decls;
   top.refs = refs;
   top.imps = imps;
   top.children = children;
   top.assoc_decl = assoc_decl;
+  top.str = toString(top.id);
 }
 
 --------------------

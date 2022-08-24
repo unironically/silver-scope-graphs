@@ -71,7 +71,7 @@ top::Program ::= list::DeclList
     list.imps,
     list.children,
     nothing(),
-    "prog"
+    "prog"  -- for debugging
   );
 
   top.all_scopes := global_scope::list.all_scopes;
@@ -121,7 +121,7 @@ top::Decl ::= decl::IdDcl list::DeclList
     list.imps,
     list.children,
     just(module_decl),
-    "decl_module"
+    "decl_module" -- for debugging
   );
 
   local attribute module_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl(
@@ -215,7 +215,7 @@ top::BindListSeq ::= decl::IdDcl exp::Exp list::BindListSeq
     list.imps,
     list.children,
     nothing(),
-    "bindlist_list_seq"
+    "bindlist_list_seq"  -- for debugging
   );
 
   local attribute let_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl (
@@ -323,7 +323,7 @@ top::Exp ::= decl::IdDcl exp::Exp
     exp.imps,
     exp.children,
     nothing(),
-    "exp_funfix"
+    "exp_funfix"  -- for debugging
   );
 
   local attribute fun_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl (
@@ -396,7 +396,7 @@ top::Qid ::= ref::IdRef qid::Qid
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
     top.inh_scope,
-    resolved_decls
+    []
   );
 
   --qual_ref.sg:seen_imports = [qual_ref];
@@ -424,7 +424,7 @@ top::Qid ::= ref::IdRef
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
     top.inh_scope,
-    resolved_decls
+    []
   );
 
   --qual_ref.sg:seen_imports = [qual_ref];

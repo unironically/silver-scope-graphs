@@ -79,14 +79,16 @@ function lam_resolve_new
 
   -- Check for any matching declarations in the current scope
   local attribute decls::[Decl<d r>] = filter(
-    (\decl::Decl<d r> -> decl.name == ref.name), cur_scope.decls);
+    (\decl::Decl<d r> -> decl.name == ref.name), 
+    unsafeTrace(cur_scope.decls, printT("Now resolving " ++ ref.str ++ ", in scope " ++ toString(cur_scope.id) ++ "\n", unsafeIO()))
+  );
 
   -- Check any imports that exist, call resolve on them
   local attribute imps::[Decl<d r>] = foldl(
     (\acc::[Decl<d r>] cur::Decl<d r> -> acc ++ 
       case cur.assoc_scope of 
         | nothing() -> []
-        | just(s) -> lam_resolve_new(new(ref), s, seen_imports, new_seen_scopes)
+        | just(s) -> lam_resolve_new(ref, s, seen_imports, new_seen_scopes)
       end),
     [],
     foldl(
@@ -96,18 +98,27 @@ function lam_resolve_new
         acc ++ 
         let n_decls::[Decl<d r>] = 
           
-          -- (decorate cur with {seen_imports = ref.seen_imports ++ [cur]; seen_scopes = [];}).resolutions  -- Doesn't work, loops
           
+          -- Doesn't work, loops:
+          -- (decorate cur with {seen_imports = ref.seen_imports ++ [cur]; seen_scopes = [];}).resolutions
+
+          -- Works without looping but does not "save" intermediate resolution paths:
           {-
-          resolve_new( -- Works without looping
+          resolve_new(
             (decorate cur with {seen_imports = new_seen_imports ++ [cur]; seen_scopes = [];}), 
             cur.in_scope
           )
           -}
 
-          -- lambda attribute?
+          -- Work without looping, but does not "save" intermediate resolution paths
+          -- lambda attribute: (?)
           cur.lam_resolutions(new_seen_imports, [])
-        
+
+          -- Doesn't work, loops:
+          -- Using lambda attribute with seen_imports, seen_scopes from program AST
+          -- cur.resolutions
+
+
         in 
           n_decls
         end
@@ -125,7 +136,7 @@ function lam_resolve_new
   -- Recursive call to parent scope
   local attribute par::[Decl<d r>] = case cur_scope.parent of
     | nothing() -> []
-    | just(p) -> lam_resolve_new(new(ref), p, seen_imports, new_seen_scopes)
+    | just(p) -> lam_resolve_new(ref, p, seen_imports, new_seen_scopes)
   end;
 
   
