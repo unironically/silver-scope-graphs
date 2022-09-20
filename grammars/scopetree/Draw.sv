@@ -8,7 +8,7 @@ String ::= graph::Graph<d r>
   return "digraph {{ node [shape=circle style=solid fontsize=" ++ graphviz_font_size ++  "] " ++
     graphviz_scope_labels(graph.root_scopes) ++
     "} node [shape=box fontsize=" ++ graphviz_font_size ++  "] edge [arrowhead=normal] " ++
-    graphviz_parent_edges(graph) ++ "}";
+    graphviz_parent_edges(graph.root_scopes) ++ "}";
 }
 
 function graphviz_scope_labels
@@ -22,7 +22,13 @@ String ::= scope_list::[Decorated Scope<d r>]
 }
 
 function graphviz_parent_edges
-String ::= graph::Graph<d r>
+String ::= scope_list::[Decorated Scope<d r>]
 {
-  return "";
+  return foldl(
+    (\acc::String scope::Decorated Scope<d r> -> acc ++ " " ++ 
+      case scope.parent of nothing() -> "" | just(p) -> scope.str ++ " -> " ++ p.str end ++ 
+      graphviz_parent_edges(scope.children)),
+    "",
+    scope_list
+  );
 }
