@@ -21,11 +21,11 @@ inherited attribute inh_scope::Decorated sg:Scope<IdDcl IdRef> occurs on DeclLis
   BindListSeq, BindListRec, BindListPar;
 inherited attribute inh_scope_two::Decorated sg:Scope<IdDcl IdRef> occurs on BindListPar, Qid;
 
-synthesized attribute all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on Program, DeclList, Decl, Qid, Exp, 
+monoid attribute all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- For double-edged arrow between parent and child scopes
-synthesized attribute children::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
+monoid attribute children::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- The scope returned by the binding list construct of a sequential let expression
@@ -44,10 +44,10 @@ top::Program ::= list::DeclList
 {
   local attribute global_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
     nothing(),
-    list.children,
+    list.children
   );
 
-  top.all_scopes = global_scope::list.all_scopes;
+  top.all_scopes := global_scope::list.all_scopes;
 
   list.inh_scope = global_scope;
 
@@ -73,7 +73,7 @@ top::DeclList ::= decl::Decl list::DeclList
 abstract production decllist_nothing
 top::DeclList ::=
 {
-  propagate children, all_scopes
+  propagate children, all_scopes;
 
   -- ast printing
   top.pp = "decllist_nothing()";
@@ -87,12 +87,12 @@ abstract production decl_module
 top::Decl ::= decl::IdDcl list::DeclList
 {
   local attribute module_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
-    just(top.inh_scope)
-    list.children,
+    just(top.inh_scope),
+    list.children
   );
 
-  top.all_scopes = list.all_scopes;
-  top.children = [module_scope];
+  top.all_scopes := list.all_scopes;
+  top.children := [module_scope];
 
   list.inh_scope = module_scope;
 
@@ -140,11 +140,11 @@ top::Exp ::= decl::IdDcl exp::Exp
 
   local attribute fun_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope (
     just(top.inh_scope),
-    exp.children,
+    exp.children
   );
 
-  top.all_scopes = exp.all_scopes;
-  top.children = [fun_scope];
+  top.all_scopes := exp.all_scopes;
+  top.children := [fun_scope];
 
   -- ast printing
   top.pp = "exp_funfix(" ++ decl.sg:name ++ "," ++ exp.pp ++ ")";
@@ -178,11 +178,11 @@ top::Qid ::= ref::IdRef qid::Qid
 {
   local attribute qual_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope (
     nothing(),
-    [],
+    []
   );
 
-  top.all_scopes = [qual_scope] ++ qid.all_scopes;
-  top.children = []; 
+  top.all_scopes := [qual_scope] ++ qid.all_scopes;
+  top.children := []; 
 
   qid.inh_scope = qual_scope;
   qid.inh_scope_two = top.inh_scope_two;

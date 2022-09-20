@@ -23,7 +23,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
   local attribute r::Program = r_cst.ast;
 
   return if result.parseSuccess then 
-      ioval(printT(printed ++ "\n", ioin), 0) 
+      ioval(printT("Success!\n", ioin), 0) 
     else 
       ioval(printT("Something went wrong!\n", ioin), -1);
 }
