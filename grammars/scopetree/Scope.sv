@@ -1,13 +1,13 @@
 grammar scopetree;
 
-nonterminal Graph<d r> with root_nodes<d r>;
+nonterminal Graph<d r> with root_scopes<d r>;
 nonterminal Scope<d r> with id, str, parent<d r>, children<d r>;
 
 synthesized attribute id::Integer;
 synthesized attribute str::String;
 synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
 synthesized attribute children<d r>::[Decorated Scope<d r>];
-synthesized attribute root_nodes<d r>::[Decorated Scope<d r>];
+synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
 
 synthesized attribute name::String;
 synthesized attribute line::Integer;
@@ -18,9 +18,9 @@ synthesized attribute column::Integer;
 
 abstract production mk_graph
 top::Graph<d r> ::=
-  root_nodes::[Decorated Scope<d r>]
+  root_scopes::[Decorated Scope<d r>]
 {
-  top.root_nodes = root_nodes;
+  top.root_scopes = root_scopes;
 }
 
 --------------------
@@ -38,11 +38,13 @@ top::Scope<d r> ::=
 }
 
 abstract production mk_scope_childless
-top::Scope<d r> ::= parent::Maybe<Decorated Scope<d r>>
+top::Scope<d r> ::= 
+  parent::Maybe<Decorated Scope<d r>>
 { forwards to mk_scope(parent, []); }
 
 abstract production mk_scope_parentless
-top::Scope<d r> ::= children::[Decorated Scope<d r>]
+top::Scope<d r> ::= 
+  children::[Decorated Scope<d r>]
 { forwards to mk_scope(nothing(), children); }
 
 abstract production mk_scope_disconnected
