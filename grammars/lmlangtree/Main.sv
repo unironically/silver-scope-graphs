@@ -22,6 +22,8 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
+  local attribute scope_graph::sg:Graph<IdDcl IdRef> = r.graph;
+
   return if result.parseSuccess then 
       ioval(printT("Success!\n", ioin), 0) 
     else 

@@ -15,13 +15,17 @@ nonterminal IdRef;
 synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar, IdDcl, IdRef;
 
+-- Entire graph, synthesized by prog
+synthesized attribute graph::sg:Graph<IdDcl IdRef> occurs on Program;
+
 -- The inherited scope passed to a node is the scope in which the corresponding construct resides
 -- Only the binding list of parrallel let expressions use two inherited scopes
 inherited attribute inh_scope::Decorated sg:Scope<IdDcl IdRef> occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 inherited attribute inh_scope_two::Decorated sg:Scope<IdDcl IdRef> occurs on BindListPar, Qid;
 
-monoid attribute all_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on Program, DeclList, Decl, Qid, Exp, 
+-- Collects all the parentless scopes in the scope forest
+monoid attribute root_scopes::[Decorated sg:Scope<IdDcl IdRef>] occurs on DeclList, Decl, Qid, Exp, 
   BindListSeq, BindListRec, BindListPar;
 
 -- For double-edged arrow between parent and child scopes
@@ -42,18 +46,20 @@ flowtype sg:name {} on IdDcl, IdRef;
 abstract production prog 
 top::Program ::= list::DeclList
 {
-  local attribute global_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope(
-    nothing(),
+  local attribute graph::sg:Graph<IdDcl IdRef> = sg:mk_graph(
+    global_scope::list.root_scopes
+  );
+
+  local attribute global_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope_parentless(
     list.children
   );
 
-  top.all_scopes := global_scope::list.all_scopes;
+  top.graph = graph;
 
   list.inh_scope = global_scope;
 
   -- ast printing
   top.pp = "prog(" ++ list.pp ++ ")";
-
 }
 
 
@@ -64,7 +70,7 @@ top::Program ::= list::DeclList
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
-  propagate inh_scope, children, all_scopes;
+  propagate inh_scope, children, root_scopes;
 
   -- ast printing
   top.pp = "decllist_list(" ++ decl.pp ++ "," ++ list.pp ++ ")";
@@ -73,7 +79,7 @@ top::DeclList ::= decl::Decl list::DeclList
 abstract production decllist_nothing
 top::DeclList ::=
 {
-  propagate children, all_scopes;
+  propagate children, root_scopes;
 
   -- ast printing
   top.pp = "decllist_nothing()";
@@ -91,7 +97,7 @@ top::Decl ::= decl::IdDcl list::DeclList
     list.children
   );
 
-  top.all_scopes := list.all_scopes;
+  top.root_scopes := list.root_scopes;
   top.children := [module_scope];
 
   list.inh_scope = module_scope;
@@ -103,7 +109,7 @@ top::Decl ::= decl::IdDcl list::DeclList
 abstract production decl_import
 top::Decl ::= qid::Qid
 {
-  propagate inh_scope, all_scopes, children;
+  propagate inh_scope, root_scopes, children;
 
   qid.inh_scope_two = top.inh_scope; -- change name inh_scope_two
 
@@ -114,7 +120,7 @@ top::Decl ::= qid::Qid
 abstract production decl_def
 top::Decl ::= decl::IdDcl exp::Exp
 {
-  propagate inh_scope, all_scopes, children;
+  propagate inh_scope, root_scopes, children;
 
   -- ast printing
   top.pp = "decl_def(" ++ decl.sg:name ++ "," ++ exp.pp ++ ")";
@@ -123,7 +129,7 @@ top::Decl ::= decl::IdDcl exp::Exp
 abstract production decl_exp
 top::Decl ::= exp::Exp
 {
-  propagate inh_scope, all_scopes, children;
+  propagate inh_scope, root_scopes, children;
 
   -- ast printing
   top.pp = "decl_exp(" ++ exp.pp ++ ")";
@@ -143,7 +149,7 @@ top::Exp ::= decl::IdDcl exp::Exp
     exp.children
   );
 
-  top.all_scopes := exp.all_scopes;
+  top.root_scopes := exp.root_scopes;
   top.children := [fun_scope];
 
   -- ast printing
@@ -153,7 +159,7 @@ top::Exp ::= decl::IdDcl exp::Exp
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
-  propagate inh_scope, all_scopes, children;
+  propagate inh_scope, root_scopes, children;
 
   -- ast printing
   top.pp ="exp_qid(" ++ qid.pp ++ ")";
@@ -162,7 +168,7 @@ top::Exp ::= qid::Qid
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
-  propagate inh_scope, all_scopes, children;
+  propagate inh_scope, root_scopes, children;
 
   -- ast printing
   top.pp = "exp_int(" ++ val.lexeme ++ ")";
@@ -176,13 +182,10 @@ top::Exp ::= val::Int_t
 abstract production qid_dot
 top::Qid ::= ref::IdRef qid::Qid
 {
-  local attribute qual_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope (
-    nothing(),
-    []
-  );
+  local attribute qual_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope_disconnected ();
 
-  top.all_scopes := [qual_scope] ++ qid.all_scopes;
-  top.children := []; 
+  top.root_scopes := qual_scope::qid.root_scopes;
+  top.children := [];
 
   qid.inh_scope = qual_scope;
   qid.inh_scope_two = top.inh_scope_two;
@@ -194,7 +197,7 @@ top::Qid ::= ref::IdRef qid::Qid
 abstract production qid_single
 top::Qid ::= ref::IdRef
 {
-  propagate all_scopes, children;
+  propagate root_scopes, children;
 
   -- ast printing
   top.pp = "qid_single(" ++ ref.sg:name ++ ")";
