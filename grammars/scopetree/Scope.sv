@@ -1,7 +1,7 @@
 grammar scopetree;
 
 nonterminal Graph<d r> with root_scopes<d r>;
-nonterminal Scope<d r> with id, str, parent<d r>, children<d r>;
+nonterminal Scope<d r> with id, str, parent<d r>, children<d r>, decls<d r>, refs<d r>, imps<d r>;
 nonterminal Decl<d r> with str, name, line, column, in_scope<d r>, assoc_scope<d r>;
 nonterminal Ref<d r> with str, name, line, column, in_scope<d r>;
 
@@ -12,6 +12,10 @@ synthesized attribute children<d r>::[Decorated Scope<d r>];
 synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute in_scope<d r>::Decorated Scope<d r>;
 synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
+
+synthesized attribute decls<d r>::[Decorated Decl<d r>];
+synthesized attribute refs<d r>::[Decorated Ref<d r>];
+synthesized attribute imps<d r>::[Decorated Ref<d r>];
 
 synthesized attribute name::String;
 synthesized attribute line::Integer;
@@ -34,26 +38,41 @@ abstract production mk_scope
 top::Scope<d r> ::= 
   parent::Maybe<Decorated Scope<d r>>
   children::[Decorated Scope<d r>]
+  decls::[Decorated Decl<d r>]
+  refs::[Decorated Ref<d r>]
+  imps::[Decorated Ref<d r>]
 {
   top.id = genInt();
   top.parent = parent;
   top.children = children;
+  top.decls = decls;
+  top.refs = refs;
+  top.imps = imps;
   top.str = toString(top.id);
 }
 
 abstract production mk_scope_childless
 top::Scope<d r> ::= 
   parent::Maybe<Decorated Scope<d r>>
-{ forwards to mk_scope(parent, []); }
+  decls::[Decorated Decl<d r>]
+  refs::[Decorated Ref<d r>]
+  imps::[Decorated Ref<d r>]
+{ forwards to mk_scope(parent, [], decls, refs, imps); }
 
 abstract production mk_scope_parentless
 top::Scope<d r> ::= 
   children::[Decorated Scope<d r>]
-{ forwards to mk_scope(nothing(), children); }
+  decls::[Decorated Decl<d r>]
+  refs::[Decorated Ref<d r>]
+  imps::[Decorated Ref<d r>]
+{ forwards to mk_scope(nothing(), children, decls, refs, imps); }
 
 abstract production mk_scope_disconnected
 top::Scope<d r> ::=
-{ forwards to mk_scope(nothing(), []); }
+  decls::[Decorated Decl<d r>]
+  refs::[Decorated Ref<d r>]
+  imps::[Decorated Ref<d r>]
+{ forwards to mk_scope(nothing(), [], decls, refs, imps); }
 
 --------------------
 -- Declaration nodes
