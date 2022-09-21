@@ -243,7 +243,7 @@ top::Qid ::= ref::IdRef qid::Qid
 
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
-    qual_scope
+    top.inh_scope
   );
 
   top.root_scopes := qual_scope::qid.root_scopes;
@@ -262,14 +262,7 @@ top::Qid ::= ref::IdRef qid::Qid
 abstract production qid_single
 top::Qid ::= ref::IdRef
 {
-  -- used in the "rqid" construction
-  local attribute last_ref_rqid::sg:Ref<IdDcl IdRef> = sg:mk_ref (
-    ref,
-    top.inh_scope
-  );
-
-  -- Used in the "iqid" construction
-  local attribute last_ref_iqid::sg:Ref<IdDcl IdRef> = sg:mk_ref (
+  local attribute last_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
     top.inh_scope_iqid
   );
@@ -277,9 +270,9 @@ top::Qid ::= ref::IdRef
   top.root_scopes := [];
   top.children := [];
   top.decls := [];
-  top.refs := [last_ref_rqid];
+  top.refs := [last_ref];
   top.imps := [];
-  top.imp_iqid = last_ref_iqid;
+  top.imp_iqid = last_ref;
 
   -- ast printing
   top.pp = "qid_single(" ++ ref.sg:name ++ ")";
