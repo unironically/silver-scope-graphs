@@ -2,14 +2,14 @@ grammar lmlangtree;
 
 imports scopetree as sg;
 
-global file_output::String = "scope_graph_lmlangtree.svg";
+global svg_out_name::String = "scope_graph_lmlangtree.svg";
 
 parser parse :: Program_c {
     lmlangtree;
 }
 
 function main
-IOVal<Integer> ::= largs::[String] ioin::IOToken
+IO<Integer> ::= largs::[String]
 {
   local attribute args::String;
   args = head(largs);
@@ -24,13 +24,10 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute scope_graph::sg:Graph<IdDcl IdRef> = r.graph;
 
-  local attribute graph_printed :: IOToken = 
-    systemT("echo '" ++ 
-      sg:graphviz_draw_graph(scope_graph) ++ 
-      "' | dot -Tsvg > " ++ file_output, ioin).io;
+  local attribute graph_printed :: IO<Integer> = 
+    system("echo '" ++ sg:graphviz_draw_graph(scope_graph) ++  "' | dot -Tsvg > " ++ svg_out_name);
 
-  return if result.parseSuccess then 
-      ioval(printT("Success!\n", graph_printed), 0) 
-    else 
-      ioval(printT("Something went wrong!\n", ioin), -1);
+  return if result.parseSuccess 
+    then do {print("Success!\n"); graph_printed; return -1;}
+    else do {print("Something went wrong!\n"); return -1;};
 }
