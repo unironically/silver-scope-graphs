@@ -45,7 +45,7 @@ String ::= scope::Decorated Scope<d r>
 
     "" ++ foldl( -- refs
       (\acc::String cur::Decorated Ref<d r> -> 
-        acc ++ " " ++ cur.str ++ "->" ++ scope.str ++ "{ edge [color=blue arrowhead=tee]" ++
+        acc ++ " " ++ cur.str ++ "->" ++ scope.str ++ "{ edge [color=blue]" ++
         foldl((\acc::String res::Decorated Decl<d r> -> 
           acc ++ cur.str ++ "->" ++ res.str ++ " "), "", cur.resolutions) ++ "}"),
       "",
@@ -55,8 +55,13 @@ String ::= scope::Decorated Scope<d r>
     "{edge [arrowhead=onormal]" ++ foldl( -- imports
       (\acc::String cur::Decorated Ref<d r> -> 
         acc ++ " " ++ scope.str ++ "->" ++ cur.str ++ "{ edge [color=blue arrowhead=tee]" ++
-        foldl((\acc::String res::Decorated Decl<d r> -> 
-          acc ++ cur.str ++ "->" ++ res.str ++ " "), "", cur.resolutions) ++ "}"),
+        
+        if cur.in_scope.id == scope.id -- hacky way to make sure two resolution arrows don't come from certain imports
+        then foldl((\acc::String res::Decorated Decl<d r> -> 
+          acc ++ cur.str ++ "->" ++ res.str ++ " "), "", cur.resolutions) 
+        else ""
+
+        ++ "}"),
       "",
       scope.imps
     ) ++ "}\n" ++

@@ -335,13 +335,13 @@ top::Qid ::= ref::IdRef qid::Qid
     [qual_ref]
   );
 
-  local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
+  local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref ( -- A_1_55
     ref,
     top.inh_scope,
     resolutions
   );
 
-  top.root_scopes := qual_scope::qid.root_scopes;
+  top.root_scopes := [qual_scope];
   top.children := [];
   top.decls := [];
   top.refs := [qual_ref];
@@ -363,9 +363,9 @@ top::Qid ::= ref::IdRef qid::Qid
 abstract production qid_single
 top::Qid ::= ref::IdRef
 {
-  local attribute last_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
+  local attribute last_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref ( -- B_1_57
     ref,
-    top.inh_scope_iqid,
+    top.inh_scope,
     resolutions
   );
 
