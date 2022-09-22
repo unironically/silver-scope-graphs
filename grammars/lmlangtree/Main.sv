@@ -28,6 +28,6 @@ IO<Integer> ::= largs::[String]
     system("echo '" ++ sg:graphviz_draw_graph(scope_graph) ++  "' | dot -Tsvg > " ++ svg_out_name);
 
   return if result.parseSuccess 
-    then do {print("Success!\n"); print(sg:graphviz_draw_graph(scope_graph) ++ "\n"); graph_output; return 0;}
+    then do {print("Success!\n"); graph_output; return 0;}
     else do {print("Something went wrong!\n"); return -1;};
 }

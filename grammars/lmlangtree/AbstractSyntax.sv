@@ -177,6 +177,80 @@ top::Decl ::= exp::Exp
 }
 
 ------------------------------------------------------------
+---- Sequential let expressions
+------------------------------------------------------------
+
+abstract production exp_let
+top::Exp ::= list::BindListSeq exp::Exp
+{
+  top.decls := list.decls;
+  top.refs := list.refs;
+  top.imps := list.imps;
+  top.root_scopes := list.root_scopes ++ exp.root_scopes;
+  top.children := list.children ++ exp.children;
+
+  list.inh_scope = top.inh_scope;
+  list.inh_decls = exp.decls; -- bringing up exp's decls/refs/imports to give to the final scope in the binding list
+  list.inh_refs = exp.refs;
+  list.inh_imps = exp.imps;
+
+  exp.inh_scope = list.ret_scope;
+  
+  -- ast printing
+  top.pp = "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ ")";
+}
+
+abstract production bindlist_list_seq
+top::BindListSeq ::= decl::IdDcl exp::Exp list::BindListSeq
+{
+  local attribute sequence_scope::sg:Scope<IdDcl IdRef> = sg:mk_scope (
+    just(top.inh_scope),
+    list.children,
+    [sequence_decl],
+    list.refs,
+    list.imps
+  );
+
+  local attribute sequence_decl::sg:Decl<IdDcl IdRef> = sg:mk_decl (
+    decl,
+    top.inh_scope
+  );
+
+  top.decls := exp.decls;
+  top.refs := exp.refs;
+  top.imps := exp.imps;
+  top.children := [sequence_scope];
+  top.root_scopes := exp.root_scopes ++ list.root_scopes;
+  top.ret_scope = list.ret_scope;
+
+  exp.inh_scope = top.inh_scope;
+
+  list.inh_scope = sequence_scope;
+  list.inh_decls = top.inh_decls;
+  list.inh_refs = top.inh_refs;
+  list.inh_imps = top.inh_imps;
+
+  -- ast printing
+  top.pp = "bindlist_list_seq(" ++ decl.sg:name ++ "," ++ exp.pp ++ "," ++ list.pp ++ ")";
+}
+
+abstract production bindlist_nothing_seq
+top::BindListSeq ::=
+{
+  --propagate root_scopes, children, decls, refs, imps;
+
+  top.root_scopes := [];
+  top.children := [];
+  top.decls := top.inh_decls;
+  top.refs := top.inh_refs;
+  top.imps := top.inh_imps;
+  top.ret_scope = top.inh_scope;
+
+  -- ast printing
+  top.pp = "bindlist_nothing_seq()";
+}
+
+------------------------------------------------------------
 ---- Other expressions
 ------------------------------------------------------------
 
@@ -207,10 +281,30 @@ top::Exp ::= decl::IdDcl exp::Exp
   top.pp = "exp_funfix(" ++ decl.sg:name ++ "," ++ exp.pp ++ ")";
 }
 
+abstract production exp_add
+top::Exp ::= left::Exp right::Exp
+{
+  propagate root_scopes, children, decls, refs, imps, inh_scope;
+
+  -- ast printing
+  top.pp = "add(" ++ left.pp ++ "," ++ right.pp ++ ")";
+}
+
+abstract production exp_app
+top::Exp ::= left::Exp right::Exp
+{
+  propagate root_scopes, children, decls, refs, imps, inh_scope;
+
+  -- ast printing
+  top.pp = "app(" ++ left.pp ++ "," ++ right.pp ++ ")";
+}
+
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
   propagate inh_scope, root_scopes, children, decls, refs, imps;
+
+  qid.inh_scope_iqid = top.inh_scope;
 
   -- ast printing
   top.pp ="exp_qid(" ++ qid.pp ++ ")";
@@ -243,7 +337,8 @@ top::Qid ::= ref::IdRef qid::Qid
 
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
-    top.inh_scope
+    top.inh_scope,
+    resolutions
   );
 
   top.root_scopes := qual_scope::qid.root_scopes;
@@ -255,6 +350,12 @@ top::Qid ::= ref::IdRef qid::Qid
 
   qid.inh_scope = qual_scope;
 
+  -- For resolution algorithm(s)
+  qual_ref.sg:seen_scopes = [];
+  qual_ref.sg:seen_imports = [qual_ref];
+
+  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = sg:resolve_visser([], qual_ref);
+
   -- ast printing
   top.pp = "qid_list(" ++ ref.sg:name ++ "," ++ qid.pp ++ ")";
 }
@@ -264,7 +365,8 @@ top::Qid ::= ref::IdRef
 {
   local attribute last_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref (
     ref,
-    top.inh_scope_iqid
+    top.inh_scope_iqid,
+    resolutions
   );
 
   top.root_scopes := [];
@@ -273,6 +375,12 @@ top::Qid ::= ref::IdRef
   top.refs := [last_ref];
   top.imps := [];
   top.imp_iqid = last_ref;
+
+  -- For resolution algorithm(s)
+  last_ref.sg:seen_scopes = [];
+  last_ref.sg:seen_imports = [last_ref];
+  
+  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = sg:resolve_visser([], last_ref);
 
   -- ast printing
   top.pp = "qid_single(" ++ ref.sg:name ++ ")";

@@ -3,7 +3,7 @@ grammar scopetree;
 nonterminal Graph<d r> with root_scopes<d r>;
 nonterminal Scope<d r> with id, str, parent<d r>, children<d r>, decls<d r>, refs<d r>, imps<d r>;
 nonterminal Decl<d r> with str, name, line, column, in_scope<d r>, assoc_scope<d r>;
-nonterminal Ref<d r> with str, name, line, column, in_scope<d r>;
+nonterminal Ref<d r> with str, name, line, column, in_scope<d r>, seen_scopes<d r>, seen_imports<d r>, resolutions<d r>;
 
 synthesized attribute id::Integer;
 synthesized attribute str::String;
@@ -12,6 +12,7 @@ synthesized attribute children<d r>::[Decorated Scope<d r>];
 synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute in_scope<d r>::Decorated Scope<d r>;
 synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
+synthesized attribute resolutions<d r>::[Decorated Decl<d r>];
 
 synthesized attribute decls<d r>::[Decorated Decl<d r>];
 synthesized attribute refs<d r>::[Decorated Ref<d r>];
@@ -20,6 +21,10 @@ synthesized attribute imps<d r>::[Decorated Ref<d r>];
 synthesized attribute name::String;
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
+
+-- Used in resolution algorithm(s)
+inherited attribute seen_scopes<d r>::[Decorated Scope<d r>];
+inherited attribute seen_imports<d r>::[Decorated Ref<d r>];
 
 --------------------
 -- Graph
@@ -115,10 +120,12 @@ abstract production mk_ref
 top::Ref<d r> ::=
   ast_node::Decorated r with i
   in_scope::Decorated Scope<d r>
+  resolutions::[Decorated Decl<d r>]
 {
   top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
   top.name = ast_node.name;
   top.line = ast_node.line;
   top.column = ast_node.column;
   top.in_scope = in_scope;
+  top.resolutions = resolutions;
 }

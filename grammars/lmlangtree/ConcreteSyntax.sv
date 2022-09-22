@@ -19,8 +19,6 @@ top::Program_c ::= list::DeclList_c
   top.ast = prog(list.ast);
 }
 
-
-
 concrete production decllist_c_list
 top::DeclList_c ::= decl::Decl_c list::DeclList_c
 {
@@ -32,8 +30,6 @@ top::DeclList_c ::=
 {
   top.ast = decllist_nothing();
 }
-
-
 
 --------------------------------------------------------------------
 -- Not included in the grammar given in the publication - but seems necessary for the examples given.
@@ -63,10 +59,40 @@ top::Decl_c ::= Def_t id::IdDcl_c Eq_t exp::Exp_c
   top.ast = decl_def(id.ast, exp.ast);
 }
 
+concrete production exp_c_let
+top::Exp_c ::= 'let' list::BindList_c_seq 'in' exp::Exp_c
+{
+  top.ast = exp_let(list.ast, exp.ast);
+}
+
+concrete production bindlist_c_seq_nothing
+top::BindList_c_seq ::=
+{
+  top.ast = bindlist_nothing_seq();
+}
+
+concrete production bindlist_c_seq_list
+top::BindList_c_seq ::= id::IdDcl_c '=' exp::Exp_c list::BindList_c_seq
+{
+  top.ast = bindlist_list_seq(id.ast, exp.ast, list.ast);
+}
+
 concrete production exp_c_fun
 top::Exp_c ::= Fun_t id::IdDcl_c LCurly_t exp::Exp_c RCurly_t
 {
   top.ast = exp_funfix(id.ast, exp.ast);
+}
+
+concrete production exp_c_add
+top::Exp_c ::= left::Exp_c Plus_t right::Exp_c
+{
+  top.ast = exp_add(left.ast, right.ast);
+}
+
+concrete production exp_c_app
+top::Exp_c ::= left::Exp_c App_t right::Exp_c
+{
+  top.ast = exp_app(left.ast, right.ast);
 }
 
 concrete production exp_c_qid
