@@ -354,7 +354,9 @@ top::Qid ::= ref::IdRef qid::Qid
   qual_ref.sg:seen_scopes = [];
   qual_ref.sg:seen_imports = [qual_ref];
 
-  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = sg:resolve_visser([], qual_ref);
+  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = 
+    --sg:resolve_visser([], qual_ref);
+    sg:visser_decorating(qual_ref, qual_ref.sg:in_scope);
 
   -- ast printing
   top.pp = "qid_list(" ++ ref.sg:name ++ "," ++ qid.pp ++ ")";
@@ -380,7 +382,9 @@ top::Qid ::= ref::IdRef
   last_ref.sg:seen_scopes = [];
   last_ref.sg:seen_imports = [last_ref];
   
-  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = sg:resolve_visser([], last_ref);
+  local attribute resolutions::[Decorated sg:Decl<IdDcl IdRef>] = 
+    --sg:resolve_visser([], last_ref);
+    sg:visser_decorating(last_ref, last_ref.sg:in_scope);
 
   -- ast printing
   top.pp = "qid_single(" ++ ref.sg:name ++ ")";
