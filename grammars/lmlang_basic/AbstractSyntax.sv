@@ -1,5 +1,10 @@
 grammar lmlang_basic;
 
+inherited attribute env::[()] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
+  lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef;
+
+synthesized attribute pass_env::[()] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:IdDecl;
+
 ------------------------------------------------------------
 ---- Program root
 ------------------------------------------------------------
@@ -7,6 +12,7 @@ grammar lmlang_basic;
 aspect production lm:prog
 top::lm:Program ::= list::lm:DeclList
 {
+  list.env = [];
 }
 
 ------------------------------------------------------------
@@ -16,6 +22,8 @@ top::lm:Program ::= list::lm:DeclList
 aspect production lm:decllist_list
 top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 {
+  decl.env = top.env;
+  list.env = decl.pass_env;
 }
 
 aspect production lm:decllist_nothing
@@ -30,21 +38,27 @@ top::lm:DeclList ::=
 aspect production lm:decl_module
 top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 {
+  decl.env = top.env;
+  list.env = decl.pass_env;
 }
 
 aspect production lm:decl_import
 top::lm:Decl ::= qid::lm:Qid
 {
+  qid.env = top.env;
 }
 
 aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
+  decl.env = top.env;
+  exp.env = decl.pass_env;
 }
 
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
+  exp.env = top.env;
 }
 
 ------------------------------------------------------------
@@ -54,11 +68,16 @@ top::lm:Decl ::= exp::lm:Exp
 aspect production lm:exp_let
 top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 {
+  list.env = top.env;
+  exp.env = list.pass_env;
 }
 
 aspect production lm:bindlist_list_seq
 top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
+  decl.env = top.env;
+  exp.env = decl.pass_env;
+  top.pass_env = list.pass_env;
 }
 
 aspect production lm:bindlist_nothing_seq
@@ -76,7 +95,7 @@ top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 }
 
 aspect production lm:bindlist_list_rec
-top::lm:BindListRec ::= id::lm:ID_t exp::lm:Exp list::lm:BindListRec
+top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
 }
 
@@ -95,7 +114,7 @@ top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 }
 
 aspect production lm:bindlist_list_par
-top::lm:BindListPar ::= id::lm:ID_t exp::lm:Exp list::lm:BindListPar
+top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
 }
 
@@ -111,25 +130,37 @@ top::lm:BindListPar ::=
 aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
+  decl.env = top.env;
+  exp.env = decl.pass_env;
 }
 
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  left.env = top.env ++ right.pass_env;
+  right.env = top.env ++ left.pass_env;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  left.env = top.env ++ right.pass_env;
+  right.env = top.env ++ left.pass_env;
 }
 
 aspect production lm:exp_qid
 top::lm:Exp ::= qid::lm:Qid
 {
+  qid.env = top.env;
 }
 
 aspect production lm:exp_int
 top::lm:Exp ::= val::lm:Int_t
+{
+}
+
+aspect production lm:exp_bool
+top::lm:Exp ::= val::Boolean
 {
 }
 
@@ -140,11 +171,14 @@ top::lm:Exp ::= val::lm:Int_t
 aspect production lm:qid_dot
 top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 {
+  ref.env = top.env;
+  qid.env = top.env;
 }
 
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
+  ref.env = top.env;
 }
 
 ------------------------------------------------------------

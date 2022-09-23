@@ -224,7 +224,7 @@ top::Exp ::= left::Exp right::Exp
 {
   top.errors := case (left.type, right.type) of 
     | (int_type(), int_type()) -> []
-    | (_, _) -> ["Mismatching types!\n"]
+    | (_, _) -> ["Mismatching types for expression " ++ top.pp ++ "\n"]
   end;
 
   top.type = int_type();
@@ -238,7 +238,7 @@ top::Exp ::= left::Exp right::Exp
 {
   top.errors := case (left.type, right.type) of 
     | (fun_type(), t) -> []
-    | (_, _) -> ["Mismatching types!\n"]
+    | (_, _) -> ["Mismatching types for expression " ++ top.pp ++ "\n"]
   end;
 
   top.type = right.type;
@@ -290,7 +290,7 @@ top::Qid ::= ref::IdRef qid::Qid
 {
   top.errors := case ref.type of 
     | module_type() -> []
-    | _ -> ["Non-module type in qid_dot!\n"]
+    | _ -> ["Non-module type qid_dot at " ++ top.pp ++ "\n"]
   end;
 
   top.type = qid.type;
