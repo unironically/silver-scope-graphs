@@ -1,9 +1,20 @@
 grammar lmlang_basic;
 
-inherited attribute env::[()] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
+inherited attribute env::[(String, lm:IdDecl)] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
   lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef;
 
-synthesized attribute pass_env::[()] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:IdDecl;
+synthesized attribute pass_env::[(String, lm:IdDecl)] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:IdDecl;
+
+synthesized attribute myDecls::[lm:IdDecl] occurs on lm:IdRef;
+
+synthesized attribute name::String occurs on lm:IdDecl, lm:IdRef;
+synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
+synthesized attribute line::Integer occurs on lm:IdDecl, lm:IdRef;
+synthesized attribute column::Integer occurs on lm:IdDecl, lm:IdRef;
+
+monoid attribute bindings::[(lm:IdRef, lm:IdDecl)] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
+  lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdRef;
+
 
 ------------------------------------------------------------
 ---- Program root
@@ -12,6 +23,8 @@ synthesized attribute pass_env::[()] occurs on lm:Decl, lm:Exp, lm:BindListSeq, 
 aspect production lm:prog
 top::lm:Program ::= list::lm:DeclList
 {
+  propagate bindings;
+
   list.env = [];
 }
 
@@ -22,19 +35,24 @@ top::lm:Program ::= list::lm:DeclList
 aspect production lm:decllist_list
 top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 {
+  propagate bindings;
+
   decl.env = top.env;
-  list.env = decl.pass_env;
+  list.env = top.env ++ decl.pass_env;
 }
 
 aspect production lm:decllist_nothing
 top::lm:DeclList ::=
 {
+  propagate bindings;
+
 }
 
 ------------------------------------------------------------
 ---- Decls
 ------------------------------------------------------------
 
+{-
 aspect production lm:decl_module
 top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 {
@@ -47,17 +65,22 @@ top::lm:Decl ::= qid::lm:Qid
 {
   qid.env = top.env;
 }
+-}
 
 aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
+  propagate bindings;
+
   decl.env = top.env;
-  exp.env = decl.pass_env;
+  exp.env = top.env ++ decl.pass_env;
 }
 
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
+  propagate bindings;
+
   exp.env = top.env;
 }
 
@@ -68,21 +91,30 @@ top::lm:Decl ::= exp::lm:Exp
 aspect production lm:exp_let
 top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 {
+  propagate bindings;
+
   list.env = top.env;
-  exp.env = list.pass_env;
+  exp.env = top.env ++ list.pass_env;
 }
 
 aspect production lm:bindlist_list_seq
 top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
+  propagate bindings;
+
   decl.env = top.env;
-  exp.env = decl.pass_env;
-  top.pass_env = list.pass_env;
+  exp.env = top.env;
+  list.env = top.env ++ exp.pass_env;
+
+  top.pass_env = decl.pass_env ++ list.pass_env;
 }
 
 aspect production lm:bindlist_nothing_seq
 top::lm:BindListSeq ::=
 {
+  propagate bindings;
+
+  top.pass_env = [];
 }
 
 ------------------------------------------------------------
@@ -130,6 +162,8 @@ top::lm:BindListPar ::=
 aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
+  propagate bindings;
+
   decl.env = top.env;
   exp.env = decl.pass_env;
 }
@@ -137,13 +171,18 @@ top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  propagate bindings;
+
   left.env = top.env ++ right.pass_env;
   right.env = top.env ++ left.pass_env;
+  top.pass_env = right.pass_env ++ left.pass_env;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  propagate bindings;
+
   left.env = top.env ++ right.pass_env;
   right.env = top.env ++ left.pass_env;
 }
@@ -151,17 +190,27 @@ top::lm:Exp ::= left::lm:Exp right::lm:Exp
 aspect production lm:exp_qid
 top::lm:Exp ::= qid::lm:Qid
 {
+  propagate bindings;
+
+  top.pass_env = [];
+
   qid.env = top.env;
 }
 
 aspect production lm:exp_int
 top::lm:Exp ::= val::lm:Int_t
 {
+  propagate bindings;
+
+  top.pass_env = [];
 }
 
 aspect production lm:exp_bool
 top::lm:Exp ::= val::Boolean
 {
+  propagate bindings;
+
+  top.pass_env = [];
 }
 
 ------------------------------------------------------------
@@ -171,6 +220,8 @@ top::lm:Exp ::= val::Boolean
 aspect production lm:qid_dot
 top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 {
+  propagate bindings;
+
   ref.env = top.env;
   qid.env = top.env;
 }
@@ -178,6 +229,8 @@ top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
+  propagate bindings;
+
   ref.env = top.env;
 }
 
@@ -188,9 +241,27 @@ top::lm:Qid ::= ref::lm:IdRef
 aspect production lm:decl
 top::lm:IdDecl ::= id::lm:ID_t
 {
+  top.name = id.lexeme;
+  top.line = id.line;
+  top.column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(id.line) ++ "_" ++ toString(id.column);
+  top.pass_env = [(top.name, top)];
 }
 
 aspect production lm:ref
 top::lm:IdRef ::= id::lm:ID_t
 {
+  top.name = id.lexeme;
+  top.line = id.line;
+  top.column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(id.line) ++ "_" ++ toString(id.column);
+
+  top.bindings := map (
+    (\pair::(String, lm:IdDecl) -> (top, snd(pair))),
+    filter(
+      (\pair::(String, lm:IdDecl) -> fst(pair) == top.name),
+      top.env
+    )
+  );
+
 }
