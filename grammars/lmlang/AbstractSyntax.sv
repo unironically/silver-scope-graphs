@@ -8,198 +8,223 @@ nonterminal Exp;
 nonterminal BindListSeq;
 nonterminal BindListRec;
 nonterminal BindListPar;
+nonterminal IdDcl;
+nonterminal IdRef;
 
-inherited attribute env::[(String, Decorated Exp)] occurs on DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
-synthesized attribute defs::[(String, Decorated Exp)] occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+-- Attributes used in printing an AST
+synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, 
+  BindListSeq, BindListRec, BindListPar, IdDcl, IdRef;
 
-synthesized attribute pp::String occurs on Program, DeclList, Decl, Qid, Exp, BindListSeq, BindListRec, BindListPar;
+------------------------------------------------------------
+---- Program root
+------------------------------------------------------------
 
 abstract production prog 
 top::Program ::= list::DeclList
 {
+  -- ast printing
   top.pp = "prog(" ++ list.pp ++ ")";
-  list.env = [];
-  top.defs = list.defs;
 }
 
-abstract production decllist_single
-top::DeclList ::= decl::Decl
-{
-  top.pp = "decllist_single(" ++ decl.pp ++ ")";
-  decl.env = top.env;
-  top.defs = decl.defs;
-}
+
+------------------------------------------------------------
+---- sg:Decl lists
+------------------------------------------------------------
 
 abstract production decllist_list
 top::DeclList ::= decl::Decl list::DeclList
 {
-  top.pp = "decl_list(" ++ decl.pp ++ ", " ++ list.pp ++ ")";
-  decl.env = top.env; -- declarations from decl not visible within list - check intended semantics
-  list.env = top.env;
-  top.defs = appendList(decl.defs, list.defs);
+  -- ast printing
+  top.pp = "decllist_list(" ++ decl.pp ++ "," ++ list.pp ++ ")";
 }
 
-abstract production decl_module
-top::Decl ::= id::ID_t list::DeclList
+abstract production decllist_nothing
+top::DeclList ::=
 {
-  top.pp = "module(" ++ id.lexeme ++ ", " ++ list.pp ++ ")";
+  -- ast printing
+  top.pp = "decllist_nothing()";
+}
+
+------------------------------------------------------------
+---- sg:Decls
+------------------------------------------------------------
+
+abstract production decl_module
+top::Decl ::= decl::IdDcl list::DeclList
+{
+  -- ast printing
+  top.pp = "decl_module("++ decl.pp ++ "," ++ list.pp ++ ")";
 }
 
 abstract production decl_import
 top::Decl ::= qid::Qid
 {
-  top.pp = "import(" ++ qid.pp ++ ")";
+  -- ast printing
+  top.pp = "decl_import(" ++ qid.pp ++ ")";
 }
 
-abstract production decl_define
-top::Decl ::= id::ID_t exp::Exp
+abstract production decl_def
+top::Decl ::= decl::IdDcl exp::Exp
 {
-  top.pp = "define(" ++ id.lexeme ++ " = " ++ exp.pp ++ ")";
-  exp.env = top.env;
-  top.defs = [(id.lexeme, exp)];
+  -- ast printing
+  top.pp = "decl_def(" ++ decl.pp ++ "," ++ exp.pp ++ ")";
 }
 
--- Not included in the grammar given in the publication - but seems necessary for the examples given.
 abstract production decl_exp
 top::Decl ::= exp::Exp
 {
+  -- ast printing
   top.pp = "decl_exp(" ++ exp.pp ++ ")";
-  exp.env = top.env;
-  top.defs = exp.defs;
 }
 
-abstract production qid_single
-top::Qid ::= id::ID_t
+------------------------------------------------------------
+---- Sequential let expressions
+------------------------------------------------------------
+
+abstract production exp_let
+top::Exp ::= list::BindListSeq exp::Exp
 {
-  top.pp = "qid_single(" ++ id.lexeme ++ ")";
-  top.defs = [];
+  -- ast printing
+  top.pp = "exp_let(" ++ list.pp ++ "," ++ exp.pp ++ ")";
 }
 
-abstract production qid_list
-top::Qid ::= id::ID_t qid::Qid
-{
-  top.pp = "qid_list(" ++ id.lexeme ++ ", " ++ qid.pp ++ ")";
-  qid.env = top.env;
-  top.defs = [];
-}
-
--- Defines the binding pattern for the sequential let feature
 abstract production bindlist_list_seq
-top::BindListSeq ::= id::ID_t exp::Exp list::BindListSeq
+top::BindListSeq ::= decl::IdDcl exp::Exp list::BindListSeq
 {
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  -- for sequential let ?
-  exp.env = top.env;
-  list.env = appendList([(id.lexeme, exp)], top.env);
-  top.defs = appendList([(id.lexeme, exp)], list.defs);
-}
-
--- Defines the binding pattern for the recursive let feature
-abstract production bindlist_list_rec
-top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  -- for recursive let ?
-  exp.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
-  list.env = appendList([(id.lexeme, exp)], appendList(list.defs, top.env));
-  top.defs = appendList([(id.lexeme, exp)], list.defs); -- check if id appears in list.defs - add error message if so.
-}
-
--- Defines the binding pattern for the parallel let feature
-abstract production bindlist_list_par
-top::BindListPar ::= id::ID_t exp::Exp list::BindListRec
-{
-  top.pp = "bindlist_list(" ++ id.lexeme ++ " = " ++ exp.pp ++ ", " ++ list.pp ++ ")";
-  -- for parallel let?
-  exp.env = top.env;
-  list.env = top.env;
-  top.defs = appendList([(id.lexeme, exp)], list.defs); -- check if if appears in list.defs - add error message if so.
+  -- ast printing
+  top.pp = "bindlist_list_seq(" ++ decl.pp ++ "," ++ exp.pp ++ "," ++ list.pp ++ ")";
 }
 
 abstract production bindlist_nothing_seq
 top::BindListSeq ::=
 {
-  top.pp = ".";
-  top.defs = [];
+  -- ast printing
+  top.pp = "bindlist_nothing_seq()";
+}
+
+------------------------------------------------------------
+---- Recursive let expressions
+------------------------------------------------------------
+
+abstract production exp_letrec
+top::Exp ::= list::BindListRec exp::Exp
+{
+  -- ast printing
+  top.pp = "exp_letrec(" ++ list.pp ++ "," ++ exp.pp ++ ")";
+}
+
+abstract production bindlist_list_rec
+top::BindListRec ::= id::ID_t exp::Exp list::BindListRec
+{
+  -- ast printing
+  top.pp = "bindlist_list_rec(" ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ ")";
 }
 
 abstract production bindlist_nothing_rec
-top::BindListSeq ::=
+top::BindListRec ::=
 {
-  top.pp = ".";
-  top.defs = [];
+  -- ast printing
+  top.pp = "bindlist_nothing_rec()";
+}
+
+
+------------------------------------------------------------
+---- Parallel let expressions
+------------------------------------------------------------
+
+abstract production exp_letpar
+top::Exp ::= list::BindListPar exp::Exp
+{
+  -- ast printing
+  top.pp = "exp_letpar(" ++ list.pp ++ "," ++ exp.pp ++ ")";
+}
+
+abstract production bindlist_list_par
+top::BindListPar ::= id::ID_t exp::Exp list::BindListPar
+{
+  -- ast printing
+  top.pp = "bindlist_list_par(" ++ id.lexeme ++ " = " ++ exp.pp ++ "," ++ list.pp ++ ")";
 }
 
 abstract production bindlist_nothing_par
 top::BindListPar ::=
 {
-  top.pp = ".";
-  top.defs = [];
+  -- ast printing
+  top.pp = "bindlist_nothing_par()";
 }
 
-abstract production exp_plus
-top::Exp ::= expLeft::Exp expRight::Exp
+------------------------------------------------------------
+---- Other expressions
+------------------------------------------------------------
+
+abstract production exp_funfix
+top::Exp ::= decl::IdDcl exp::Exp
 {
-  top.pp = "plus(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
-  expLeft.env = top.env;
-  expRight.env = top.env;
-  top.defs = appendList(expLeft.defs, expRight.defs);
+  -- ast printing
+  top.pp = "exp_funfix(" ++ decl.pp ++ "," ++ exp.pp ++ ")";
+}
+
+abstract production exp_add
+top::Exp ::= left::Exp right::Exp
+{
+  -- ast printing
+  top.pp = "add(" ++ left.pp ++ "," ++ right.pp ++ ")";
 }
 
 abstract production exp_app
-top::Exp ::= expLeft::Exp expRight::Exp
+top::Exp ::= left::Exp right::Exp
 {
-  top.pp = "apply(" ++ expLeft.pp ++ ", " ++ expRight.pp ++ ")";
-  expLeft.env = top.env;
-  expRight.env = top.env;
-  top.defs = appendList(expLeft.defs, expRight.defs);
+  -- ast printing
+  top.pp = "app(" ++ left.pp ++ "," ++ right.pp ++ ")";
 }
 
 abstract production exp_qid
 top::Exp ::= qid::Qid
 {
-  top.pp = "exp_qid(" ++ qid.pp ++ ")";
-  qid.env = top.env;
-  top.defs = [];
+  -- ast printing
+  top.pp ="exp_qid(" ++ qid.pp ++ ")";
 }
-
-abstract production exp_fun
-top::Exp ::= id::ID_t exp::Exp
-{
-  top.pp = "fun(" ++ id.lexeme ++ ", " ++ exp.pp ++ ")";
-  exp.env = top.env;
-  top.defs = [(id.lexeme, exp)];
-}
-
-abstract production exp_let
-top::Exp ::= list::BindListSeq exp::Exp
-{
-  top.pp = "exp_let(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  list.env = top.env;
-  exp.env = appendList(list.defs, top.env);
-  top.defs = appendList(list.defs, exp.defs);
-}
-
-abstract production exp_letrec
-top::Exp ::= list::BindListRec exp::Exp
-{
-  top.pp = "exp_letrec(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
-  list.env = top.env;
-  exp.env = top.env;
-  top.defs = [];
-}
-
---abstract production exp_letpar
---top::Exp ::= list::BindList exp::Exp
---{
---  top.pp = "exp_letpar(" ++ list.pp ++ ", " ++ exp.pp ++ ")";
---  list.bindlist_mode = 3;
---  top.defs = [];
---}
 
 abstract production exp_int
 top::Exp ::= val::Int_t
 {
+  -- ast printing
   top.pp = "exp_int(" ++ val.lexeme ++ ")";
-  top.defs = [];
+}
+
+
+------------------------------------------------------------
+---- Qualified identifiers
+------------------------------------------------------------
+
+abstract production qid_dot
+top::Qid ::= ref::IdRef qid::Qid
+{
+  -- ast printing
+  top.pp = "qid_list(" ++ ref.pp ++ "," ++ qid.pp ++ ")";
+}
+
+abstract production qid_single
+top::Qid ::= ref::IdRef
+{
+  -- ast printing
+  top.pp = "qid_single(" ++ ref.pp ++ ")";
+}
+
+------------------------------------------------------------
+---- Decls / Refs
+------------------------------------------------------------
+
+abstract production decl
+top::IdDcl ::= id::ID_t
+{
+  -- ast printing
+  top.pp = "decl(" ++ id.lexeme ++ ")";
+}
+
+abstract production ref
+top::IdRef ::= id::ID_t
+{
+  -- ast printing
+  top.pp = "ref(" ++ id.lexeme ++ ")";
 }

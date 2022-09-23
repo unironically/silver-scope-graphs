@@ -5,11 +5,10 @@ parser parse :: Program_c {
 }
 
 function main
-IOVal<Integer> ::= largs::[String] ioin::IOToken
+IO<Integer> ::= largs::[String]
 {
-
   local attribute args::String;
-  args = implode(" ", largs);
+  args = head(largs);
 
   local attribute result :: ParseResult<Program_c>;
   result = parse(args, "<<args>>");
@@ -19,12 +18,7 @@ IOVal<Integer> ::= largs::[String] ioin::IOToken
 
   local attribute r::Program = r_cst.ast;
 
-  local attribute print_success :: IOToken;
-  print_success = printT("Success!" ++ "\n" ++ r.pp ++ "\n", ioin);
-
-  local attribute print_failure :: IOToken;
-  print_failure = printT("Failure!", ioin);
-
-  return ioval(if result.parseSuccess then print_success else print_failure, 0);
-
+  return if result.parseSuccess 
+    then do {print("Success!\n" ++ r.pp ++ "\n"); return 0;}
+    else do {print("Something went wrong!\n"); return -1;};
 }
