@@ -1,7 +1,5 @@
 grammar lmlang_basic;
 
-synthesized attribute str::String occurs on lm:Program, lm:DeclList;
-
 ------------------------------------------------------------
 ---- Program root
 ------------------------------------------------------------
@@ -12,7 +10,7 @@ top::lm:Program ::= list::lm:DeclList
 }
 
 ------------------------------------------------------------
----- Declaration lists
+---- Decl lists
 ------------------------------------------------------------
 
 aspect production lm:decllist_list
@@ -30,7 +28,7 @@ top::lm:DeclList ::=
 ------------------------------------------------------------
 
 aspect production lm:decl_module
-top::lm:Decl ::= decl::lm:IdDcl list::lm:DeclList
+top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 {
 }
 
@@ -40,7 +38,7 @@ top::lm:Decl ::= qid::lm:Qid
 }
 
 aspect production lm:decl_def
-top::lm:Decl ::= decl::lm:IdDcl exp::lm:Exp
+top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
 }
 
@@ -59,7 +57,7 @@ top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 }
 
 aspect production lm:bindlist_list_seq
-top::lm:BindListSeq ::= decl::lm:IdDcl exp::lm:Exp list::lm:BindListSeq
+top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
 }
 
@@ -111,7 +109,7 @@ top::lm:BindListPar ::=
 ------------------------------------------------------------
 
 aspect production lm:exp_funfix
-top::lm:Exp ::= decl::lm:IdDcl exp::lm:Exp
+top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
 }
 
@@ -135,7 +133,6 @@ top::lm:Exp ::= val::lm:Int_t
 {
 }
 
-
 ------------------------------------------------------------
 ---- Qualified identifiers
 ------------------------------------------------------------
@@ -155,7 +152,7 @@ top::lm:Qid ::= ref::lm:IdRef
 ------------------------------------------------------------
 
 aspect production lm:decl
-top::lm:IdDcl ::= id::lm:ID_t
+top::lm:IdDecl ::= id::lm:ID_t
 {
 }
 
