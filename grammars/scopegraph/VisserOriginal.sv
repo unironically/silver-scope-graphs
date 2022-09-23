@@ -1,4 +1,4 @@
-grammar scopetree;
+grammar scopegraph;
 
 ----------------
 -- Functions corresponding to the scope graphs resolution algorithm:

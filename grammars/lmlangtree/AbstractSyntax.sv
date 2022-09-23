@@ -336,7 +336,7 @@ top::Qid ::= ref::IdRef qid::Qid
   );
 
   local attribute qual_ref::sg:Ref<IdDcl IdRef> = sg:mk_ref ( -- A_1_55
-    ref,
+    ref, -- ast node
     top.inh_scope,
     resolutions
   );

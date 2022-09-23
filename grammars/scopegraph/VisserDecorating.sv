@@ -1,4 +1,4 @@
-grammar scopetree;
+grammar scopegraph;
 
 --------------------
 -- Scope nodes
@@ -12,14 +12,8 @@ function visser_decorating
   cur_scope::Decorated Scope<d r>
 {
   return 
-    let collected_decls::[Decorated Decl<d r>] = 
-      mergeCollectedDecls(ref, cur_scope)
-    in
-      filter (  
-        (\d::Decorated Decl<d r> -> d.name == ref.name),
-        collected_decls    
-      )
-  end;
+    let collected_decls::[Decorated Decl<d r>] = collect_and_merge_decls(ref, cur_scope)
+    in filter ((\d::Decorated Decl<d r> -> d.name == ref.name), collected_decls) end;
 }
 
 @{-
@@ -60,10 +54,10 @@ function check_parent
       | nothing() -> []
       | just(p) -> 
         let decorated_ref::Decorated Ref<d r> = 
-          decorate new(ref) with 
+          decorate new(ref) with
             {seen_imports = ref.seen_imports; seen_scopes = cur_scope::ref.seen_scopes;} 
         in
-          mergeCollectedDecls(decorated_ref, p)
+          collect_and_merge_decls(decorated_ref, p)
         end
     end
   else [];
@@ -72,7 +66,7 @@ function check_parent
 @{-
  - Merge declarations found from parent, imports and current scope
 -}
-function mergeCollectedDecls
+function collect_and_merge_decls
 [Decorated Decl<d r>] ::=
   ref::Decorated Ref<d r> 
   cur_scope::Decorated Scope<d r>
