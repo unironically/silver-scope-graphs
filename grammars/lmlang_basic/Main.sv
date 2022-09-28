@@ -23,6 +23,6 @@ IO<Integer> ::= largs::[String]
   );
 
   return if result.parseSuccess
-    then do {print("Success!\n" ++ r.lm:pp ++ "\n" ++ bindings_string ++ "\n"); return 0;}
+    then do {print("Success!\n" ++ bindings_string ++ "\n"); return 0;}
     else do {print("Something went wrong during parsing!\n"); return -1;};
 }

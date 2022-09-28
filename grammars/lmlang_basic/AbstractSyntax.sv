@@ -263,12 +263,15 @@ top::lm:IdRef ::= id::lm:ID_t
   top.column = id.column;
   top.str = id.lexeme ++ "_" ++ toString(id.line) ++ "_" ++ toString(id.column);
 
+  {-
   top.bindings := map (
     (\pair::(String, lm:IdDecl) -> (top, snd(pair))),
     [head(filter(
       (\pair::(String, lm:IdDecl) -> fst(pair) == top.name),
       top.env
-    ))]
+      ))]
   );
+  -}
+  top.bindings := 
 
 }

@@ -19,6 +19,6 @@ IO<Integer> ::= largs::[String]
   local attribute r::Program = r_cst.ast;
 
   return if result.parseSuccess
-    then do {print("Success!\n" ++ r.pp ++ "\n"); return 0;}
+    then do {print("Success!\n"); return 0;}
     else do {print("Something went wrong during parsing!\n"); return -1;};
 }
