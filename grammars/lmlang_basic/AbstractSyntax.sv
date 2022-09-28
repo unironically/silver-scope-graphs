@@ -1,9 +1,9 @@
 grammar lmlang_basic;
 
-inherited attribute env::[(String, lm:IdDecl)] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
+inherited attribute env::[lm:IdDecl] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
   lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef;
 
-synthesized attribute pass_env::[(String, lm:IdDecl)] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl;
+synthesized attribute pass_env::[lm:IdDecl] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl;
 
 synthesized attribute myDecls::[lm:IdDecl] occurs on lm:IdRef;
 
@@ -128,17 +128,36 @@ top::lm:BindListSeq ::=
 aspect production lm:exp_letrec
 top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 {
+  propagate bindings;
+
+  list.env = top.env;
+  exp.env = list.pass_env;
 }
 
 aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
+  propagate bindings;
+
+  decl.env = exp.pass_env ++ list.pass_env ++ top.env;
+  exp.env = decl.pass_env ++ list.pass_env ++ top.env;
+  list.env = decl.pass_env ++ exp.pass_env ++ top.env;
+
+  top.pass_env = decl.pass_env ++ exp.pass_env ++ list.pass_env;  
 }
 
 aspect production lm:bindlist_nothing_rec
 top::lm:BindListRec ::=
 {
+  propagate bindings;
+
+  top.pass_env = [];
 }
+
+{-
+def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
+    4         14        24           37  41 43  47 49  53   58  62  66                       
+-}
 
 ------------------------------------------------------------
 ---- Parallel let expressions
@@ -252,7 +271,7 @@ top::lm:IdDecl ::= id::lm:ID_t
   top.line = id.line;
   top.column = id.column;
   top.str = id.lexeme ++ "_" ++ toString(id.line) ++ "_" ++ toString(id.column);
-  top.pass_env = [(top.name, top)];
+  top.pass_env = [top];
 }
 
 aspect production lm:ref
@@ -265,8 +284,8 @@ top::lm:IdRef ::= id::lm:ID_t
 
   top.bindings := [head(
     filterMap(
-      (\cur::(String, lm:IdDecl) -> 
-        if fst(cur) == top.name then just((top, snd(cur))) else nothing()),
+      (\cur::lm:IdDecl -> 
+        if cur.name == top.name then just((top, cur)) else nothing()),
       top.env
     )
   )];
