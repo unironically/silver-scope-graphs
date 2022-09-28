@@ -5,7 +5,7 @@ inherited attribute env::[lm:IdDecl] occurs on lm:Program, lm:DeclList, lm:Decl,
 
 synthesized attribute pass_env::[lm:IdDecl] occurs on lm:Decl, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl;
 
-synthesized attribute myDecls::[lm:IdDecl] occurs on lm:IdRef;
+synthesized attribute myDecl::lm:IdDecl occurs on lm:IdRef;
 
 synthesized attribute name::String occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
@@ -294,13 +294,14 @@ top::lm:IdRef ::= id::lm:ID_t
   top.line = id.line;
   top.column = id.column;
   top.str = id.lexeme ++ "_" ++ toString(id.line) ++ "_" ++ toString(id.column);
+  top.bindings := [(top, top.myDecl)];
 
-  top.bindings := [head(
+  top.myDecl = head(
     filterMap(
       (\cur::lm:IdDecl -> 
-        if cur.name == top.name then just((top, cur)) else nothing()),
+        if cur.name == top.name then just(cur) else nothing()),
       top.env
     )
-  )];
+  );
 
 }
