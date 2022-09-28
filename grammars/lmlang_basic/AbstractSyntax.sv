@@ -131,7 +131,9 @@ top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
   propagate bindings;
 
   list.env = top.env;
-  exp.env = list.pass_env;
+  exp.env = list.pass_env ++ top.env;
+
+  top.pass_env = [];
 }
 
 aspect production lm:bindlist_list_rec
@@ -154,11 +156,6 @@ top::lm:BindListRec ::=
   top.pass_env = [];
 }
 
-{-
-def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
-    4         14        24           37  41 43  47 49  53   58  62  66                       
--}
-
 ------------------------------------------------------------
 ---- Parallel let expressions
 ------------------------------------------------------------
@@ -166,16 +163,32 @@ def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
 aspect production lm:exp_letpar
 top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 {
+  propagate bindings;
+
+  list.env = top.env;
+  exp.env = list.pass_env ++ top.env;
+
+  top.pass_env = [];
 }
 
 aspect production lm:bindlist_list_par
 top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
+  propagate bindings;
+
+  decl.env = top.env;
+  exp.env = top.env;
+  list.env = top.env;
+
+  top.pass_env = decl.pass_env ++ list.pass_env;
 }
 
 aspect production lm:bindlist_nothing_par
 top::lm:BindListPar ::=
 {
+  propagate bindings;
+
+  top.pass_env = [];
 }
 
 ------------------------------------------------------------
