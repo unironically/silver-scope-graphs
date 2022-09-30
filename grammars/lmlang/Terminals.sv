@@ -14,7 +14,7 @@ terminal Imp_t 'imp';
 terminal Def_t 'def';
 terminal Fun_t 'fun';
 
-terminal Let_t 'let' precedence = 1;
+terminal Let_t 'letseq' precedence = 1;
 terminal LetRec_t 'letrec' precedence = 1;
 terminal LetPar_t 'letpar' precedence = 1;
 terminal In_t 'in' precedence = 4;

@@ -1,4 +1,4 @@
-grammar lmlang_basic;
+grammar lmlang_basic_list;
 
 imports lmlang as lm;
 
