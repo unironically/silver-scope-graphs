@@ -16,7 +16,7 @@ IO<Integer> ::= largs::[String]
   local attribute r::lm:Program = result.parseTree.lm:ast;
 
   local attribute bindings_string::String = foldl (
-    (\acc::String pair::(lm:IdRef, lm:IdDecl) -> 
+    (\acc::String pair::(lm:IdRef, Decorated lm:IdDecl) -> 
       acc ++ "- " ++ fst(pair).str ++ " -> " ++ snd(pair).str ++ "\n"),
     "",
     r.bindings

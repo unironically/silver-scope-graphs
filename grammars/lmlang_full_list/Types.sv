@@ -2,7 +2,7 @@ grammar lmlang_full_list;
 
 nonterminal Type;
 
-synthesized attribute decls::[Decorated lm:IdRef] occurs on Type;
+synthesized attribute decls::[Decorated lm:IdDecl] occurs on Type;
 
 abstract production int_type
 top::Type ::=
@@ -17,7 +17,7 @@ top::Type ::=
 }
 
 abstract production module_type
-top::Type ::= decls::[Decorated lm:IdRef]
+top::Type ::= decls::[Decorated lm:IdDecl]
 {
   top.decls = decls;
 }
