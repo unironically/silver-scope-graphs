@@ -30,7 +30,11 @@ def a = 0 def b = 1 def c = 2 letpar a = c  b = a  c = b in a + b + c
     4         14        24           37  41 43  47 49  53   58  62  66    
 
 def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
-    4         14        24           37  41 43  47 49  53   58  62  66                
+    4         14        24           37  41 43  47 49  53   58  62  66  
+
+module A { module B { def b = 1 } }  module C { import A.B def a = b }
+       7          18      26                44         55.57   63  67   
+       D          D       D                 D           R R    D   R
 -}
 
 ------------------------------------------------------------
@@ -57,7 +61,7 @@ top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
   decl.env = top.env;
   list.env = decl.pass_env ++ top.env;
 
-  top.pass_env = decl.env ++ list.pass_env;
+  top.pass_env = decl.pass_env ++ list.pass_env;
 }
 
 aspect production lm:decllist_nothing
@@ -76,7 +80,7 @@ aspect production lm:decl_module
 top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 {
   decl.env = top.env;
-  list.env = decl.pass_env;
+  list.env = decl.pass_env ++ top.env;
 
   top.bindings := list.bindings;
   top.pass_env = decl.pass_env ++ list.pass_env;
@@ -88,9 +92,10 @@ top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 aspect production lm:decl_import
 top::lm:Decl ::= qid::lm:Qid
 {
+  propagate bindings;
+
   qid.env = top.env;
 
-  top.bindings := [];
   top.pass_env = qid.import_env;
 }
 
@@ -364,9 +369,7 @@ top::lm:IdRef ::= id::lm:ID_t
     filterMap(
       (\cur::Decorated lm:IdDecl -> 
         if cur.name == top.name then just(cur) else nothing()),
-        let e::[Decorated lm:IdDecl] = top.env in 
-          unsafeTrace(e, printT("looking for: " ++ top.name ++ " with env: {" ++ foldl((\acc::String d::Decorated lm:IdDecl -> 
-            acc ++ "," ++ d.str), "", e) ++ "}\n", unsafeIO())) end
+        top.env
     )
   );
 
