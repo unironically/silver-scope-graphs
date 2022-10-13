@@ -6,7 +6,8 @@ inherited attribute env::[Decorated lm:IdDecl] occurs on lm:Program, lm:DeclList
 inherited attribute scope::Scope occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
   lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef;
 
-monoid attribute decls::[Decorated lm:IdDecl] occurs on lm:DeclList, lm:Decl, lm:IdDecl;
+monoid attribute decls::[Decorated lm:IdDecl] occurs on lm:DeclList, lm:Decl, lm:IdDecl,
+  lm:BindListRec, lm:BindListPar;
 synthesized attribute ret_scope::Scope occurs on lm:BindListSeq;
 
 synthesized attribute myDecl::Decorated lm:IdDecl occurs on lm:IdRef;
@@ -31,10 +32,24 @@ def a = 0 def b = 1 def c = 2 letseq a = c  b = a  c = b in a + b + c
   - c_1_66 -> c_1_49
 
 def a = 0 def b = 1 def c = 2 letpar a = c  b = a  c = b in a + b + c
-    4         14        24           37  41 43  47 49  53   58  62  66    
+    4         14        24           37  41 43  47 49  53   58  62  66  
+  Should get:
+  - c_1_41 -> c_1_49
+  - a_1_47 -> a_1_37
+  - b_1_53 -> b_1_43
+  - a_1_58 -> a_1_37
+  - b_1_62 -> b_1_53
+  - c_1_66 -> c_1_49  
 
 def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
-    4         14        24           37  41 43  47 49  53   58  62  66                
+    4         14        24           37  41 43  47 49  53   58  62  66      
+  Should get:
+  - c_1_41 -> c_1_24
+  - a_1_47 -> a_1_4
+  - b_1_53 -> b_1_14
+  - a_1_58 -> a_1_37
+  - b_1_62 -> b_1_43
+  - c_1_66 -> c_1_49      
 -}
 
 ------------------------------------------------------------
@@ -132,16 +147,28 @@ top::lm:BindListSeq ::=
 aspect production lm:exp_letrec
 top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 {
+  propagate bindings;
+
+  local attribute let_scope :: Scope = cons_scope (
+    list.decls,
+    top.scope
+  );
+
+  list.scope = let_scope;
+
+  exp.scope = let_scope;
 }
 
 aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
+  propagate scope, bindings, decls;
 }
 
 aspect production lm:bindlist_nothing_rec
 top::lm:BindListRec ::=
 {
+  propagate bindings, decls;
 }
 
 ------------------------------------------------------------
@@ -151,16 +178,28 @@ top::lm:BindListRec ::=
 aspect production lm:exp_letpar
 top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 {
+  propagate bindings;
+
+  local attribute let_scope :: Scope = cons_scope (
+    list.decls,
+    top.scope
+  );
+
+  list.scope = top.scope;
+
+  exp.scope = let_scope;
 }
 
 aspect production lm:bindlist_list_par
 top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
+  propagate scope, bindings, decls;
 }
 
 aspect production lm:bindlist_nothing_par
 top::lm:BindListPar ::=
 {
+  propagate bindings, decls;
 }
 
 ------------------------------------------------------------
@@ -171,7 +210,13 @@ aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
   propagate bindings;
-  -- todo
+
+  local attribute fun_scope :: Scope = cons_scope (
+    decl.decls ++ exp.decls,
+    top.scope
+  );
+
+  exp.scope = fun_scope;
 }
 
 aspect production lm:exp_add
