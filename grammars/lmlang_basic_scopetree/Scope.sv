@@ -8,7 +8,7 @@ synthesized attribute resolutions :: [Decorated lm:IdDecl];
 abstract production empty_scope
 top::Scope ::=
 {
-  resolutions = [];
+  top.resolutions = [];
 }
 
 abstract production cons_scope
