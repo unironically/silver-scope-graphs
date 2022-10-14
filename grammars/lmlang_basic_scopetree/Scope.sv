@@ -12,13 +12,13 @@ top::Scope ::=
 }
 
 abstract production cons_scope
-top::Scope ::= decls::[Decorated lm:IdDecl] rest::Scope
+top::Scope ::= decls::[Decorated lm:IdDecl] par::Scope
 {
   top.resolutions =
     let res::[Decorated lm:IdDecl] = 
       filter((\decl::Decorated lm:IdDecl -> decl.name == top.look_for.name), decls) in 
       if null(res) 
-        then (decorate rest with {look_for = top.look_for;}).resolutions
+        then (decorate par with {look_for = top.look_for;}).resolutions
         else res
     end;
 }

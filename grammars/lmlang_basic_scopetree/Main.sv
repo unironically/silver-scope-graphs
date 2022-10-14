@@ -22,7 +22,14 @@ IO<Integer> ::= largs::[String]
     r.bindings
   );
 
-  return if result.parseSuccess
+  local attribute errors_string::String = foldl (
+    (\acc::String err::String -> 
+      acc ++ "ERROR: " ++ err ++ "\n"),
+    "",
+    r.type_errors
+  );
+
+  return if result.parseSuccess && null(r.type_errors)
     then do {print("Success!\n" ++ bindings_string ++ "\n"); return 0;}
-    else do {print("Something went wrong during parsing!\n"); return -1;};
+    else do {print("Something went wrong during parsing!\n" ++ errors_string ++ "\n"); return -1;};
 }

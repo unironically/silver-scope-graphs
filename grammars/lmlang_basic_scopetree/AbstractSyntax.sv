@@ -1,16 +1,11 @@
 grammar lmlang_basic_scopetree;
 
-{-
-inherited attribute env::[Decorated lm:IdDecl] occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
-  lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef; -}
 inherited attribute scope::Scope occurs on lm:Program, lm:DeclList, lm:Decl, lm:Qid, lm:Exp, 
   lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdDecl, lm:IdRef;
 
 monoid attribute decls::[Decorated lm:IdDecl] occurs on lm:DeclList, lm:Decl, lm:IdDecl,
   lm:BindListRec, lm:BindListPar;
 synthesized attribute ret_scope::Scope occurs on lm:BindListSeq;
-
-synthesized attribute myDecl::Decorated lm:IdDecl occurs on lm:IdRef;
 
 synthesized attribute name::String occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
@@ -19,6 +14,7 @@ synthesized attribute column::Integer occurs on lm:IdDecl, lm:IdRef;
 
 monoid attribute bindings::[(lm:IdRef, Decorated lm:IdDecl)] occurs on lm:Program, lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdRef;
+synthesized attribute my_decl::Decorated lm:IdDecl occurs on lm:IdRef;
 
 {-
 def a = 0 def b = 1 def c = 2 letseq a = c  b = a  c = b in a + b + c
@@ -212,7 +208,7 @@ top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
   propagate bindings;
 
   local attribute fun_scope :: Scope = cons_scope (
-    decl.decls ++ exp.decls,
+    decl.decls,
     top.scope
   );
 
@@ -291,5 +287,7 @@ top::lm:IdRef ::= id::lm:ID_t
   local attribute resolutions :: [Decorated lm:IdDecl] = 
     (decorate top.scope with {look_for = top;}).resolutions;
 
-  top.bindings := [(top, head(resolutions))];
+  top.my_decl = head(resolutions);
+
+  top.bindings := [(top, top.my_decl)];
 }
