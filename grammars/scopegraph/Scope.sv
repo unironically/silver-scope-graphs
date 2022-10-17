@@ -3,7 +3,7 @@ grammar scopegraph;
 nonterminal Graph<d r> with root_scopes<d r>;
 nonterminal Scope<d r> with id, str, parent<d r>, decls<d r>, refs<d r>, imps<d r>;
 nonterminal Decl<d r> with str, name, line, column, in_scope<d r>, assoc_scope<d r>;
-nonterminal Ref<d r> with str, name, line, column, in_scope<d r>, resolutions<d r>;
+nonterminal Ref<d r> with str, name, line, column, in_scope<d r>;
 
 synthesized attribute id::Integer;
 synthesized attribute str::String;
@@ -19,10 +19,6 @@ synthesized attribute imps<d r>::[Decorated Ref<d r>];
 synthesized attribute name::String;
 synthesized attribute line::Integer;
 synthesized attribute column::Integer;
-
--- Used in resolution algorithm(s)
-inherited attribute look_for :: String;
-synthesized attribute resolutions<d r>::[Decorated Decl<d r>];
 
 --------------------
 -- Graph
