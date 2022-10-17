@@ -369,7 +369,7 @@ top::lm:IdRef ::= id::lm:ID_t
     filterMap(
       (\cur::Decorated lm:IdDecl -> 
         if cur.name == top.name then just(cur) else nothing()),
-        top.env
+      top.env
     )
   );
 
