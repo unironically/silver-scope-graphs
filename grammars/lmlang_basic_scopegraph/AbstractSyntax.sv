@@ -2,15 +2,15 @@ grammar lmlang_basic_scopegraph;
 
 -- Parent scope passed down the tree
 inherited attribute scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
-  lm:Exp, lm:BindListSeq;
+  lm:Exp, lm:BindListSeq, lm:Qid, lm:IdDecl, lm:IdRef;
 
 -- Decls/Refs/Imports passed up the tree to a scope node constructor
 monoid attribute decls::[Decorated sg:Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
   lm:IdDecl;
 monoid attribute refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
-  lm:Exp, lm:IdRef, lm:BindListSeq;
+  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
 monoid attribute imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
-  lm:Exp, lm:IdRef, lm:BindListSeq;
+  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
 
 -- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
 inherited attribute letseq_refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
@@ -20,10 +20,9 @@ inherited attribute letseq_imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs o
 synthesized attribute ret_scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
 
 -- Decl/Ref attributes derived from terminal
-synthesized attribute name::String occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
-synthesized attribute line::Integer occurs on lm:IdDecl, lm:IdRef;
-synthesized attribute column::Integer occurs on lm:IdDecl, lm:IdRef;
+attribute sg:name, sg:line, sg:column occurs on lm:IdDecl, lm:IdRef;
+flowtype sg:name {} on lm:IdDecl, lm:IdRef;
 
 ------------------------------------------------------------
 ---- Program root
@@ -164,26 +163,31 @@ top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  propagate scope, refs, imps;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
+  propagate scope, refs, imps;
 }
 
 aspect production lm:exp_qid
 top::lm:Exp ::= qid::lm:Qid
 {
+  propagate scope, refs, imps;
 }
 
 aspect production lm:exp_int
 top::lm:Exp ::= val::lm:Int_t
 {
+  propagate scope, refs, imps;
 }
 
 aspect production lm:exp_bool
 top::lm:Exp ::= val::Boolean
 {
+  propagate scope, refs, imps;
 }
 
 ------------------------------------------------------------
@@ -198,6 +202,7 @@ top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
+  propagate scope, refs, imps;
 }
 
 ------------------------------------------------------------
@@ -207,19 +212,33 @@ top::lm:Qid ::= ref::lm:IdRef
 aspect production lm:decl
 top::lm:IdDecl ::= id::lm:ID_t
 {
-  top.name = id.lexeme;
-  top.line = id.line;
-  top.column = id.column;
-  top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
+  top.sg:name = id.lexeme;
+  top.sg:line = id.line;
+  top.sg:column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(top.sg:line) ++ "_" ++ toString(top.sg:column);
+
+  local attribute graph_decl::sg:Decl<lm:IdDecl lm:IdRef> = sg:mk_decl (
+    top.scope,
+    top
+  );
+
+  top.decls := [graph_decl];
 }
 
 aspect production lm:ref
 top::lm:IdRef ::= id::lm:ID_t
 {
-  top.name = id.lexeme;
-  top.line = id.line;
-  top.column = id.column;
-  top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
+  top.sg:name = id.lexeme;
+  top.sg:line = id.line;
+  top.sg:column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(top.sg:line) ++ "_" ++ toString(top.sg:column);
+
+  local attribute graph_ref::sg:Ref<lm:IdDecl lm:IdRef> = sg:mk_ref (
+    top.scope,
+    top
+  );
+
+  top.refs := [graph_ref];
 }
 
 {-
