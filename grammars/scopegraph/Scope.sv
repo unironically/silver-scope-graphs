@@ -7,7 +7,7 @@ nonterminal Ref<d r> with str, name, line, column, in_scope<d r>, resolutions<d 
 
 synthesized attribute id::Integer;
 synthesized attribute str::String;
-synthesized attribute parent<d r>::Maybe<Decorated Scope<d r>>;
+synthesized attribute parent<d r>::Maybe<Scope<d r>>;
 synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute in_scope<d r>::Decorated Scope<d r>;
 synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
@@ -21,8 +21,6 @@ synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
 -- Used in resolution algorithm(s)
---inherited attribute seen_scopes<d r>::[Decorated Scope<d r>];
---inherited attribute seen_imports<d r>::[Decorated Ref<d r>];
 inherited attribute look_for :: String;
 synthesized attribute resolutions<d r>::[Decorated Decl<d r>];
 
@@ -41,7 +39,7 @@ top::Graph<d r> ::=
 
 abstract production mk_scope
 top::Scope<d r> ::= 
-  parent::Maybe<Decorated Scope<d r>>
+  parent::Maybe<Scope<d r>>
   decls::[Decorated Decl<d r>]
   refs::[Decorated Ref<d r>]
   imps::[Decorated Ref<d r>]
@@ -54,15 +52,7 @@ top::Scope<d r> ::=
   top.str = toString(top.id);
 }
 
-abstract production mk_scope_childless
-top::Scope<d r> ::= 
-  parent::Maybe<Decorated Scope<d r>>
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
-{ forwards to mk_scope(parent, decls, refs, imps); }
-
-abstract production mk_scope_parentless
+abstract production mk_scope_orphan
 top::Scope<d r> ::= 
   decls::[Decorated Decl<d r>]
   refs::[Decorated Ref<d r>]
@@ -117,12 +107,10 @@ abstract production mk_ref
 top::Ref<d r> ::=
   ast_node::Decorated r with i
   in_scope::Decorated Scope<d r>
-  resolutions::[Decorated Decl<d r>]
 {
   top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
   top.name = ast_node.name;
   top.line = ast_node.line;
   top.column = ast_node.column;
   top.in_scope = in_scope;
-  top.resolutions = resolutions;
 }

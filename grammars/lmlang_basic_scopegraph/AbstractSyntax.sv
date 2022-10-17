@@ -1,10 +1,29 @@
 grammar lmlang_basic_scopegraph;
 
+-- Parent scope passed down the tree
+inherited attribute scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
+  lm:Exp, lm:BindListSeq;
+
+-- Decls/Refs/Imports passed up the tree to a scope node constructor
+monoid attribute decls::[Decorated sg:Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+  lm:IdDecl;
+monoid attribute refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+  lm:Exp, lm:IdRef, lm:BindListSeq;
+monoid attribute imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+  lm:Exp, lm:IdRef, lm:BindListSeq;
+
+-- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
+inherited attribute letseq_refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+inherited attribute letseq_imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+
+-- Last scope constructed in a let binding expression, to be passed to exp of let
+synthesized attribute ret_scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
+
+-- Decl/Ref attributes derived from terminal
 synthesized attribute name::String occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute line::Integer occurs on lm:IdDecl, lm:IdRef;
 synthesized attribute column::Integer occurs on lm:IdDecl, lm:IdRef;
---synthesized attribute my_decl::lm:IdDecl occurs on lm:IdRef;
 
 ------------------------------------------------------------
 ---- Program root
@@ -13,6 +32,13 @@ synthesized attribute column::Integer occurs on lm:IdDecl, lm:IdRef;
 aspect production lm:prog
 top::lm:Program ::= list::lm:DeclList
 {
+  local attribute global_scope::sg:Scope<lm:IdDecl lm:IdRef> = sg:mk_scope_orphan (
+    list.decls,
+    list.refs,
+    list.imps
+  );
+
+  list.scope = global_scope;
 }
 
 ------------------------------------------------------------
@@ -22,11 +48,13 @@ top::lm:Program ::= list::lm:DeclList
 aspect production lm:decllist_list
 top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 {
+  propagate scope, decls, refs, imps;
 }
 
 aspect production lm:decllist_nothing
 top::lm:DeclList ::=
 {
+  propagate decls, refs, imps;
 }
 
 ------------------------------------------------------------
@@ -36,11 +64,13 @@ top::lm:DeclList ::=
 aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
+  propagate scope, decls, refs, imps;
 }
 
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
+  propagate scope, decls, refs, imps;
 }
 
 ------------------------------------------------------------
@@ -50,16 +80,38 @@ top::lm:Decl ::= exp::lm:Exp
 aspect production lm:exp_let
 top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 {
+  list.scope = top.scope;
+  list.letseq_refs = exp.refs;
+  list.letseq_imps = exp.imps;
+
+  exp.scope = list.ret_scope;
 }
 
 aspect production lm:bindlist_list_seq
 top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
+  propagate letseq_refs, letseq_imps;
+
+  local attribute let_scope::sg:Scope<lm:IdDecl lm:IdRef> = sg:mk_scope (
+    just(top.scope),
+    decl.decls,
+    list.refs,
+    list.imps
+  );
+
+  top.refs := exp.refs;
+  top.imps := exp.imps;
+  top.ret_scope = list.ret_scope;
+
+  exp.scope = top.scope;
 }
 
 aspect production lm:bindlist_nothing_seq
 top::lm:BindListSeq ::=
 {
+  top.refs := top.letseq_refs;
+  top.imps := top.letseq_imps;
+  top.ret_scope = top.scope;
 }
 
 ------------------------------------------------------------
