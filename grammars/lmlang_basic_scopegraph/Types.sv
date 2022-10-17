@@ -1,5 +1,5 @@
 grammar lmlang_basic_scopegraph;
-
+{-
 ------------------------------------------------------------
 ---- Typing nonterminal
 ------------------------------------------------------------
@@ -142,3 +142,4 @@ top::lm:IdRef ::= id::lm:ID_t
 { 
   --top.type = top.my_decl.decl_type; 
 }
+-}
