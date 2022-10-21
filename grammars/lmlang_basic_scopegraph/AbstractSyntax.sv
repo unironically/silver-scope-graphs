@@ -1,28 +1,29 @@
 grammar lmlang_basic_scopegraph;
 
 -- Parent scope passed down the tree
-inherited attribute scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
+inherited attribute scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
   lm:Exp, lm:BindListSeq, lm:Qid, lm:IdDecl, lm:IdRef;
 
 -- Decls/Refs/Imports passed up the tree to a scope node constructor
-monoid attribute decls::[Decorated sg:Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute decls::[Decorated Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
   lm:IdDecl;
-monoid attribute refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
-monoid attribute imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
 
 -- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
-inherited attribute letseq_refs::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
-inherited attribute letseq_imps::[Decorated sg:Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+inherited attribute letseq_refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+inherited attribute letseq_imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+
+monoid attribute bindings::[(lm:IdRef, Decorated lm:IdDecl)] occurs on lm:IdRef, lm:Qid,
+  lm:Exp, lm:Decl, lm:DeclList, lm:Program;
 
 -- Last scope constructed in a let binding expression, to be passed to exp of let
-synthesized attribute ret_scope::sg:Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
+synthesized attribute ret_scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
 
 -- Decl/Ref attributes derived from terminal
-synthesized attribute str::String occurs on lm:IdDecl, lm:IdRef;
-attribute sg:name, sg:line, sg:column occurs on lm:IdDecl, lm:IdRef;
-flowtype sg:name {} on lm:IdDecl, lm:IdRef;
+attribute str, name, line, column occurs on lm:IdDecl, lm:IdRef;
 
 ------------------------------------------------------------
 ---- Program root
@@ -31,7 +32,7 @@ flowtype sg:name {} on lm:IdDecl, lm:IdRef;
 aspect production lm:prog
 top::lm:Program ::= list::lm:DeclList
 {
-  local attribute global_scope::sg:Scope<lm:IdDecl lm:IdRef> = sg:mk_scope_orphan (
+  local attribute global_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope_orphan (
     list.decls,
     list.refs,
     list.imps
@@ -91,7 +92,7 @@ top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
   propagate letseq_refs, letseq_imps;
 
-  local attribute let_scope::sg:Scope<lm:IdDecl lm:IdRef> = sg:mk_scope (
+  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
     just(top.scope),
     decl.decls,
     list.refs,
@@ -212,12 +213,12 @@ top::lm:Qid ::= ref::lm:IdRef
 aspect production lm:decl
 top::lm:IdDecl ::= id::lm:ID_t
 {
-  top.sg:name = id.lexeme;
-  top.sg:line = id.line;
-  top.sg:column = id.column;
-  top.str = id.lexeme ++ "_" ++ toString(top.sg:line) ++ "_" ++ toString(top.sg:column);
+  top.name = id.lexeme;
+  top.line = id.line;
+  top.column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
 
-  local attribute graph_decl::sg:Decl<lm:IdDecl lm:IdRef> = sg:mk_decl (
+  local attribute graph_decl::Decl<lm:IdDecl lm:IdRef> = mk_decl (
     top.scope,
     top
   );
@@ -228,17 +229,25 @@ top::lm:IdDecl ::= id::lm:ID_t
 aspect production lm:ref
 top::lm:IdRef ::= id::lm:ID_t
 {
-  top.sg:name = id.lexeme;
-  top.sg:line = id.line;
-  top.sg:column = id.column;
-  top.str = id.lexeme ++ "_" ++ toString(top.sg:line) ++ "_" ++ toString(top.sg:column);
+  top.name = id.lexeme;
+  top.line = id.line;
+  top.column = id.column;
+  top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
 
-  local attribute graph_ref::sg:Ref<lm:IdDecl lm:IdRef> = sg:mk_ref (
+  local attribute graph_ref::Ref<lm:IdDecl lm:IdRef> = mk_ref (
     top.scope,
     top
   );
 
   top.refs := [graph_ref];
+
+  top.bindings := 
+    let res::[Decorated Decl<lm:IdDecl lm:IdRef>] = 
+      (decorate top.scope with {sg_look_for = top.name;}).sg_resolutions
+    in 
+      [(top, head(res).sg_ast_decl)]
+    end;
+
 }
 
 {-

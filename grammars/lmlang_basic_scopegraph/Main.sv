@@ -1,7 +1,6 @@
 grammar lmlang_basic_scopegraph;
 
 imports lmlang as lm;
-imports scopegraph as sg;
 
 parser parse :: lm:Program_c {
     lmlang;
