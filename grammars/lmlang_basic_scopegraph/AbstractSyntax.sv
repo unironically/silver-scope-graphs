@@ -2,22 +2,22 @@ grammar lmlang_basic_scopegraph;
 
 -- Parent scope passed down the tree
 inherited attribute scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
-  lm:Exp, lm:BindListSeq, lm:Qid, lm:IdDecl, lm:IdRef;
+  lm:Exp, lm:BindListSeq, lm:Qid, lm:IdDecl, lm:IdRef, lm:BindListRec, lm:BindListPar;
 
 -- Decls/Refs/Imports passed up the tree to a scope node constructor
 monoid attribute decls::[Decorated Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
-  lm:IdDecl;
+  lm:IdDecl, lm:BindListRec, lm:BindListPar;
 monoid attribute refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
-  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
+  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
 monoid attribute imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
-  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq;
+  lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
 
 -- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
 inherited attribute letseq_refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
 inherited attribute letseq_imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
 
 monoid attribute bindings::[(lm:IdRef, Decorated lm:IdDecl)] occurs on lm:IdRef, lm:Qid,
-  lm:Exp, lm:Decl, lm:DeclList, lm:Program;
+  lm:Exp, lm:Decl, lm:DeclList, lm:Program, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
 
 -- Last scope constructed in a let binding expression, to be passed to exp of let
 synthesized attribute ret_scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
@@ -32,6 +32,8 @@ attribute str, name, line, column occurs on lm:IdDecl, lm:IdRef;
 aspect production lm:prog
 top::lm:Program ::= list::lm:DeclList
 {
+  propagate bindings;
+
   local attribute global_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope_orphan (
     list.decls,
     list.refs,
@@ -48,29 +50,41 @@ top::lm:Program ::= list::lm:DeclList
 aspect production lm:decllist_list
 top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 {
-  propagate scope, decls, refs, imps;
+  propagate scope, decls, refs, imps, bindings;
 }
 
 aspect production lm:decllist_nothing
 top::lm:DeclList ::=
 {
-  propagate decls, refs, imps;
+  propagate decls, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
 ---- Decls
 ------------------------------------------------------------
 
+aspect production lm:decl_module
+top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
+{
+  propagate scope, decls, refs, imps, bindings;
+}
+
+aspect production lm:decl_import
+top::lm:Decl ::= qid::lm:Qid
+{
+  propagate scope, decls, refs, imps, bindings;
+}
+
 aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
-  propagate scope, decls, refs, imps;
+  propagate scope, decls, refs, imps, bindings;
 }
 
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
-  propagate scope, decls, refs, imps;
+  propagate scope, decls, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -80,6 +94,11 @@ top::lm:Decl ::= exp::lm:Exp
 aspect production lm:exp_let
 top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 {
+  propagate bindings;
+
+  top.refs := [];
+  top.imps := [];
+
   list.scope = top.scope;
   list.letseq_refs = exp.refs;
   list.letseq_imps = exp.imps;
@@ -90,7 +109,7 @@ top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 aspect production lm:bindlist_list_seq
 top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
-  propagate letseq_refs, letseq_imps;
+  propagate letseq_refs, letseq_imps, bindings;
 
   local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
     just(top.scope),
@@ -103,12 +122,18 @@ top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
   top.imps := exp.imps;
   top.ret_scope = list.ret_scope;
 
+  decl.scope = let_scope;
+
   exp.scope = top.scope;
+
+  list.scope = let_scope;
 }
 
 aspect production lm:bindlist_nothing_seq
 top::lm:BindListSeq ::=
 {
+  propagate bindings;
+
   top.refs := top.letseq_refs;
   top.imps := top.letseq_imps;
   top.ret_scope = top.scope;
@@ -121,16 +146,33 @@ top::lm:BindListSeq ::=
 aspect production lm:exp_letrec
 top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 {
+  propagate bindings;
+
+  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
+    just(top.scope),
+    list.decls,
+    list.refs ++ exp.refs,
+    list.imps ++ exp.imps
+  );
+
+  top.refs := [];
+  top.imps := [];
+
+  list.scope = let_scope;
+
+  exp.scope = let_scope;
 }
 
 aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
+  propagate scope, decls, refs, imps, bindings;
 }
 
 aspect production lm:bindlist_nothing_rec
 top::lm:BindListRec ::=
 {
+  propagate scope, decls, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -140,16 +182,30 @@ top::lm:BindListRec ::=
 aspect production lm:exp_letpar
 top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 {
+  propagate refs, imps, bindings;
+
+  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
+    just(top.scope),
+    list.decls,
+    exp.refs,
+    exp.imps
+  );
+
+  list.scope = top.scope;
+
+  exp.scope = let_scope;
 }
 
 aspect production lm:bindlist_list_par
 top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
+  propagate scope, decls, refs, imps, bindings;
 }
 
 aspect production lm:bindlist_nothing_par
 top::lm:BindListPar ::=
 {
+  propagate scope, decls, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -159,36 +215,37 @@ top::lm:BindListPar ::=
 aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:exp_qid
 top::lm:Exp ::= qid::lm:Qid
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:exp_int
 top::lm:Exp ::= val::lm:Int_t
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:exp_bool
 top::lm:Exp ::= val::Boolean
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -198,12 +255,13 @@ top::lm:Exp ::= val::Boolean
 aspect production lm:qid_dot
 top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 {
+  propagate scope, refs, imps, bindings;
 }
 
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
-  propagate scope, refs, imps;
+  propagate scope, refs, imps, bindings;
 }
 
 ------------------------------------------------------------

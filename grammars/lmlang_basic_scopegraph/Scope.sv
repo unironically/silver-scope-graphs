@@ -2,7 +2,7 @@ grammar lmlang_basic_scopegraph;
 
 nonterminal Graph<d r> with sg_root_scopes<d r>;
 nonterminal Scope<d r> with id, str, sg_parent<d r>, sg_decls<d r>, sg_refs<d r>, sg_imps<d r>;
-nonterminal Decl<d r> with str, name, line, column, sg_in_scope<d r>, sg_assoc_scope<d r>;
+nonterminal Decl<d r> with str, name, line, column, sg_in_scope<d r>{-, sg_assoc_scope<d r>-};
 nonterminal Ref<d r> with str, name, line, column, sg_in_scope<d r>;
 
 synthesized attribute id::Integer;
@@ -14,7 +14,7 @@ synthesized attribute column::Integer;
 synthesized attribute sg_parent<d r>::Maybe<Scope<d r>>;
 synthesized attribute sg_root_scopes<d r>::[Decorated Scope<d r>];
 synthesized attribute sg_in_scope<d r>::Scope<d r>;
-synthesized attribute sg_assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
+--synthesized attribute sg_assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
 
 synthesized attribute sg_ast_decl<d>::Decorated lm:IdDecl occurs on Decl<d r>;
 synthesized attribute sg_ast_ref<r>::lm:IdRef occurs on Ref<d r>;

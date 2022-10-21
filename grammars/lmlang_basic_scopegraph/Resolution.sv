@@ -6,21 +6,21 @@ grammar lmlang_basic_scopegraph;
 inherited attribute sg_look_for :: String occurs on Scope<d r>, Ref<d r>;
 
 synthesized attribute sg_resolutions<d r>::[Decorated Decl<d r>] occurs on Scope<d r>, Ref<d r>;
-{-
+
 aspect production mk_scope
 top::Scope<d r> ::=
   _ _ _ _
 {
-  top.resolutions = 
+  top.sg_resolutions = 
     let local_decls::[Decorated Decl<d r>] = 
       filter (
-        (\decl::Decorated Decl<d r> -> decl.name == top.look_for),
-        top.decls
+        (\decl::Decorated Decl<d r> -> decl.name == top.sg_look_for),
+        top.sg_decls
       )
     in let parent_decls::[Decorated Decl<d r>] = 
-      case top.parent of 
+      case top.sg_parent of 
         | nothing() -> []
-        | just(p) -> (decorate p with {look_for = top.look_for;}).resolutions
+        | just(p) -> (decorate p with {sg_look_for = top.sg_look_for;}).sg_resolutions
       end
     in
       if !null(local_decls)
@@ -33,6 +33,6 @@ aspect production mk_ref
 top::Ref<d r> ::=
   _ _
 {
-  top.resolutions = (decorate top.in_scope with {look_for = top.look_for;}).resolutions;
+  top.sg_resolutions = 
+    (decorate top.sg_in_scope with {sg_look_for = top.sg_look_for;}).sg_resolutions;
 }
--}
