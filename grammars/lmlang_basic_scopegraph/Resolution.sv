@@ -33,39 +33,49 @@ top::Scope ::=
     -- Get the import nodes from this scope whose name matches the name we're trying to resolve
     let filtered_refs::[Ref] = 
       filter((\r::Ref -> 
-        !containsBy((\r::Ref seen::Ref -> r.str == seen.str), r, top.sg_seen_imports)), top.sg_imps) in
+        !is_seen_imp(r, top.sg_seen_imports)), top.sg_imps) 
+    in
 
     -- Try to find the declarations for those imports
     let modules::[Decorated Decl] = 
-      foldl((\acc::[Decorated Decl] cur::Ref -> acc ++ 
-        ((decorate cur with {sg_look_for = cur; sg_seen_scopes = []; sg_seen_imports = top.sg_seen_imports;}).sg_resolutions)), [], filtered_refs) in
+      foldl (
+        (\acc::[Decorated Decl] cur::Ref -> acc ++ 
+          ((decorate cur with {sg_look_for = cur; 
+                               sg_seen_scopes = []; 
+                               sg_seen_imports = top.sg_seen_imports;}
+          ).sg_resolutions)), 
+        [], 
+        filtered_refs
+      ) 
+    in
     
     -- Resolve the original reference within the associated scopes of the declarations found
     let module_decls::[Decorated Decl] = 
-      foldl(
+      foldl (
         (\acc::[Decorated Decl] cur::Decorated Decl -> acc ++ 
           (case cur.sg_assoc_scope of 
             | nothing() -> [] 
-            | just(p) -> (decorate p with {sg_look_for = top.sg_look_for; 
-                                           sg_seen_scopes = top::top.sg_seen_scopes; 
-                                           sg_seen_imports = top.sg_look_for::top.sg_seen_imports;}
-                          ).sg_resolutions
+            | just(p) -> 
+              (decorate p with {sg_look_for = top.sg_look_for; 
+                                sg_seen_scopes = top::top.sg_seen_scopes; 
+                                sg_seen_imports = top.sg_look_for::top.sg_seen_imports;}
+              ).sg_resolutions
           end)),
         [], 
-        modules) in
+        modules
+      ) 
+    in
     
     module_decls
     end end end;
 
   -- Final resolutions
   top.sg_resolutions = 
-    --if !containsBy((\left::Scope right::Scope -> left.id == right.id), top, top.sg_seen_scopes)
-      --then
-        (if !(null(local_decls))
-          then local_decls
-          else if !null(import_decls) then import_decls else parent_decls);
-      --else
-        --[];
+    if !is_seen_scope(top, top.sg_seen_scopes)
+      then shadow_decls(local_decls, shadow_decls(import_decls, parent_decls))
+      else [];
+
+  
 }
 
 -- Initial call to resolve handled here
@@ -79,4 +89,22 @@ top::Ref ::=
        sg_seen_scopes = top.sg_seen_scopes;
        sg_seen_imports = top::top.sg_seen_imports; }
     ).sg_resolutions;
+}
+
+function shadow_decls
+[Decorated Decl] ::= left::[Decorated Decl] right::[Decorated Decl]
+{
+  return unionBy((\d1::Decorated Decl d2::Decorated Decl -> d1.name == d2.name), right, left);
+}
+
+function is_seen_scope
+Boolean ::= scope::Scope seen_scopes::[Scope]
+{
+  return containsBy((\left::Scope right::Scope -> left.id == right.id), scope, seen_scopes);
+}
+
+function is_seen_imp
+Boolean ::= ref::Ref seen_imps::[Ref]
+{
+  return containsBy((\r::Ref seen::Ref -> r.str == seen.str), ref, seen_imps);
 }
