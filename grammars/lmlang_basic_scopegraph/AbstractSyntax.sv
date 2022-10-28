@@ -1,26 +1,31 @@
 grammar lmlang_basic_scopegraph;
 
 -- Parent scope passed down the tree
-inherited attribute scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:Program, lm:DeclList, lm:Decl,
+inherited attribute scope::Scope occurs on lm:Program, lm:DeclList, lm:Decl,
   lm:Exp, lm:BindListSeq, lm:Qid, lm:IdDecl, lm:IdRef, lm:BindListRec, lm:BindListPar;
 
 -- Decls/Refs/Imports passed up the tree to a scope node constructor
-monoid attribute decls::[Decorated Decl<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute decls::[Decorated Decl] occurs on lm:DeclList, lm:Decl, 
   lm:IdDecl, lm:BindListRec, lm:BindListPar;
-monoid attribute refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute refs::[Ref] occurs on lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
-monoid attribute imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:DeclList, lm:Decl, 
+monoid attribute imps::[Ref] occurs on lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
 
+-- Associated scope of a module declaration
+inherited attribute assoc_scope::Maybe<Scope> occurs on lm:IdDecl;
+
+synthesized attribute sg_ref::Ref occurs on lm:IdRef;
+
 -- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
-inherited attribute letseq_refs::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
-inherited attribute letseq_imps::[Decorated Ref<lm:IdDecl lm:IdRef>] occurs on lm:BindListSeq;
+inherited attribute letseq_refs::[Ref] occurs on lm:BindListSeq;
+inherited attribute letseq_imps::[Ref] occurs on lm:BindListSeq;
 
 monoid attribute bindings::[(lm:IdRef, Decorated lm:IdDecl)] occurs on lm:IdRef, lm:Qid,
   lm:Exp, lm:Decl, lm:DeclList, lm:Program, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
 
 -- Last scope constructed in a let binding expression, to be passed to exp of let
-synthesized attribute ret_scope::Scope<lm:IdDecl lm:IdRef> occurs on lm:BindListSeq;
+synthesized attribute ret_scope::Scope occurs on lm:BindListSeq;
 
 -- Decl/Ref attributes derived from terminal
 attribute str, name, line, column occurs on lm:IdDecl, lm:IdRef;
@@ -34,7 +39,7 @@ top::lm:Program ::= list::lm:DeclList
 {
   propagate bindings;
 
-  local attribute global_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope_orphan (
+  local attribute global_scope::Scope = mk_scope_orphan (
     list.decls,
     list.refs,
     list.imps
@@ -56,7 +61,7 @@ top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 aspect production lm:decllist_nothing
 top::lm:DeclList ::=
 {
-  propagate decls, refs, imps, bindings;
+  propagate scope, decls, refs, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -66,7 +71,23 @@ top::lm:DeclList ::=
 aspect production lm:decl_module
 top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate bindings;
+
+  local attribute module_scope::Scope = mk_scope (
+    just(top.scope),
+    list.decls,
+    list.refs,
+    list.imps
+  );
+
+  top.decls := decl.decls;
+  top.refs := [];
+  top.imps := [];
+
+  decl.scope = top.scope;
+  decl.assoc_scope = just(module_scope);
+
+  list.scope = module_scope;
 }
 
 aspect production lm:decl_import
@@ -79,12 +100,14 @@ aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
   propagate scope, decls, refs, imps, bindings;
+
+  decl.assoc_scope = nothing();
 }
 
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, refs, decls, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -111,7 +134,7 @@ top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
   propagate letseq_refs, letseq_imps, bindings;
 
-  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
+  local attribute let_scope::Scope = mk_scope (
     just(top.scope),
     decl.decls,
     list.refs,
@@ -123,6 +146,7 @@ top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
   top.ret_scope = list.ret_scope;
 
   decl.scope = let_scope;
+  decl.assoc_scope = nothing(); -- would be just(module_decl)
 
   exp.scope = top.scope;
 
@@ -148,7 +172,7 @@ top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 {
   propagate bindings;
 
-  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
+  local attribute let_scope::Scope = mk_scope (
     just(top.scope),
     list.decls,
     list.refs ++ exp.refs,
@@ -167,6 +191,7 @@ aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
   propagate scope, decls, refs, imps, bindings;
+  decl.assoc_scope = nothing();
 }
 
 aspect production lm:bindlist_nothing_rec
@@ -184,7 +209,7 @@ top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 {
   propagate refs, imps, bindings;
 
-  local attribute let_scope::Scope<lm:IdDecl lm:IdRef> = mk_scope (
+  local attribute let_scope::Scope = mk_scope (
     just(top.scope),
     list.decls,
     exp.refs,
@@ -200,6 +225,7 @@ aspect production lm:bindlist_list_par
 top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
   propagate scope, decls, refs, imps, bindings;
+  decl.assoc_scope = nothing();
 }
 
 aspect production lm:bindlist_nothing_par
@@ -216,6 +242,7 @@ aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
   propagate scope, refs, imps, bindings;
+  decl.assoc_scope = nothing();
 }
 
 aspect production lm:exp_add
@@ -255,13 +282,29 @@ top::lm:Exp ::= val::Boolean
 aspect production lm:qid_dot
 top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 {
-  propagate scope, refs, imps, bindings;
+  propagate imps, bindings;
+
+  local attribute qid_scope::Scope = mk_scope_orphan (
+    [],
+    qid.refs,
+    [ref.sg_ref]
+  );
+
+  top.refs := [ref.sg_ref];
+
+  ref.scope = top.scope;
+
+  qid.scope = qid_scope;
+
 }
 
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, bindings;
+
+  top.refs := [ref.sg_ref];
+  top.imps := [ref.sg_ref]; -- for iqid import
 }
 
 ------------------------------------------------------------
@@ -276,8 +319,9 @@ top::lm:IdDecl ::= id::lm:ID_t
   top.column = id.column;
   top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
 
-  local attribute graph_decl::Decl<lm:IdDecl lm:IdRef> = mk_decl (
+  local attribute graph_decl::Decl = mk_decl (
     top.scope,
+    top.assoc_scope,
     top
   );
 
@@ -292,19 +336,27 @@ top::lm:IdRef ::= id::lm:ID_t
   top.column = id.column;
   top.str = id.lexeme ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
 
-  local attribute graph_ref::Ref<lm:IdDecl lm:IdRef> = mk_ref (
+  local attribute graph_ref::Ref = mk_ref (
     top.scope,
     top
   );
 
+  top.sg_ref = graph_ref;
   top.refs := [graph_ref];
 
   top.bindings := 
-    let res::[Decorated Decl<lm:IdDecl lm:IdRef>] = 
-      (decorate top.scope with {sg_look_for = top.name;}).sg_resolutions
+    let res::[Decorated Decl] = 
+      (decorate top.scope with 
+        { sg_look_for = graph_ref; 
+          sg_seen_scopes = [];
+          sg_seen_imports = []; }
+      ).sg_resolutions
     in 
-      [(top, head(res).sg_ast_decl)]
-    end;
+      let res2::[(lm:IdRef, Decorated lm:IdDecl)] = 
+        [(top, head(res).sg_ast_decl)]
+      in unsafeTrace(res2, printT("[#] Trying to resolve ref: " ++ top.str 
+        ++ " size: " ++ toString(length(res)) ++ " - " ++ (if length(res) > 0 then head(res).str else "") ++ "\n", unsafeIO()))
+    end end;
 
 }
 
