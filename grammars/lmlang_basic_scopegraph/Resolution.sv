@@ -21,9 +21,10 @@ top::Scope ::=
     case top.sg_parent of 
         | nothing() -> []
         | just(p) -> 
-          (decorate p with {sg_look_for = top.sg_look_for; 
-                            sg_seen_scopes = top::top.sg_seen_scopes; 
-                            sg_seen_imports = top.sg_seen_imports;}
+          (decorate p with 
+            {sg_look_for = top.sg_look_for; 
+             sg_seen_scopes = top::top.sg_seen_scopes; 
+             sg_seen_imports = top.sg_seen_imports;}
           ).sg_resolutions
       end;
 
@@ -40,9 +41,10 @@ top::Scope ::=
     let modules::[Decorated Decl] = 
       foldl (
         (\acc::[Decorated Decl] cur::Ref -> acc ++ 
-          ((decorate cur with {sg_look_for = cur; 
-                               sg_seen_scopes = []; 
-                               sg_seen_imports = top.sg_seen_imports;}
+          ((decorate cur with 
+            {sg_look_for = cur; 
+             sg_seen_scopes = []; 
+             sg_seen_imports = top.sg_seen_imports;}
           ).sg_resolutions)), 
         [], 
         filtered_refs
@@ -56,9 +58,10 @@ top::Scope ::=
           (case cur.sg_assoc_scope of 
             | nothing() -> [] 
             | just(p) -> 
-              (decorate p with {sg_look_for = top.sg_look_for; 
-                                sg_seen_scopes = top::top.sg_seen_scopes; 
-                                sg_seen_imports = top.sg_look_for::top.sg_seen_imports;}
+              (decorate p with 
+                {sg_look_for = top.sg_look_for; 
+                 sg_seen_scopes = top::top.sg_seen_scopes; 
+                 sg_seen_imports = top.sg_look_for::top.sg_seen_imports;}
               ).sg_resolutions
           end)),
         [], 
@@ -74,7 +77,6 @@ top::Scope ::=
     if !is_seen_scope(top, top.sg_seen_scopes)
       then shadow_decls(local_decls, shadow_decls(import_decls, parent_decls))
       else [];
-
   
 }
 
@@ -85,9 +87,9 @@ top::Ref ::=
 {
   top.sg_resolutions = 
     (decorate top.sg_in_scope with 
-      { sg_look_for = top.sg_look_for;
+      {sg_look_for = top.sg_look_for;
        sg_seen_scopes = top.sg_seen_scopes;
-       sg_seen_imports = top::top.sg_seen_imports; }
+       sg_seen_imports = top::top.sg_seen_imports;}
     ).sg_resolutions;
 }
 

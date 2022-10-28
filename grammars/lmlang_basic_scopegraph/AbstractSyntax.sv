@@ -146,7 +146,7 @@ top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
   top.ret_scope = list.ret_scope;
 
   decl.scope = let_scope;
-  decl.assoc_scope = nothing(); -- would be just(module_decl)
+  decl.assoc_scope = nothing();
 
   exp.scope = top.scope;
 
