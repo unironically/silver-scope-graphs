@@ -9,8 +9,15 @@ monoid attribute decls::[Decorated Decl] occurs on lm:DeclList, lm:Decl,
   lm:IdDecl, lm:BindListRec, lm:BindListPar;
 monoid attribute refs::[Ref] occurs on lm:DeclList, lm:Decl, 
   lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
+
 monoid attribute imps::[Ref] occurs on lm:DeclList, lm:Decl, 
-  lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
+  lm:Qid, lm:Exp, lm:IdRef, lm:BindListSeq, lm:BindListRec, lm:BindListPar;
+
+--monoid attribute imps::[Scope] occurs on lm:DeclList, lm:Decl, 
+--  lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdRef;
+monoid attribute ress::[(Ref, [Decorated Decl])] occurs on lm:DeclList, lm:Decl, 
+  lm:Qid, lm:Exp, lm:BindListSeq, lm:BindListRec, lm:BindListPar, lm:IdRef;
+
 
 -- Associated scope of a module declaration
 inherited attribute assoc_scope::Maybe<Scope> occurs on lm:IdDecl;
@@ -19,6 +26,7 @@ synthesized attribute sg_ref::Ref occurs on lm:IdRef;
 
 -- Passing the refs/imports from the RHS of a let expression to the scope(s) created on the left
 inherited attribute letseq_refs::[Ref] occurs on lm:BindListSeq;
+inherited attribute letseq_ress::[(Ref, [Decorated Decl])] occurs on lm:BindListSeq;
 inherited attribute letseq_imps::[Ref] occurs on lm:BindListSeq;
 
 monoid attribute bindings::[(lm:IdRef, Decorated lm:IdDecl)] occurs on lm:IdRef, lm:Qid,
@@ -55,13 +63,13 @@ top::lm:Program ::= list::lm:DeclList
 aspect production lm:decllist_list
 top::lm:DeclList ::= decl::lm:Decl list::lm:DeclList
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
 }
 
 aspect production lm:decllist_nothing
 top::lm:DeclList ::=
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -93,13 +101,13 @@ top::lm:Decl ::= decl::lm:IdDecl list::lm:DeclList
 aspect production lm:decl_import
 top::lm:Decl ::= qid::lm:Qid
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
 }
 
 aspect production lm:decl_def
 top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
 
   decl.assoc_scope = nothing();
 }
@@ -107,7 +115,7 @@ top::lm:Decl ::= decl::lm:IdDecl exp::lm:Exp
 aspect production lm:decl_exp
 top::lm:Decl ::= exp::lm:Exp
 {
-  propagate scope, refs, decls, imps, bindings;
+  propagate scope, refs, decls, ress, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -120,7 +128,7 @@ top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
   propagate bindings;
 
   top.refs := [];
-  top.imps := [];
+  top.ress := [];
 
   list.scope = top.scope;
   list.letseq_refs = exp.refs;
@@ -159,7 +167,7 @@ top::lm:BindListSeq ::=
   propagate bindings;
 
   top.refs := top.letseq_refs;
-  top.imps := top.letseq_imps;
+  top.ress := top.letseq_ress;
   top.ret_scope = top.scope;
 }
 
@@ -190,14 +198,14 @@ top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, bindings;
   decl.assoc_scope = nothing();
 }
 
 aspect production lm:bindlist_nothing_rec
 top::lm:BindListRec ::=
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, bindings;
 }
 
 ------------------------------------------------------------
@@ -224,14 +232,14 @@ top::lm:Exp ::= list::lm:BindListPar exp::lm:Exp
 aspect production lm:bindlist_list_par
 top::lm:BindListPar ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListPar
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, bindings;
   decl.assoc_scope = nothing();
 }
 
 aspect production lm:bindlist_nothing_par
 top::lm:BindListPar ::=
 {
-  propagate scope, decls, refs, imps, bindings;
+  propagate scope, decls, refs, ress, bindings;
 }
 
 ------------------------------------------------------------
@@ -241,38 +249,38 @@ top::lm:BindListPar ::=
 aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, bindings;
   decl.assoc_scope = nothing();
 }
 
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, bindings;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, bindings;
 }
 
 aspect production lm:exp_qid
 top::lm:Exp ::= qid::lm:Qid
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, imps, bindings;
 }
 
 aspect production lm:exp_int
 top::lm:Exp ::= val::lm:Int_t
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, imps, bindings;
 }
 
 aspect production lm:exp_bool
 top::lm:Exp ::= val::Boolean
 {
-  propagate scope, refs, imps, bindings;
+  propagate scope, refs, ress, bindings;
 }
 
 ------------------------------------------------------------
@@ -282,15 +290,16 @@ top::lm:Exp ::= val::Boolean
 aspect production lm:qid_dot
 top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 {
-  propagate imps, bindings;
+  propagate bindings;
 
   local attribute qid_scope::Scope = mk_scope_orphan (
     [],
     qid.refs,
-    [ref.sg_ref]
+    ref.imps
   );
 
   top.refs := [ref.sg_ref];
+  top.imps := qid.imps;
 
   ref.scope = top.scope;
 
@@ -301,10 +310,13 @@ top::lm:Qid ::= ref::lm:IdRef qid::lm:Qid
 aspect production lm:qid_single
 top::lm:Qid ::= ref::lm:IdRef
 {
-  propagate scope, bindings;
+  propagate scope, imps, bindings;
 
   top.refs := [ref.sg_ref];
-  top.imps := [ref.sg_ref]; -- for iqid import
+  
+  -- imps for iqid import
+  --top.imps := ref.imps;
+
 }
 
 ------------------------------------------------------------
@@ -343,20 +355,18 @@ top::lm:IdRef ::= id::lm:ID_t
 
   top.sg_ref = graph_ref;
   top.refs := [graph_ref];
+  top.imps := [graph_ref];
 
-  top.bindings := 
-    let res::[Decorated Decl] = 
-      (decorate top.scope with 
-        { sg_look_for = graph_ref; 
-          sg_seen_scopes = [];
-          sg_seen_imports = []; }
-      ).sg_resolutions
-    in 
-      let res2::[(lm:IdRef, Decorated lm:IdDecl)] = 
-        [(top, head(res).sg_ast_decl)]
-      in unsafeTrace(res2, printT("[#] Trying to resolve ref: " ++ top.str 
-        ++ " size: " ++ toString(length(res)) ++ " - " ++ (if length(res) > 0 then head(res).str else "") ++ "\n", unsafeIO()))
-    end end;
+  local attribute resolutions::[Decorated Decl] = 
+    (decorate graph_ref with 
+      { sg_look_for = graph_ref; 
+        sg_seen_scopes = [];
+        sg_seen_imports = [];
+      }).sg_resolutions;
+
+  top.bindings := [(top, head(resolutions).sg_ast_decl)];
+
+  top.ress := [(graph_ref, resolutions)];
 
 }
 
@@ -390,4 +400,11 @@ def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
   - a_1_58 -> a_1_37
   - b_1_62 -> b_1_43
   - c_1_66 -> c_1_49      
+
+
+module A {module B {def y = 0}}  module C { import A.B def a = y}
+  Should get:
+  - A_1_51 -> A_1_7
+  - B_1_53 -> B_1_17
+  - y_1_63 -> y_1_24
 -}

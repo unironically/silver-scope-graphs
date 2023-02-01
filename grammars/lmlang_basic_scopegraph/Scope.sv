@@ -12,9 +12,9 @@ synthesized attribute line::Integer;
 synthesized attribute column::Integer;
 
 synthesized attribute sg_parent::Maybe<Scope>;
-synthesized attribute sg_root_scopes::[Decorated Scope];
 synthesized attribute sg_in_scope::Scope;
 synthesized attribute sg_assoc_scope::Maybe<Scope>;
+synthesized attribute sg_root_scopes::[Decorated Scope];
 
 synthesized attribute sg_ast_decl::Decorated lm:IdDecl occurs on Decl;
 synthesized attribute sg_ast_ref::lm:IdRef occurs on Ref;
@@ -47,7 +47,7 @@ top::Scope ::=
   top.sg_parent = parent;
   top.sg_decls = decls;
   top.sg_refs = refs;
-  top.sg_imps = imps;
+  top.sg_imps = imps;  
   top.str = toString(top.id);
 }
 
