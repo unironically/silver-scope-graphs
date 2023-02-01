@@ -129,6 +129,7 @@ top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 
   top.refs := [];
   top.ress := [];
+  top.imps := [];
 
   list.scope = top.scope;
   list.letseq_refs = exp.refs;
@@ -140,7 +141,7 @@ top::lm:Exp ::= list::lm:BindListSeq exp::lm:Exp
 aspect production lm:bindlist_list_seq
 top::lm:BindListSeq ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListSeq
 {
-  propagate letseq_refs, letseq_imps, bindings;
+  propagate letseq_refs, letseq_ress, letseq_imps, bindings;
 
   local attribute let_scope::Scope = mk_scope (
     just(top.scope),
@@ -168,6 +169,7 @@ top::lm:BindListSeq ::=
 
   top.refs := top.letseq_refs;
   top.ress := top.letseq_ress;
+  top.imps := top.letseq_imps;
   top.ret_scope = top.scope;
 }
 
@@ -198,14 +200,14 @@ top::lm:Exp ::= list::lm:BindListRec exp::lm:Exp
 aspect production lm:bindlist_list_rec
 top::lm:BindListRec ::= decl::lm:IdDecl exp::lm:Exp list::lm:BindListRec
 {
-  propagate scope, decls, refs, ress, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
   decl.assoc_scope = nothing();
 }
 
 aspect production lm:bindlist_nothing_rec
 top::lm:BindListRec ::=
 {
-  propagate scope, decls, refs, ress, bindings;
+  propagate scope, decls, refs, ress, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -249,20 +251,20 @@ top::lm:BindListPar ::=
 aspect production lm:exp_funfix
 top::lm:Exp ::= decl::lm:IdDecl exp::lm:Exp
 {
-  propagate scope, refs, ress, bindings;
+  propagate scope, refs, ress, imps, bindings;
   decl.assoc_scope = nothing();
 }
 
 aspect production lm:exp_add
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, ress, bindings;
+  propagate scope, refs, ress, imps, bindings;
 }
 
 aspect production lm:exp_app
 top::lm:Exp ::= left::lm:Exp right::lm:Exp
 {
-  propagate scope, refs, ress, bindings;
+  propagate scope, refs, ress, imps, bindings;
 }
 
 aspect production lm:exp_qid
@@ -280,7 +282,7 @@ top::lm:Exp ::= val::lm:Int_t
 aspect production lm:exp_bool
 top::lm:Exp ::= val::Boolean
 {
-  propagate scope, refs, ress, bindings;
+  propagate scope, refs, ress, imps, bindings;
 }
 
 ------------------------------------------------------------
@@ -394,9 +396,9 @@ def a = 0 def b = 1 def c = 2 letpar a = c  b = a  c = b in a + b + c
 def a = 0 def b = 1 def c = 2 letrec a = c  b = a  c = b in a + b + c
     4         14        24           37  41 43  47 49  53   58  62  66      
   Should get:
-  - c_1_41 -> c_1_24
-  - a_1_47 -> a_1_4
-  - b_1_53 -> b_1_14
+  - c_1_41 -> c_1_49
+  - a_1_47 -> a_1_37
+  - b_1_53 -> b_1_43
   - a_1_58 -> a_1_37
   - b_1_62 -> b_1_43
   - c_1_66 -> c_1_49      
@@ -407,4 +409,9 @@ module A {module B {def y = 0}}  module C { import A.B def a = y}
   - A_1_51 -> A_1_7
   - B_1_53 -> B_1_17
   - y_1_63 -> y_1_24
+
+module A {def y = 0}  module C { import A def a = y}
+  Should get:
+  - A_1_40 -> A_1_7
+  - y_1_50 -> y_1_14
 -}

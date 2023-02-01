@@ -35,10 +35,8 @@ top::Scope ::=
       end;
 
   top.sg_resolutions_import =
-
     let valid_imps::[Ref] = 
       filter ((\r::Ref -> !is_seen_import(r, top.sg_seen_imports)), top.sg_imps)
-
     in let resolved_decls::[Decorated Decl] = 
       foldl (
         (\acc::[Decorated Decl] imp::Ref -> acc ++
@@ -50,7 +48,6 @@ top::Scope ::=
         ), 
         [], 
         valid_imps)
-
     in let assoc_scopes::[Scope] = 
       foldl (
         (\acc::[Scope] d::Decorated Decl -> acc ++
@@ -60,7 +57,6 @@ top::Scope ::=
           end), 
         [], 
         resolved_decls)
-    
     in
       foldl ((\acc::[Decorated Decl] s::Scope -> 
           (decorate s with {
@@ -70,12 +66,13 @@ top::Scope ::=
           ).sg_envl), 
         [], 
         assoc_scopes)
-
     end end end;
 
   top.sg_envv = shadow (top.sg_envl, top.sg_resolutions_parent);
   top.sg_envl = shadow (top.sg_resolutions_local, top.sg_resolutions_import);
 }
+
+{- NOTE: The imps that flow up the AST should be `Decorated Ref` so that their resolutions are kept? -}
 
 @{-
   - Aspect production for defining the resolutions attribute for reference nodes.
