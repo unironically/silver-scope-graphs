@@ -37,11 +37,11 @@ top::Graph ::=
 -- Scope nodes
 
 abstract production mk_scope
-top::Scope ::= 
+top::Scope ::=  
   parent::Maybe<Scope>
   decls::[Decorated Decl]
   refs::[Ref]
-  imps::[Ref]
+  imps::[Ref] -- should be decorated(?)
 {
   top.id = genInt();
   top.sg_parent = parent;

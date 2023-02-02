@@ -45,7 +45,7 @@ top::Scope ::=
             sg_seen_scopes = [];
             sg_seen_imports = top.sg_seen_imports; }
           ).sg_resolutions
-        ), 
+        ),
         [], 
         valid_imps)
     in let assoc_scopes::[Scope] = 

@@ -1,104 +1,158 @@
 grammar scopegraph;
 
-nonterminal Graph<d r> with root_scopes<d r>;
-nonterminal Scope<d r> with id, str, parent<d r>, decls<d r>, refs<d r>, imps<d r>;
-nonterminal Decl<d r> with str, name, line, column, in_scope<d r>, assoc_scope<d r>;
-nonterminal Ref<d r> with str, name, line, column, in_scope<d r>;
+nonterminal Scope;
+nonterminal Decl;
+nonterminal Ref;
+nonterminal Imp;
 
-synthesized attribute id::Integer;
-synthesized attribute str::String;
-synthesized attribute parent<d r>::Maybe<Scope<d r>>;
-synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
-synthesized attribute in_scope<d r>::Scope<d r>;
-synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
+{-====================-}
 
-synthesized attribute ast_decl<d>::Decorated d occurs on Decl<d r>;
-synthesized attribute ast_ref<r>::r occurs on Ref<d r>;
+inherited attribute parent_scope::Decorated Scope occurs on Scope, Decl, Decls, Ref, Refs, Imp, Imps;
+--synthesized attribute reachable_scopes::[[Decorated Scope]] occurs on Scope;
+synthesized attribute resolutions::[Decorated Decl] occurs on Ref, Refs, Imp;
+synthesized attribute assoc_scope::Maybe<Decorated Scope> occurs on Decl;
+synthesized attribute name::String occurs on Decl, Ref, Imp;
+inherited attribute other_imps::[Decorated Imp] occurs on Imp;
 
-synthesized attribute decls<d r>::[Decorated Decl<d r>];
-synthesized attribute refs<d r>::[Decorated Ref<d r>];
-synthesized attribute imps<d r>::[Decorated Ref<d r>];
+synthesized attribute local_decls::[Decorated Decl] occurs on Scope;
+synthesized attribute imported_scopes::[Decorated Scope] occurs on Scope, Imps;
+synthesized attribute parent_scopes::[Decorated Scope] occurs on Scope;
 
-synthesized attribute name::String;
-synthesized attribute line::Integer;
-synthesized attribute column::Integer;
+{-====================-}
 
---------------------
--- Graph
 
-abstract production mk_graph
-top::Graph<d r> ::=
-  root_scopes::[Decorated Scope<d r>]
-{
-  top.root_scopes = root_scopes;
-}
-
---------------------
--- Scope nodes
 
 abstract production mk_scope
-top::Scope<d r> ::= 
-  parent::Maybe<Scope<d r>>
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
+s::Scope ::= decls::Decls refs::Refs imps::Imps
 {
-  top.id = genInt();
-  top.parent = parent;
-  top.decls = decls;
-  top.refs = refs;
-  top.imps = imps;
-  top.str = toString(top.id);
+  decls.parent_scope = s; refs.parent_scope = s; imps.parent_scope = s;
+
+  --s.reachable_scopes = 
+  --  imps.imported_scopes :: [s.parent_scope] :: s.parent_scope.reachable_scopes;
+    
+  imps.all_imps = imps.imps;
+
+  s.local_decls = decls.decls_list;
+  s.imported_scopes = imps.imported_scopes;
+  s.parent_scopes = s.parent_scope.parent_scopes;
 }
 
-abstract production mk_scope_orphan
-top::Scope<d r> ::= 
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
-{ forwards to mk_scope(nothing(), decls, refs, imps); }
+abstract production mk_scope_orphan {- TODO -}
+s::Scope ::=
+{ 
+  s.parent_scopes = [];
+  s.local_decls = [];
+  s.imported_scopes = [];
+}
 
-abstract production mk_scope_disconnected
-top::Scope<d r> ::=
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
-{ forwards to mk_scope(nothing(), decls, refs, imps); }
 
---------------------
--- Declaration nodes
 
 abstract production mk_decl
-  attribute name i occurs on d,
-  attribute line i occurs on d,
-  attribute column i occurs on d =>
-top::Decl<d r> ::= 
-  in_scope::Scope<d r>
-  ast_node::Decorated d with i
+d::Decl ::= id::String assoc_scope::Maybe<Decorated Scope>
 {
-  top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
-  top.name = ast_node.name;
-  top.line = ast_node.line;
-  top.column = ast_node.column;
-  top.in_scope = in_scope;
-  top.ast_decl = ast_node;
+  d.name = id;
+  d.assoc_scope = assoc_scope;
 }
 
---------------------
--- Reference nodes
+
 
 abstract production mk_ref
-  attribute name i occurs on r,
-  attribute line i occurs on r,
-  attribute column i occurs on r =>
-top::Ref<d r> ::=
-  in_scope::Scope<d r>
-  ast_node::Decorated r with i
+r::Ref ::= id::String
 {
-  top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
-  top.name = ast_node.name;
-  top.line = ast_node.line;
-  top.column = ast_node.column;
-  top.in_scope = in_scope;
-  top.ast_ref = ast_node;
+  r.name = id;
+  r.resolutions = [];
+}
+
+
+
+abstract production mk_imp {- inh: i.other_imps -}
+i::Imp ::= id::String
+{
+  i.name = id;
+  i.resolutions = [];
+}
+
+
+
+{-====================-}
+
+
+
+nonterminal Decls;
+
+synthesized attribute decls_list::[Decorated Decl] occurs on Decls;
+
+abstract production decl_cons
+dt::Decls ::= d::Decl ds::Decls
+{
+  propagate parent_scope;
+  dt.decls_list = d :: ds.decls_list;
+}
+
+abstract production decl_nil
+dt::Decls ::= 
+{
+  dt.decls_list = [];
+}
+
+
+
+nonterminal Refs;
+
+abstract production ref_cons
+rt::Refs ::= r::Ref ds::Refs
+{
+  propagate parent_scope;
+  rt.resolutions = r.resolutions ++ ds.resolutions;
+}
+
+abstract production ref_nil
+rt::Refs ::= 
+{
+  rt.resolutions = [];
+}
+
+
+
+nonterminal Imps;
+
+inherited attribute all_imps::[Decorated Imp] occurs on Imps;
+synthesized attribute imps::[Decorated Imp] occurs on Imps;
+
+abstract production imp_cons
+it::Imps ::= i::Imp ds::Imps
+{
+  propagate all_imps, parent_scope;
+  it.imps = i :: ds.imps;
+
+  i.other_imps = filter (not_same_imp(i,_), ds.all_imps);
+  
+  it.imported_scopes = 
+    foldl (decls_assoc_scope, [], i.resolutions) ++ ds.imported_scopes;
+}
+
+abstract production imp_nil
+it::Imps ::= 
+{
+  it.imps = [];
+  it.imported_scopes = [];
+}
+
+
+
+{-====================-}
+
+function decls_assoc_scope
+[Decorated Scope] ::= scopes::[Decorated Scope] decl::Decorated Decl
+{
+  return case decl.assoc_scope of
+    | nothing() -> scopes
+    | just(s) -> s :: scopes
+  end;
+}
+
+function not_same_imp
+Boolean ::= i1::Decorated Imp i2::Decorated Imp
+{
+  return i1.name != i2.name;
 }
