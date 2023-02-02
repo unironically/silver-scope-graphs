@@ -139,12 +139,12 @@ r::Ref ::= n::String
   r.scope_paths = r.parent.scope_paths;
 
   -- resolutions must be Dcls without an associated scope
-  r.reachable = case r.visible of
+  r.visible = case r.visible of
                 | [] -> []
                 | h::t -> h
                 end;
   
-  r.visible = resolutions (n, r.parent.scope_paths);
+  r.reachable = resolutions (n, r.parent.scope_paths);
 
   r.all_refs <- [r];
 }
