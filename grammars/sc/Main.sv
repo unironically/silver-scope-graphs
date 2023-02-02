@@ -65,10 +65,13 @@ IO<Integer> ::= largs::[String]
    ---
    module A { def x = ... }
    module B { def x = ... }
-
+   def x = _
    import A;
    import B;
-   def _ = x
+   def _ = x   - x has either 1 or 3 reachable declarations,
+                 depending the language.
+                 Do we have different scope graphs for each interpretation?
+                 Or different orderings on paths?
   -}
 
 
@@ -106,11 +109,11 @@ IO<Integer> ::= largs::[String]
 
   {- Example 6
    ---
-   module A {
-     module B { def a = ... }
+   module A_1 {
+     module B_1 { def a = ... }
    }
-   import A
-   import B
+   import A_2
+   import B_2
    def b = a
    -}
 
@@ -188,7 +191,7 @@ IO<Integer> ::= largs::[String]
      print ("Example 5 (expect A 1, a 0)\n");
      print (report (e5.all_refs));
      print ("Example 6 (expect A 1, A 1, a 1)\n");
-     print (report (e6.all_refs));
+     --print (report (e6.all_refs));
      print ("Example 7 (expect A 1, A 1, a 1)\n");
      print (report (e7.all_refs));
      return 0;
