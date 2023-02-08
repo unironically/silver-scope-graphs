@@ -1,5 +1,8 @@
 grammar sc;
 
+imports silver:langutil;
+imports silver:langutil:pp;
+
 nonterminal Scope;
 
 synthesized attribute dcls :: [ Decorated Dcl ] occurs on Scope, Dcls;
@@ -8,24 +11,24 @@ synthesized attribute imps :: [ Decorated Ref ] occurs on Scope, Refs, Ref;
 
 inherited attribute parent :: Decorated Scope occurs on Ref, Refs, Dcl, Dcls, Scope;
 
-synthesized attribute reachable :: [ Decorated Dcl ] occurs on Ref;
-synthesized attribute visible :: [ [ Decorated Dcl ] ] occurs on Ref;
+synthesized attribute visible :: [ Decorated Dcl ] occurs on Ref;
+synthesized attribute reachable :: [ [ Decorated Dcl ] ] occurs on Ref;
 
 synthesized attribute scope_paths :: [ [Decorated Scope] ] occurs on Ref, Scope;
 
 synthesized attribute name :: String occurs on Dcl, Ref;
+synthesized attribute index :: Integer occurs on Dcl, Ref;
 
+attribute pp occurs on Scope, Dcl, Dcls, Ref, Refs;
 
 production root_scope
 gs::Scope ::= main::Scope
 {
   gs.scope_paths = [];
   main.parent = gs; 
-}
 
-function fold_dcls
-[ Decorated Dcl] ::= sofar :: [Decorated Dcl] r::Decorated Ref
-{ return r.reachable ++ sofar; }
+  gs.pp = main.pp;
+}
 
 function fold_scopes
 [ Decorated Scope] ::= sofar :: [Decorated Scope] d::Decorated Dcl
@@ -45,7 +48,8 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   s.imps = imps_tr.imps;
 
   local resolved_imports :: [Decorated Dcl] = 
-    foldl (fold_dcls, [], s.imps) ;
+    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> r.visible ++ sofar, 
+           [], s.imps) ;
 
   local imported_scopes :: [Decorated Scope] =
     foldl (fold_scopes, [], resolved_imports);
@@ -53,6 +57,23 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   -- look on this scope, then imports on this scope
   -- then parent of this scope, then imports on parent ...
   s.scope_paths = [s] :: imported_scopes :: s.parent.scope_paths ;
+
+  local dcls_doc :: Document =
+     terminate (
+       line(),
+       map (\d::Decorated Dcl -> 
+              ppConcat ([text(d.name), text(":"), pp(d.index),
+                           text(" = ...")]),
+           s.dcls)
+        );
+
+
+  s.pp = braces(
+          nestlines(2,
+            cat (dcls_doc,          
+            cat (text("_ = "), ppImplode (cat (comma(), space()), 
+                                          map ( (.pp), s.refs))))
+         ));
 }
 
 function dcls_in_scope
@@ -70,7 +91,7 @@ function dcls_in_scope
 function local_resolutions
 [Decorated Dcl] ::= name::String  scopes::[Decorated Scope]
 {
-  return 
+   return 
     case scopes of
     | [] -> []
     | s::ss -> dcls_in_scope (name, s.dcls) ++ local_resolutions (name, ss)
@@ -102,14 +123,16 @@ nonterminal Dcls;
 synthesized attribute assoc_scope :: Maybe <Decorated Scope> occurs on Dcl;
 
 production dcl_tr
-d::Dcl ::= n::String
+d::Dcl ::= n::String ind::Integer
 { d.name = n;
+  d.index = ind;
   d.assoc_scope = nothing();
 }
 
 production dcl_scope_tr
-d::Dcl ::= n::String s::Scope
+d::Dcl ::= n::String ind::Integer s::Scope
 { d.name = n;
+  d.index = ind;
   d.assoc_scope = just(s);
   s.parent = d.parent;
 }
@@ -131,15 +154,17 @@ nonterminal Ref;
 nonterminal Refs;
 
 production ref_tr
-r::Ref ::= n::String
+r::Ref ::= n::String ind::Integer
 { r.name = n;
+  r.index = ind;
+  r.pp = ppConcat ([text(n), text(":"), pp(ind)]);
   r.refs = [r];
   r.imps = [];
 
   r.scope_paths = r.parent.scope_paths;
 
   -- resolutions must be Dcls without an associated scope
-  r.visible = case r.visible of
+  r.visible = case r.reachable of
                 | [] -> []
                 | h::t -> h
                 end;
@@ -151,8 +176,9 @@ r::Ref ::= n::String
 
 
 production imp_tr
-i::Ref ::= n::String
+i::Ref ::= n::String ind::Integer
 { i.name = n;
+  i.index = ind;
   i.refs = [];
   i.imps = [i];
 
@@ -161,12 +187,12 @@ i::Ref ::= n::String
   -- [ ]   - error, undeclared name used for an import
   -- [d]   -- OK - we have a Dcl
   -- [d1, d2] -- maybe an error, maybe OK
-  i.reachable = case i.visible of
+  i.visible = case i.reachable of
                 | [] -> []
                 | h::t -> h
                 end;
 
-  i.visible = resolutions (n, i.parent.scope_paths);
+  i.reachable = resolutions (n, i.parent.scope_paths);
 
   i.all_refs <- [i];
 }
@@ -198,9 +224,10 @@ propagate all_refs on Ref, Refs, Dcl, Dcls, Scope;
 function report
 String ::= refs :: [Decorated Ref]
 { return
-    concat (map ( \r::Decorated Ref -> case r.reachable of
-                     | [] -> r.name ++ " not declared \n"
-                     | ds -> r.name ++ " is declared " ++
+    concat (map ( \r::Decorated Ref -> r.name ++ ":" ++ toString (r.index) ++ 
+                 case r.visible of
+                 | [] -> " not declared \n"
+                 | ds -> " is declared " ++
                               toString (length (ds)) ++ "\n"
-                     end, refs) );
+                 end, refs) );
 }  
