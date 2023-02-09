@@ -14,7 +14,7 @@ inherited attribute parent :: Decorated Scope occurs on Ref, Refs, Dcl, Dcls, Sc
 synthesized attribute visible :: [ Decorated Dcl ] occurs on Ref;
 synthesized attribute reachable :: [ [ Decorated Dcl ] ] occurs on Ref;
 
-synthesized attribute scope_paths :: [ (Maybe<String>, [Decorated Scope]) ] 
+synthesized attribute scope_paths :: [ [(Maybe<String>, Decorated Scope)] ] 
             occurs on Ref, Scope;
 
 synthesized attribute name :: String occurs on Dcl, Ref;
@@ -52,8 +52,8 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
     foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> (just(r.name),r.visible) ++ sofar, 
            [], s.imps) ;
 
-  local imported_scopes :: [(Maybe<String>, Decorated Scope)] = [];
---    foldl (fold_scopes, [], resolved_imports);
+  local imported_scopes :: [(Maybe<String>, Decorated Scope)] =
+    foldl (fold_scopes, [], resolved_imports);
 
   -- look on this scope, then imports on this scope
   -- then parent of this scope, then imports on parent ...
