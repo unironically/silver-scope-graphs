@@ -7,15 +7,16 @@ IO<Integer> ::= largs::[String]
 
   {- Example 1
    ---
-   def a = ...
-   def b = a
+   def a_1 = ...
+   def b_2 = a_3 ... a_4
   -}
   local e1 :: Scope = 
     root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("a"),
-                   dcl_cons (dcl_tr ("b"), dcl_nil())),
+      scope_tr ( dcl_cons (dcl_tr ("a",1),
+                   dcl_cons (dcl_tr ("b",2), dcl_nil())),
 
-                 ref_cons (ref_tr ("a"), ref_nil()),
+                 ref_cons (ref_tr ("a",3),
+                 ref_cons (ref_tr ("a",4), ref_nil())),
 
                  ref_nil() ) );
 
@@ -27,11 +28,11 @@ IO<Integer> ::= largs::[String]
   -}
   local e2 :: Scope = 
     root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("a"),
-                   dcl_cons (dcl_tr ("a"),
-                     dcl_cons (dcl_tr ("b"), dcl_nil()))),
+      scope_tr ( dcl_cons (dcl_tr ("a",1),
+                   dcl_cons (dcl_tr ("a",2),
+                     dcl_cons (dcl_tr ("b",3), dcl_nil()))),
 
-                 ref_cons (ref_tr ("a"), ref_nil()),
+                 ref_cons (ref_tr ("a",4), ref_nil()),
 
                  ref_nil() ) );
 
@@ -46,17 +47,17 @@ IO<Integer> ::= largs::[String]
   -}
   local e3 :: Scope = 
     root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("b"),
-                 dcl_cons (dcl_scope_tr ("A", 
-                     scope_tr ( dcl_cons (dcl_tr ("x"), dcl_nil()),
+      scope_tr ( dcl_cons (dcl_tr ("b",1),
+                 dcl_cons (dcl_scope_tr ("A",2, 
+                     scope_tr ( dcl_cons (dcl_tr ("x",3), dcl_nil()),
                                 ref_nil(),  ref_nil()
                        )
                      ), 
                  dcl_nil())),
 
-                 ref_cons (ref_tr ("x"), ref_nil()),
+                 ref_cons (ref_tr ("x",4), ref_nil()),
 
-                 ref_cons (imp_tr ("A"), ref_nil())
+                 ref_cons (imp_tr ("A",5), ref_nil())
                )
       ) ;
 
@@ -88,21 +89,21 @@ IO<Integer> ::= largs::[String]
   -- Root
   local e5 :: Scope = root_scope (
     scope_tr ( dcl_cons (a1, 
-               dcl_cons (dcl_tr ("b"),
+               dcl_cons (dcl_tr ("b",1),
                dcl_nil())),
 
-               ref_cons (ref_tr ("a"), ref_nil()),
-               ref_cons (imp_tr ("A"), ref_nil()) ) );
+               ref_cons (ref_tr ("a",2), ref_nil()),
+               ref_cons (imp_tr ("A",3), ref_nil()) ) );
 
   -- A1
-  local a1 :: Dcl = dcl_scope_tr ("A", 
+  local a1 :: Dcl = dcl_scope_tr ("A",1, 
     scope_tr ( dcl_cons (a2, dcl_nil()), 
                                  ref_nil(), ref_nil() )
     );
 
   -- A2
-  local a2 :: Dcl = dcl_scope_tr ("A", 
-    scope_tr ( dcl_cons (dcl_tr ("a"), dcl_nil()),
+  local a2 :: Dcl = dcl_scope_tr ("A",2, 
+    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
                                  ref_nil(), ref_nil() )
    );
 
@@ -120,25 +121,25 @@ IO<Integer> ::= largs::[String]
   -- Root
   local e6 :: Scope = root_scope (
     scope_tr ( dcl_cons (a1_6, 
-               dcl_cons (dcl_tr ("b"),
+               dcl_cons (dcl_tr ("b",6),
                dcl_nil())),
 
-               ref_cons (ref_tr ("a"), ref_nil()),
+               ref_cons (ref_tr ("a",7), ref_nil()),
 
-               ref_cons (imp_tr ("A"), 
-               ref_cons (imp_tr ("B"), 
+               ref_cons (imp_tr ("A",4), 
+               ref_cons (imp_tr ("B",5), 
                ref_nil()))
     ) );
 
   -- A1
-  local a1_6 :: Dcl = dcl_scope_tr ("A", 
+  local a1_6 :: Dcl = dcl_scope_tr ("A",1, 
     scope_tr ( dcl_cons (b2_6, dcl_nil()), 
                ref_nil(), ref_nil() )
     );
 
   -- A2
-  local b2_6 :: Dcl = dcl_scope_tr ("B", 
-    scope_tr ( dcl_cons (dcl_tr ("a"), dcl_nil()),
+  local b2_6 :: Dcl = dcl_scope_tr ("B",2, 
+    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
                ref_nil(), ref_nil() )
    );
 
@@ -156,25 +157,25 @@ IO<Integer> ::= largs::[String]
   -- Root 
   local e7 :: Scope = root_scope (
     scope_tr ( dcl_cons (a1_7, 
-               dcl_cons (dcl_tr ("b"),
+               dcl_cons (dcl_tr ("b",6),
                dcl_nil())),
 
-               ref_cons (ref_tr ("a"), ref_nil()),
+               ref_cons (ref_tr ("a",7), ref_nil()),
 
-               ref_cons (imp_tr ("A"), 
-               ref_cons (imp_tr ("A"), 
+               ref_cons (imp_tr ("A",4), 
+               ref_cons (imp_tr ("A",5), 
                ref_nil()))
     ) );
 
   -- A1
-  local a1_7 :: Dcl = dcl_scope_tr ("A", 
+  local a1_7 :: Dcl = dcl_scope_tr ("A",1, 
     scope_tr ( dcl_cons (a2_7, dcl_nil()), 
                                  ref_nil(), ref_nil() )
     );
 
   -- A2
-  local a2_7 :: Dcl = dcl_scope_tr ("A", 
-    scope_tr ( dcl_cons (dcl_tr ("a"), dcl_nil()),
+  local a2_7 :: Dcl = dcl_scope_tr ("A",2, 
+    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
                                  ref_nil(), ref_nil() )
    );
 
@@ -182,6 +183,8 @@ IO<Integer> ::= largs::[String]
 
   return do {
      print ("Example 1 (expect a declared 1 time)\n");
+     print (show (60, e1.pp));
+     print ("\n");
      print (report (e1.all_refs));
      print ("Example 2 (expect a 2) \n");
      print (report (e2.all_refs));
@@ -191,7 +194,7 @@ IO<Integer> ::= largs::[String]
      print ("Example 5 (expect A 1, a 0)\n");
      print (report (e5.all_refs));
      print ("Example 6 (expect A 1, A 1, a 1)\n");
-     --print (report (e6.all_refs));
+     print (report (e6.all_refs));
      print ("Example 7 (expect A 1, A 1, a 1)\n");
      print (report (e7.all_refs));
      return 0;
