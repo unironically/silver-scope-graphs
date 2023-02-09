@@ -7,8 +7,8 @@ IO<Integer> ::= largs::[String]
 
   {- Example 1
    ---
-   def a = ...
-   def b = a
+   def a_1 = ...
+   def b_2 = a_3 ... a_4
   -}
   local e1 :: Scope = 
     root_scope (

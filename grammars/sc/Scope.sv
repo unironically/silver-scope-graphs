@@ -200,7 +200,7 @@ i::Ref ::= n::String ind::Integer
                 | h::t -> h
                 end;
 
-  i.reachable = resolutions (n, i.parent.scope_paths);
+  i.reachable = resolutions (n, [n], i.parent.scope_paths);
 
   i.all_refs <- [i];
 }
