@@ -14,7 +14,8 @@ inherited attribute parent :: Decorated Scope occurs on Ref, Refs, Dcl, Dcls, Sc
 synthesized attribute visible :: [ Decorated Dcl ] occurs on Ref;
 synthesized attribute reachable :: [ [ Decorated Dcl ] ] occurs on Ref;
 
-synthesized attribute scope_paths :: [ [Decorated Scope] ] occurs on Ref, Scope;
+synthesized attribute scope_paths :: [ (Maybe<String>, [Decorated Scope]) ] 
+            occurs on Ref, Scope;
 
 synthesized attribute name :: String occurs on Dcl, Ref;
 synthesized attribute index :: Integer occurs on Dcl, Ref;
@@ -31,7 +32,7 @@ gs::Scope ::= main::Scope
 }
 
 function fold_scopes
-[ Decorated Scope] ::= sofar :: [Decorated Scope] d::Decorated Dcl
+[Decorated Scope] ::= sofar::[Decorated Scope] d::Decorated Dcl
 { return case d.assoc_scope of
          | nothing() -> sofar
          | just(s) -> s :: sofar
@@ -47,16 +48,18 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   s.refs = refs_tr.refs;
   s.imps = imps_tr.imps;
 
-  local resolved_imports :: [Decorated Dcl] = 
-    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> r.visible ++ sofar, 
+  local resolved_imports :: [(Maybe<String>,Decorated Dcl)] = 
+    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> (just(r.name),r.visible) ++ sofar, 
            [], s.imps) ;
 
-  local imported_scopes :: [Decorated Scope] =
-    foldl (fold_scopes, [], resolved_imports);
+  local imported_scopes :: [(Maybe<String>, Decorated Scope)] = [];
+--    foldl (fold_scopes, [], resolved_imports);
 
   -- look on this scope, then imports on this scope
   -- then parent of this scope, then imports on parent ...
-  s.scope_paths = [s] :: imported_scopes :: s.parent.scope_paths ;
+  s.scope_paths = [(nothing(),s)] :: imported_scopes :: s.parent.scope_paths ;
+
+
 
   local dcls_doc :: Document =
      terminate (
@@ -89,25 +92,30 @@ function dcls_in_scope
 }
 
 function local_resolutions
-[Decorated Dcl] ::= name::String  scopes::[Decorated Scope]
+[Decorated Dcl] ::= name::String  seen::[String]
+                    scopes::[(Maybe<String>,Decorated Scope)]
 {
    return 
     case scopes of
     | [] -> []
-    | s::ss -> dcls_in_scope (name, s.dcls) ++ local_resolutions (name, ss)
+    | (nothing(),s) :: ss 
+        -> dcls_in_scope (name, s.dcls) ++ local_resolutions (name, seen, ss)
+    | (just(nm),s) :: ss 
+        -> dcls_in_scope (name, s.dcls) ++ local_resolutions (name, seen, ss)
     end;
 }
 
 function resolutions
-[ [ Decorated Dcl] ] ::= name::String  scope_paths::[ [Decorated Scope] ]
+[ [ Decorated Dcl] ] ::= name::String  seen::[String] 
+                         scope_paths::[ [(Maybe<String>,Decorated Scope)] ]
 {
   return 
     case scope_paths of
     | [] -> []
     | scopes :: rest -> let dcls :: [Decorated Dcl] = local_resolutions (name, scopes) 
                         in if null (dcls)
-                           then resolutions (name, rest)
-                           else dcls :: resolutions (name, rest)
+                           then resolutions (name, seen, rest)
+                           else dcls :: resolutions (name, seen, rest)
                         end
     end;
 }
@@ -169,7 +177,7 @@ r::Ref ::= n::String ind::Integer
                 | h::t -> h
                 end;
   
-  r.reachable = resolutions (n, r.parent.scope_paths);
+  r.reachable = resolutions (n, [], r.parent.scope_paths);
 
   r.all_refs <- [r];
 }

@@ -194,7 +194,7 @@ IO<Integer> ::= largs::[String]
      print ("Example 5 (expect A 1, a 0)\n");
      print (report (e5.all_refs));
      print ("Example 6 (expect A 1, A 1, a 1)\n");
-     --print (report (e6.all_refs));
+     print (report (e6.all_refs));
      print ("Example 7 (expect A 1, A 1, a 1)\n");
      print (report (e7.all_refs));
      return 0;
