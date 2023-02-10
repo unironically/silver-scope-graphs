@@ -46,12 +46,14 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
 {
   dcls_tr.parent = s; refs_tr.parent = s; imps_tr.parent = s;
 
+  -- Decorated versions of the chilldren
   s.dcls = dcls_tr.dcls;
   s.refs = refs_tr.refs;
   s.imps = imps_tr.imps;
 
   local resolved_imports :: [Decorated Dcl] = 
-    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> r.visible ++ sofar, 
+    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> 
+             r.visible ++ sofar, 
            [], s.imps) ;
 
 
@@ -73,56 +75,63 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
            s.dcls)
         );
 
-
   s.pp = braces(
           nestlines(2,
-            cat (dcls_doc,          
-            cat (text("_ = "), ppImplode (cat (comma(), space()), 
-                                          map ( (.pp), s.refs))))
+            ppConcat( [
+              dcls_doc,
+              text("_ = "), ppImplode (cat (comma(), space()), 
+                                          map ( (.pp), s.refs)),
+              line(),
+              text("scope_paths"), line(),
+              pp(length(s.scope_paths)), line(),
+              pp(length(head(s.scope_paths))), line(),
+              pp(length(resolved_imports)), line()
+             ] )
+            
          ));
 }
 
 function dcls_in_scope
-[Decorated Dcl] ::= name::String dcls::[Decorated Dcl]
+[Decorated Dcl] ::= r::Ref dcls::[Decorated Dcl]
 {
   return
     case dcls of
     | [] -> []
-    | d::ds -> if d.name == name
-               then d :: dcls_in_scope (name, ds)
-               else dcls_in_scope (name, ds)
+    | d::ds -> if d.name == r.name
+               then d :: dcls_in_scope (r, ds)
+               else dcls_in_scope (r, ds)
     end;
 }
 
 function local_resolutions
-[Decorated Dcl] ::= name::String  seen::[String]
+[Decorated Dcl] ::= r::Ref  seen::[Ref]
                     scopes::[(Maybe<String>,Decorated Scope)]
 {
-   return 
+   return
     case scopes of
     | [] -> []
     | (nothing(),s) :: ss
-        -> dcls_in_scope (name, s.dcls) ++ local_resolutions (name, seen, ss)
+        -> dcls_in_scope (r, s.dcls) ++ local_resolutions (r, seen, ss)
     | (just(nm),s) :: ss 
-        -> if contains(nm, seen)
-           then local_resolutions (name, seen, ss)
-           else dcls_in_scope (name, s.dcls) ++ 
-                  local_resolutions (name, seen, ss)
+        -> if false --contains(nm, seen)
+           then local_resolutions (r, seen, ss)
+           else dcls_in_scope (r, s.dcls) ++ 
+                  local_resolutions (r, seen, ss)
     end;
 }
 
 function resolutions
-[ [ Decorated Dcl] ] ::= name::Ref  seen::[Ref] 
+[ [ Decorated Dcl] ] ::= r::Ref  seen::[Ref] 
                          scope_paths::[ [(Maybe<String>,Decorated Scope)] ]
 {
   return 
     case scope_paths of
     | [] -> []
     | scopes :: rest -> let dcls :: [Decorated Dcl] = 
-                              local_resolutions (name, seen, scopes) 
+                              local_resolutions (r, seen, scopes) 
                         in if null (dcls)
-                           then resolutions (name, seen, rest)
-                           else dcls :: resolutions (name, seen, rest)
+                           then resolutions (r, seen, rest)
+                           else dcls :: resolutions (r, seen, rest)
                         end
     end;
 }
@@ -184,7 +193,7 @@ r::Ref ::= n::String ind::Integer
                 | h::t -> h
                 end;
   
-  r.reachable = resolutions (n, [n], r.parent.scope_paths);
+  r.reachable = resolutions (r, [r], r.parent.scope_paths);
 
   r.all_refs <- [r];
 }
@@ -195,7 +204,7 @@ i::Ref ::= n::String ind::Integer
 { i.name = n;
   i.index = ind;
   i.refs = [];
-  i.imps = [i];
+  i.imps = if n == "B" then [] else [i];
 
   -- resolutions must be Dcls with an associated scope
 
@@ -207,7 +216,7 @@ i::Ref ::= n::String ind::Integer
                 | h::t -> h
                 end;
 
-  i.reachable = resolutions (n, [n], i.parent.scope_paths);
+  i.reachable = resolutions (i, [i], i.parent.scope_paths);
 
   i.all_refs <- [i];
 }
