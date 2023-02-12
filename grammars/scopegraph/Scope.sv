@@ -14,8 +14,10 @@ nonterminal Imps;
 
 inherited attribute parent::Maybe<Scope> occurs on 
   Scope, Decl, Decls, Ref, Refs, Imps;
-
 propagate parent on Decls, Refs, Imps;
+
+synthesized attribute name::String occurs on Ref, Decl;
+synthesized attribute assoc_scope :: Maybe<Scope> occurs on Decl;
 
 {-====================-}
 
@@ -25,13 +27,16 @@ s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Scope]
 }
 
 abstract production mk_decl
-d::Decl ::= id::String assoc_scope::Maybe<Decorated Scope>
+d::Decl ::= id::String assoc_scope::Maybe<Scope>
 {
+  d.name = id;
+  d.assoc_scope = assoc_scope;
 }
 
 abstract production mk_ref
 r::Ref ::= id::String
 {
+  r.name = id;
 }
 
 {-====================-}

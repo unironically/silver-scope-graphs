@@ -82,6 +82,8 @@ concrete production decl_module_c
 d::Decl_c ::= Module_t id::ID_t LBrace_t sl::NodeList_c RBrace_t
 {
   local new_scope :: Scope = mk_scope (sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
+  new_scope.parent = nothing();
+
   local new_decl :: Decl = mk_decl (id.lexeme, just(new_scope));
   d.decl_c = new_decl;
   d.children_c = new_scope :: sl.children_c;
@@ -93,13 +95,14 @@ concrete production qid_dot_c
 q::Qid_c ::= id::ID_t Dot_t qt::Qid_c
 {
   local new_ref::Ref = mk_ref (id.lexeme);
+  new_ref.parent = just(q.parent_c);
 
   local new_scope::Scope = mk_scope (
     decl_nil (), 
     ref_cons (qt.ref_c, ref_nil ()), 
     imp_cons (new_ref, imp_nil ()), 
     qt.children_c);
-  new_scope.parent = just(q.parent_c);
+  new_scope.parent = nothing ();
 
   q.ref_c = new_ref;
   q.imp_c = qt.imp_c;
@@ -112,6 +115,8 @@ concrete production qid_single_c
 q::Qid_c ::= id::ID_t
 {
   local new_ref::Ref = mk_ref (id.lexeme);
+  new_ref.parent = just(q.parent_c);
+
   q.ref_c = new_ref;
   q.imp_c = new_ref;
   q.children_c = [];
