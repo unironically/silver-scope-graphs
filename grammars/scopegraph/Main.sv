@@ -12,7 +12,10 @@ IO<Integer> ::= largs::[String]
   local r_cst :: Program_c = result.parseTree;
   local sg :: Decorated Scope = r_cst.scope_c;
 
+  local graphviz_printed :: IO<Integer> = 
+    system ("echo '" ++ graphviz_draw_graph(sg) ++ "' | dot -Tsvg > scope_graph.svg");
+
   return if result.parseSuccess
-    then do {print ("Success!\n" ++ graphviz_draw_graph(sg) ++ "\n"); return 0;}
+    then do {print ("Success!\n" ++ graphviz_draw_graph(sg) ++ "\n"); graphviz_printed;}
     else do {print ("Failure!\n"); return 0;};
 }
