@@ -1,6 +1,6 @@
 grammar scopegraph;
 
-terminal ID_t /[a-zA-Z]*'_'[1-9][0-9]*/;
+terminal ID_t /[a-zA-Z]_[1-9][0-9]*/;
 terminal Int_t /(0|[1-9][0-9]*)/;
 
 terminal Module_t 'module';
