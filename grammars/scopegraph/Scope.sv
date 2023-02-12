@@ -8,17 +8,19 @@ nonterminal Decls;
 nonterminal Ref;
 nonterminal Refs;
 
+nonterminal Imps;
+
 {-====================-}
 
-inherited attribute par::Maybe<Scope> occurs on 
-  Scope, Decl, Decls, Ref, Refs;
+inherited attribute parent::Maybe<Scope> occurs on 
+  Scope, Decl, Decls, Ref, Refs, Imps;
 
-propagate par on Decls, Refs;
+propagate parent on Decls, Refs, Imps;
 
 {-====================-}
 
 abstract production mk_scope
-s::Scope ::= decls::Decls refs::Refs children::[Scope]
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Scope]
 {
 }
 
@@ -51,5 +53,15 @@ rt::Refs ::= r::Ref ds::Refs
 
 abstract production ref_nil
 rt::Refs ::= 
+{
+}
+
+abstract production imp_cons
+it::Imps ::= i::Ref ds::Imps
+{
+}
+
+abstract production imp_nil
+it::Imps ::= 
 {
 }
