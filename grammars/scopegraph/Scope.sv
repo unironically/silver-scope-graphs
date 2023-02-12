@@ -12,18 +12,31 @@ nonterminal Imps;
 
 {-====================-}
 
-inherited attribute parent::Maybe<Scope> occurs on 
-  Scope, Decl, Decls, Ref, Refs, Imps;
+inherited attribute scope_parent :: Maybe<Scope> occurs on Scope;
+
+inherited attribute parent :: Scope occurs on 
+  Decl, Decls, Ref, Refs, Imps;
 propagate parent on Decls, Refs, Imps;
 
-synthesized attribute name::String occurs on Ref, Decl;
+synthesized attribute id :: Integer occurs on Scope;
+synthesized attribute name :: String occurs on Ref, Decl;
 synthesized attribute assoc_scope :: Maybe<Scope> occurs on Decl;
+synthesized attribute children :: [Decorated Scope] occurs on Scope;
+
+synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
+synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
+synthesized attribute impsl :: [Ref] occurs on Scope, Imps;
 
 {-====================-}
 
 abstract production mk_scope
-s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Scope]
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Decorated Scope]
 {
+  s.id = genInt();
+  s.declsl = decls.declsl;
+  s.refsl = refs.refsl;
+  s.impsl = imps.impsl;
+  s.children = children;
 }
 
 abstract production mk_decl
@@ -42,31 +55,37 @@ r::Ref ::= id::String
 {-====================-}
 
 abstract production decl_cons
-dt::Decls ::= d::Decl ds::Decls
+dt::Decls ::= d::Decorated Decl ds::Decls
 {
+  dt.declsl = d :: ds.declsl;
 }
 
 abstract production decl_nil
 dt::Decls ::= 
 {
+  dt.declsl = [];
 }
 
 abstract production ref_cons
-rt::Refs ::= r::Ref ds::Refs
+rt::Refs ::= r::Decorated Ref rs::Refs
 {
+  rt.refsl = r :: rs.refsl;
 }
 
 abstract production ref_nil
 rt::Refs ::= 
 {
+  rt.refsl = [];
 }
 
 abstract production imp_cons
-it::Imps ::= i::Ref ds::Imps
+it::Imps ::= i::Ref is::Imps
 {
+  it.impsl = i :: is.impsl;
 }
 
 abstract production imp_nil
 it::Imps ::= 
 {
+  it.impsl = [];
 }

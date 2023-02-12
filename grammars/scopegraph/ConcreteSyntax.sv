@@ -1,13 +1,13 @@
 grammar scopegraph;
 
-synthesized attribute scope_c :: Scope;
-synthesized attribute decl_c :: Decl;
+synthesized attribute scope_c :: Decorated Scope;
+synthesized attribute decl_c :: Decorated Decl;
 synthesized attribute decls_c :: Decls;
-synthesized attribute ref_c :: Ref;
+synthesized attribute ref_c :: Decorated Ref;
 synthesized attribute refs_c :: Refs;
 synthesized attribute imp_c :: Ref;
 synthesized attribute imps_c :: Imps;
-synthesized attribute children_c :: [Scope];
+synthesized attribute children_c :: [Decorated Scope];
 
 inherited attribute parent_c::Scope occurs on 
   NodeList_c, Decl_c, Qid_c;
@@ -25,7 +25,7 @@ p::Program_c ::= sl::NodeList_c
 {
   local new_scope :: Scope = 
     mk_scope (sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
-  new_scope.parent = nothing();
+  new_scope.scope_parent = nothing();
 
   p.scope_c = new_scope;
   sl.parent_c = new_scope;
@@ -74,7 +74,10 @@ sl::NodeList_c ::=
 concrete production decl_single_c
 d::Decl_c ::= Decl_t id::ID_t
 {
-  d.decl_c = mk_decl (id.lexeme, nothing());
+  local new_decl :: Decl = mk_decl (id.lexeme, nothing());
+  new_decl.parent = d.parent_c;
+
+  d.decl_c = new_decl;
   d.children_c = [];
 }
 
@@ -82,7 +85,7 @@ concrete production decl_module_c
 d::Decl_c ::= Module_t id::ID_t LBrace_t sl::NodeList_c RBrace_t
 {
   local new_scope :: Scope = mk_scope (sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
-  new_scope.parent = nothing();
+  new_scope.scope_parent = nothing();
 
   local new_decl :: Decl = mk_decl (id.lexeme, just(new_scope));
   d.decl_c = new_decl;
@@ -95,14 +98,14 @@ concrete production qid_dot_c
 q::Qid_c ::= id::ID_t Dot_t qt::Qid_c
 {
   local new_ref::Ref = mk_ref (id.lexeme);
-  new_ref.parent = just(q.parent_c);
+  new_ref.parent = q.parent_c;
 
   local new_scope::Scope = mk_scope (
     decl_nil (), 
     ref_cons (qt.ref_c, ref_nil ()), 
     imp_cons (new_ref, imp_nil ()), 
     qt.children_c);
-  new_scope.parent = nothing ();
+  new_scope.scope_parent = nothing ();
 
   q.ref_c = new_ref;
   q.imp_c = qt.imp_c;
@@ -115,7 +118,7 @@ concrete production qid_single_c
 q::Qid_c ::= id::ID_t
 {
   local new_ref::Ref = mk_ref (id.lexeme);
-  new_ref.parent = just(q.parent_c);
+  new_ref.parent = q.parent_c;
 
   q.ref_c = new_ref;
   q.imp_c = new_ref;
