@@ -5,7 +5,7 @@ synthesized attribute decl_c :: Decorated Decl;
 synthesized attribute decls_c :: Decls;
 synthesized attribute ref_c :: Decorated Ref;
 synthesized attribute refs_c :: Refs;
-synthesized attribute imp_c :: Ref;
+synthesized attribute imp_c :: Decorated Ref;
 synthesized attribute imps_c :: Imps;
 synthesized attribute children_c :: [Decorated Scope];
 
@@ -39,7 +39,7 @@ sl::NodeList_c ::= d::Decl_c slt::NodeList_c
   sl.decls_c = decl_cons (d.decl_c, slt.decls_c);
   sl.refs_c = slt.refs_c;
   sl.imps_c = slt.imps_c;
-  sl.children_c = slt.children_c;
+  sl.children_c = d.children_c ++ slt.children_c;
 }
 
 concrete production scopelist_ref_c
@@ -85,11 +85,15 @@ concrete production decl_module_c
 d::Decl_c ::= Module_t id::ID_t LBrace_t sl::NodeList_c RBrace_t
 {
   local new_scope :: Scope = mk_scope (sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
-  new_scope.scope_parent = nothing();
+  new_scope.scope_parent = just(d.parent_c);
 
   local new_decl :: Decl = mk_decl (id.lexeme, just(new_scope));
+  new_decl.parent = d.parent_c;
+
   d.decl_c = new_decl;
   d.children_c = new_scope :: sl.children_c;
+
+  sl.parent_c = new_scope;
 }
 
 {- Qid -}

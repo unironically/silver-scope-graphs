@@ -16,16 +16,33 @@ function graphviz_draw_scope
 String ::= s::Decorated Scope
 {
   return
-    "{" ++ scope_format ++ toString(s.id) ++ "}" ++ 
+    "{" ++ scope_format ++ toString (s.id) ++ "}" ++ 
+    graphviz_draw_parent (s) ++
     graphviz_draw_decls (s.declsl) ++
-    graphviz_draw_refs (s.refsl);
+    graphviz_draw_refs (s.refsl) ++
+    graphviz_draw_imps (s.impsl);
+}
+
+function graphviz_draw_parent
+String ::= s::Decorated Scope
+{
+  return case s.scope_parent of 
+    | nothing () -> ""
+    | just(p) -> toString (s.id) ++ "->" ++ toString (p.id)
+  end;
 }
 
 function graphviz_draw_decls
 String ::= ds::[Decorated Decl]
 {
   return foldl (
-    (\acc::String d::Decorated Decl -> acc ++ " " ++ toString(d.parent.id) ++ "->" ++ d.name ++ "_D"),
+    (\acc::String d::Decorated Decl -> 
+      acc ++ " " ++ toString(d.parent.id) ++ "->" ++ d.str ++ 
+      case d.assoc_scope of 
+        | nothing () -> ""
+        | just (s) -> "{edge [arrowhead=onormal]" ++ d.str ++ "->" ++ toString (s.id) ++ "}"
+      end
+    ),
     "",
     ds
   );
@@ -35,8 +52,22 @@ function graphviz_draw_refs
 String ::= rs::[Decorated Ref]
 {
   return foldl (
-    (\acc::String r::Decorated Ref -> acc ++ " " ++ r.name ++ "_R ->" ++ toString(r.parent.id)),
+    (\acc::String r::Decorated Ref -> 
+      acc ++ " " ++ r.str ++ "->" ++ toString(r.parent.id)),
     "",
     rs
   );
+}
+
+function graphviz_draw_imps
+String ::= rs::[Decorated Ref]
+{
+  return 
+    "{edge [arrowhead=onormal]" ++ 
+      foldl (
+        (\acc::String r::Decorated Ref -> 
+          acc ++ " " ++ toString(r.parent.id) ++ "->" ++ r.str),
+        "",
+        rs) ++
+    "}";
 }

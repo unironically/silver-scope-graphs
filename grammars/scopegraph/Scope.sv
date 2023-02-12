@@ -12,7 +12,7 @@ nonterminal Imps;
 
 {-====================-}
 
-inherited attribute scope_parent :: Maybe<Scope> occurs on Scope;
+inherited attribute scope_parent :: Maybe<Decorated Scope> occurs on Scope;
 
 inherited attribute parent :: Decorated Scope occurs on 
   Decl, Decls, Ref, Refs, Imps;
@@ -20,12 +20,13 @@ propagate parent on Decls, Refs, Imps;
 
 synthesized attribute id :: Integer occurs on Scope;
 synthesized attribute name :: String occurs on Ref, Decl;
-synthesized attribute assoc_scope :: Maybe<Scope> occurs on Decl;
+synthesized attribute str :: String occurs on Ref, Decl;
+synthesized attribute assoc_scope :: Maybe<Decorated Scope> occurs on Decl;
 synthesized attribute children :: [Decorated Scope] occurs on Scope;
 
 synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
 synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
-synthesized attribute impsl :: [Ref] occurs on Scope, Imps;
+synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
 
 {-====================-}
 
@@ -40,9 +41,10 @@ s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Decorated Scope]
 }
 
 abstract production mk_decl
-d::Decl ::= id::String assoc_scope::Maybe<Scope>
+d::Decl ::= id::String assoc_scope::Maybe<Decorated Scope>
 {
   d.name = id;
+  d.str = d.name ++ "_D";
   d.assoc_scope = assoc_scope;
 }
 
@@ -50,6 +52,7 @@ abstract production mk_ref
 r::Ref ::= id::String
 {
   r.name = id;
+  r.str = r.name ++ "_R";
 }
 
 {-====================-}
@@ -79,7 +82,7 @@ rt::Refs ::=
 }
 
 abstract production imp_cons
-it::Imps ::= i::Ref is::Imps
+it::Imps ::= i::Decorated Ref is::Imps
 {
   it.impsl = i :: is.impsl;
 }

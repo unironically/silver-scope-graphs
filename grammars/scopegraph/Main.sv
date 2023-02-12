@@ -16,6 +16,6 @@ IO<Integer> ::= largs::[String]
     system ("echo '" ++ graphviz_draw_graph(sg) ++ "' | dot -Tsvg > scope_graph.svg");
 
   return if result.parseSuccess
-    then do {print ("Success!\n" ++ graphviz_draw_graph(sg) ++ "\n"); graphviz_printed;}
+    then do {print ("Success! " ++ toString(length(sg.children)) ++ "\n" ++ graphviz_draw_graph(sg) ++ "\n"); graphviz_printed;}
     else do {print ("Failure!\n"); return 0;};
 }
