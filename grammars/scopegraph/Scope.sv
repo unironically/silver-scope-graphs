@@ -14,7 +14,7 @@ nonterminal Imps;
 
 inherited attribute scope_parent :: Maybe<Scope> occurs on Scope;
 
-inherited attribute parent :: Scope occurs on 
+inherited attribute parent :: Decorated Scope occurs on 
   Decl, Decls, Ref, Refs, Imps;
 propagate parent on Decls, Refs, Imps;
 

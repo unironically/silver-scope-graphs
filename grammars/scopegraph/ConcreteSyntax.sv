@@ -9,7 +9,7 @@ synthesized attribute imp_c :: Ref;
 synthesized attribute imps_c :: Imps;
 synthesized attribute children_c :: [Decorated Scope];
 
-inherited attribute parent_c::Scope occurs on 
+inherited attribute parent_c :: Decorated Scope occurs on 
   NodeList_c, Decl_c, Qid_c;
 propagate parent_c on NodeList_c;
 
