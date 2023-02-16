@@ -1,6 +1,0 @@
-let x : int = 
-  1 + 2 in
-let y : int = 
-    x + 3 
-in 
-  x + y

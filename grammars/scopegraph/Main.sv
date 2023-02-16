@@ -7,15 +7,19 @@ parser parse :: Program_c {
 function main
 IO<Integer> ::= largs::[String]
 {
-  local args :: String = head(largs);
-  local result :: ParseResult<Program_c> = parse (args, "<<args>>");
-  local r_cst :: Program_c = result.parseTree;
-  local sg :: Decorated Graph = r_cst.graph_c;
-
-  local graphviz_printed :: IO<Integer> = 
-    system ("echo '" ++ graphviz_draw_graph(sg) ++ "' | dot -Tsvg > scope_graph.svg");
-
-  return if result.parseSuccess
-    then do {print ("Success! " ++ toString(length(sg.children)) ++ "\n" ++ graphviz_draw_graph(sg) ++ "\n"); graphviz_printed;}
-    else do {print ("Failure!\n"); return 0;};
+  return do {
+    let fileName :: String = head(largs);
+    file :: String <- readFile(head(largs));
+    
+    let result :: ParseResult<Program_c> = parse (file, fileName);
+    let r_cst :: Program_c = result.parseTree;
+    let sg :: Decorated Graph = r_cst.graph_c;
+    
+    graphviz_printed :: Integer <- 
+      system ("echo '" ++ graphviz_draw_graph(sg) ++ "' | dot -Tsvg > scope_graph.svg");
+    
+    if result.parseSuccess
+      then do {print ("Success!\n"); return 0;}
+      else do {print ("Failure!\n"); return -1;};
+  };
 }

@@ -62,32 +62,34 @@ function env_i
       in
 
       -- Resolve each of the known imports in the current scope collected from the above
-      let res_list::[Decorated Decl] = foldl (
-        (\res_list::[Decorated Decl] imp::Decorated Ref 
-          -> res_list ++ 
+      let imp_res_list::[Decorated Decl] = foldl (
+        (\imp_res_list::[Decorated Decl] imp::Decorated Ref 
+          -> imp_res_list ++ 
             resolve_visser(seen_imports, imp)),  -- this is where decorated will come in when time to implement
         [],
         imp_list)
       in
 
-      -- Get all the 'associated scope' nodes from declarations in res_list generated above
+      -- Get all the 'associated scope' nodes from declarations in imp_res_list generated above
       let scope_list::[Decorated Scope] = foldl (
         (\scope_list::[Decorated Scope] decl::Decorated Decl 
           -> scope_list ++ case decl.assoc_scope of 
             | nothing() -> [] | just(p) -> [p] end), 
         [],
-        res_list)
+        imp_res_list)
       in
 
       -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let last_list::[Decorated Decl] = foldl (
-        (\last_list::[Decorated Decl] scope::Decorated Scope 
-          -> last_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
+      let final_res_list::[Decorated Decl] = foldl (
+        (\final_res_list::[Decorated Decl] scope::Decorated Scope 
+          -> final_res_list ++ env_l(seen_imports, seen_scopes ++ [current_scope], scope)), 
         [],
         scope_list)
       in 
 
-      last_list end end end end;
+      final_res_list 
+      
+      end end end end;
 }
 
 function env_p
@@ -120,7 +122,6 @@ Boolean ::=
   cur_scope::Decorated Scope 
   seen_scopes::[Decorated Scope]
 {
-  -- true if cur_scope is contained in seen_scopes
   return containsBy((\l::Decorated Scope r::Decorated Scope -> 
     l.id == r.id), cur_scope, seen_scopes);
 }
