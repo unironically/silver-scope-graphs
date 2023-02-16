@@ -1,5 +1,6 @@
 grammar scopegraph;
 
+nonterminal Graph;
 nonterminal Scope;
 
 nonterminal Decl;
@@ -18,11 +19,11 @@ inherited attribute parent :: Decorated Scope occurs on
   Decl, Decls, Ref, Refs, Imps;
 propagate parent on Decls, Refs, Imps;
 
-synthesized attribute id :: Integer occurs on Scope;
-synthesized attribute name :: String occurs on Ref, Decl;
+synthesized attribute name :: String occurs on Scope, Ref, Decl;
 synthesized attribute str :: String occurs on Ref, Decl;
+synthesized attribute substr :: String occurs on Ref, Decl;
 synthesized attribute assoc_scope :: Maybe<Decorated Scope> occurs on Decl;
-synthesized attribute children :: [Decorated Scope] occurs on Scope;
+synthesized attribute children :: [Decorated Scope] occurs on Graph, Scope;
 
 synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
 synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
@@ -30,29 +31,42 @@ synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
 
 {-====================-}
 
+abstract production mk_graph
+g::Graph ::= children::[Decorated Scope]
+{
+  g.children = children;
+}
+
+{-====================-}
+
 abstract production mk_scope
 s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Decorated Scope]
 {
-  s.id = genInt();
   s.declsl = decls.declsl;
   s.refsl = refs.refsl;
   s.impsl = imps.impsl;
   s.children = children;
+  local id::Integer = genInt();
+  s.name = toString(id);
 }
 
 abstract production mk_decl
 d::Decl ::= id::String assoc_scope::Maybe<Decorated Scope>
 {
-  d.name = id;
-  d.str = d.name ++ "_D";
+  local parts::[String] = explode ("_", id);
+  d.str = id;
+  d.name = head(parts);
+  d.substr = head(tail(parts));
   d.assoc_scope = assoc_scope;
 }
 
 abstract production mk_ref
 r::Ref ::= id::String
 {
-  r.name = id;
-  r.str = r.name ++ "_R";
+  local parts::[String] = explode ("_", id);
+  r.str = id;
+  r.name = head(parts);
+  r.substr = head(tail(parts));
 }
 
 {-====================-}

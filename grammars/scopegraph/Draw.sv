@@ -1,46 +1,64 @@
 grammar scopegraph;
 
 global graphviz_font_size :: String = "12";
+
 global scope_format :: String = "node [shape=circle style=solid fontsize=" ++ graphviz_font_size ++ "]";
+global node_format :: String = "node [shape=box fontsize=" ++ graphviz_font_size ++ "]";
+global edge_format :: String = "edge [arrowhead=normal]";
+global imp_edge_format :: String = "edge [arrowhead=onormal]";
 
 function graphviz_draw_graph
-String ::= root::Decorated Scope
+String ::= g::Decorated Graph
 {
-  return "digraph {" ++ 
-      "\n{node [shape=box fontsize=" ++ graphviz_font_size ++  "] edge [arrowhead=normal]\n" ++ 
-      foldl((\acc::String cur::Decorated Scope -> acc ++ graphviz_draw_scope(cur)), "", root :: root.children) ++ 
-      "}}";
+  return "digraph {\n" ++ 
+      "\t{" ++ scope_format ++ draw_scope_labels (g) ++ "}\n" ++
+      "\t{" ++ node_format ++ draw_declrefs_labels_graph (g) ++ "}\n" ++
+      "\t{" ++ node_format ++ edge_format ++ draw_scope (g) ++ "}\n}";
 }
 
-function graphviz_draw_scope
-String ::= s::Decorated Scope
+function draw_scope
+String ::= g::Decorated Graph
 {
-  return
-    "{" ++ scope_format ++ toString (s.id) ++ "}" ++ 
-    graphviz_draw_parent (s) ++
-    graphviz_draw_decls (s.declsl) ++
-    graphviz_draw_refs (s.refsl) ++
-    graphviz_draw_imps (s.impsl);
+  return 
+    foldl(
+      (\acc::String cur::Decorated Scope -> 
+        acc ++ "{" ++ draw_scope_parent(cur) ++ draw_scope_children(cur) ++ "}"), 
+      "", g.children);
 }
 
-function graphviz_draw_parent
+function draw_scope_labels
+String ::= g::Decorated Graph
+{
+  return implode (" ", map ((\s::Decorated Scope -> s.name), g.children));
+}
+
+function draw_scope_parent
 String ::= s::Decorated Scope
 {
   return case s.scope_parent of 
     | nothing () -> ""
-    | just(p) -> toString (s.id) ++ "->" ++ toString (p.id)
+    | just(p) -> s.name ++ "->" ++ p.name
   end;
 }
 
-function graphviz_draw_decls
+function draw_scope_children
+String ::= s::Decorated Scope
+{
+  return
+    draw_decls (s.declsl) ++
+    draw_refs (s.refsl) ++
+    draw_imps (s.impsl, s);
+}
+
+function draw_decls
 String ::= ds::[Decorated Decl]
 {
   return foldl (
     (\acc::String d::Decorated Decl -> 
-      acc ++ " " ++ toString(d.parent.id) ++ "->" ++ d.str ++ 
+      acc ++ " " ++ d.parent.name ++ "->" ++ d.str ++ 
       case d.assoc_scope of 
         | nothing () -> ""
-        | just (s) -> "{edge [arrowhead=onormal]" ++ d.str ++ "->" ++ toString (s.id) ++ "}"
+        | just (s) -> "{" ++ imp_edge_format ++ d.str ++ "->" ++ s.name ++ "}"
       end
     ),
     "",
@@ -48,26 +66,60 @@ String ::= ds::[Decorated Decl]
   );
 }
 
-function graphviz_draw_refs
+function draw_refs
 String ::= rs::[Decorated Ref]
 {
   return foldl (
     (\acc::String r::Decorated Ref -> 
-      acc ++ " " ++ r.str ++ "->" ++ toString(r.parent.id)),
+      acc ++ " " ++ r.str ++ "->" ++ r.parent.name),
     "",
     rs
   );
 }
 
-function graphviz_draw_imps
-String ::= rs::[Decorated Ref]
+function draw_imps
+String ::= rs::[Decorated Ref] s::Decorated Scope
 {
   return 
-    "{edge [arrowhead=onormal]" ++ 
+    "{" ++ imp_edge_format ++ 
       foldl (
         (\acc::String r::Decorated Ref -> 
-          acc ++ " " ++ toString(r.parent.id) ++ "->" ++ r.str),
+          acc ++ " " ++ s.name ++ "->" ++ r.str),
         "",
         rs) ++
     "}";
+}
+
+{-====================-}
+
+function draw_declrefs_labels_graph
+String ::= g::Decorated Graph
+{
+  return
+    foldl (draw_declrefs_labels_scope, "", g.children);
+}
+
+function draw_declrefs_labels_scope
+String ::= acc::String s::Decorated Scope
+{
+  return
+    acc ++
+    foldl (draw_decl_labels, "", s.declsl) ++
+    foldl (draw_ref_labels, "", s.refsl);
+}
+
+function draw_decl_labels
+String ::= acc::String d::Decorated Decl
+{
+  return 
+    acc ++ d.str ++ "[label=<" ++ d.name ++ 
+      "<SUB>" ++ d.substr ++ "</SUB><SUP>D</SUP>>] ";
+}
+
+function draw_ref_labels
+String ::= acc::String r::Decorated Ref
+{
+  return 
+    acc ++ r.str ++ "[label=<" ++ r.name ++ 
+      "<SUB>" ++ r.substr ++ "</SUB><SUP>R</SUP>>] ";
 }

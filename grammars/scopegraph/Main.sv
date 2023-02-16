@@ -10,7 +10,7 @@ IO<Integer> ::= largs::[String]
   local args :: String = head(largs);
   local result :: ParseResult<Program_c> = parse (args, "<<args>>");
   local r_cst :: Program_c = result.parseTree;
-  local sg :: Decorated Scope = r_cst.scope_c;
+  local sg :: Decorated Graph = r_cst.graph_c;
 
   local graphviz_printed :: IO<Integer> = 
     system ("echo '" ++ graphviz_draw_graph(sg) ++ "' | dot -Tsvg > scope_graph.svg");

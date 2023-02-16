@@ -13,6 +13,8 @@ terminal Def_t 'def';
 terminal LBrace_t '{';
 terminal RBrace_t '}';
 
+terminal Semi_t ';';
+
 terminal Dot_t '.';
 
 ignore terminal Whitespace_t /[\n\r\t ]+/;
