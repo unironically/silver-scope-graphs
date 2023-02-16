@@ -19,6 +19,7 @@ inherited attribute parent :: Decorated Scope occurs on
   Decl, Decls, Ref, Refs, Imps;
 propagate parent on Decls, Refs, Imps;
 
+synthesized attribute id :: Integer occurs on Scope;
 synthesized attribute name :: String occurs on Scope, Ref, Decl;
 synthesized attribute str :: String occurs on Ref, Decl;
 synthesized attribute substr :: String occurs on Ref, Decl;
@@ -28,6 +29,8 @@ synthesized attribute children :: [Decorated Scope] occurs on Graph, Scope;
 synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
 synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
 synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
+
+synthesized attribute res :: [Decorated Decl] occurs on Ref;
 
 {-====================-}
 
@@ -46,8 +49,8 @@ s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Decorated Scope]
   s.refsl = refs.refsl;
   s.impsl = imps.impsl;
   s.children = children;
-  local id::Integer = genInt();
-  s.name = toString(id);
+  s.id = genInt();
+  s.name = toString(s.id);
 }
 
 abstract production mk_decl
@@ -67,6 +70,7 @@ r::Ref ::= id::String
   r.str = id;
   r.name = head(parts);
   r.substr = head(tail(parts));
+  r.res = resolve_visser([], r);
 }
 
 {-====================-}

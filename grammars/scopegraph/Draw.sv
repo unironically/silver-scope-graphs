@@ -6,6 +6,9 @@ global scope_format :: String = "node [shape=circle style=solid fontsize=" ++ gr
 global node_format :: String = "node [shape=box fontsize=" ++ graphviz_font_size ++ "]";
 global edge_format :: String = "edge [arrowhead=normal]";
 global imp_edge_format :: String = "edge [arrowhead=onormal]";
+global res_edge_format :: String = "edge [color=blue arrowhead=vee style=dashed]";
+
+{-====================-}
 
 function graphviz_draw_graph
 String ::= g::Decorated Graph
@@ -71,7 +74,10 @@ String ::= rs::[Decorated Ref]
 {
   return foldl (
     (\acc::String r::Decorated Ref -> 
-      acc ++ " " ++ r.str ++ "->" ++ r.parent.name), "", rs);
+      acc ++ " " ++ r.str ++ "->" ++ r.parent.name ++ " " ++ 
+      "{" ++ res_edge_format ++ foldl ((\acc::String d::Decorated Decl -> acc ++ " " ++ r.str ++ "->" ++ d.str), "", r.res) ++ "}"), 
+    "", 
+    rs);
 }
 
 function draw_imps
