@@ -38,7 +38,7 @@ p::Program_c ::= sl::NodeList_c
 
 {- Node List -}
 
-concrete production scopelist_decl_c
+concrete production nodelist_decl_c
 sl::NodeList_c ::= d::Decl_c slt::NodeList_c
 {
   propagate parent_c;
@@ -49,7 +49,7 @@ sl::NodeList_c ::= d::Decl_c slt::NodeList_c
   sl.all_scopes_c = d.all_scopes_c ++ slt.all_scopes_c;
 }
 
-concrete production scopelist_ref_c
+concrete production nodelist_ref_c
 sl::NodeList_c ::= Ref_t qid::Qid_c slt::NodeList_c
 {
   propagate parent_c;
@@ -60,7 +60,7 @@ sl::NodeList_c ::= Ref_t qid::Qid_c slt::NodeList_c
   sl.all_scopes_c = qid.all_scopes_c ++ slt.all_scopes_c;
 }
 
-concrete production scopelist_import_c
+concrete production nodelist_import_c
 sl::NodeList_c ::= Import_t qid::Qid_c slt::NodeList_c
 {
   propagate parent_c;
@@ -71,7 +71,7 @@ sl::NodeList_c ::= Import_t qid::Qid_c slt::NodeList_c
   sl.all_scopes_c = qid.all_scopes_c ++ slt.all_scopes_c;
 }
 
-concrete production scopelist_subscope_c
+concrete production nodelist_subscope_c
 sl::NodeList_c ::= LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
 {
   local new_scope :: Scope = 
@@ -88,7 +88,7 @@ sl::NodeList_c ::= LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
   sl.all_scopes_c = new_scope :: (sub.all_scopes_c ++ slt.all_scopes_c);
 }
 
-concrete production scopelist_nothing_c
+concrete production nodelist_nothing_c
 sl::NodeList_c ::= 
 {
   sl.decls_c = decl_nil ();
