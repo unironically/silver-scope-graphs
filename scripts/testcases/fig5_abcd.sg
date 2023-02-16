@@ -1,0 +1,9 @@
+decl a_1
+decl b_2
+decl b_5
+decl c_8
+
+ref a_3
+ref c_4
+ref b_6
+ref d_7

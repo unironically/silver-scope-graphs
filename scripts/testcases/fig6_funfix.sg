@@ -1,0 +1,16 @@
+decl n_8
+decl f_1
+
+ref f_9
+
+{
+  decl f_2
+  {
+    decl n_3
+    
+    ref n_4
+    ref n_5
+    ref n_7
+    ref f_6
+  }
+}

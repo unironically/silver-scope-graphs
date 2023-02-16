@@ -1,8 +1,11 @@
 import A_1 
+
 decl a_2
+
 ref a_3
 ref b_4
 ref c_5
+
 module A_6 {
   decl a_7
   decl b_8
