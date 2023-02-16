@@ -71,10 +71,7 @@ String ::= rs::[Decorated Ref]
 {
   return foldl (
     (\acc::String r::Decorated Ref -> 
-      acc ++ " " ++ r.str ++ "->" ++ r.parent.name),
-    "",
-    rs
-  );
+      acc ++ " " ++ r.str ++ "->" ++ r.parent.name), "", rs);
 }
 
 function draw_imps
@@ -84,9 +81,7 @@ String ::= rs::[Decorated Ref] s::Decorated Scope
     "{" ++ imp_edge_format ++ 
       foldl (
         (\acc::String r::Decorated Ref -> 
-          acc ++ " " ++ s.name ++ "->" ++ r.str),
-        "",
-        rs) ++
+          acc ++ " " ++ s.name ++ "->" ++ r.str), "", rs) ++ 
     "}";
 }
 

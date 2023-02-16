@@ -40,7 +40,7 @@ p::Program_c ::= sl::NodeList_c
 {- Node List -}
 
 concrete production scopelist_decl_c
-sl::NodeList_c ::= d::Decl_c Semi_t slt::NodeList_c
+sl::NodeList_c ::= d::Decl_c slt::NodeList_c
 {
   sl.decls_c = decl_cons (d.decl_c, slt.decls_c);
   sl.refs_c = slt.refs_c;
@@ -50,7 +50,7 @@ sl::NodeList_c ::= d::Decl_c Semi_t slt::NodeList_c
 }
 
 concrete production scopelist_ref_c
-sl::NodeList_c ::= Ref_t qid::Qid_c Semi_t slt::NodeList_c
+sl::NodeList_c ::= Ref_t qid::Qid_c slt::NodeList_c
 {
   sl.decls_c = slt.decls_c;
   sl.refs_c = ref_cons (qid.ref_c, slt.refs_c);
@@ -60,7 +60,7 @@ sl::NodeList_c ::= Ref_t qid::Qid_c Semi_t slt::NodeList_c
 }
 
 concrete production scopelist_import_c
-sl::NodeList_c ::= Import_t qid::Qid_c Semi_t slt::NodeList_c
+sl::NodeList_c ::= Import_t qid::Qid_c slt::NodeList_c
 {
   sl.decls_c = slt.decls_c;
   sl.refs_c = ref_cons (qid.ref_c, slt.refs_c);
