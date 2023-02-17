@@ -1,0 +1,9 @@
+module A_1 {
+  module A_2 {
+    decl a_3
+  }
+}
+
+import A_4
+decl b_5
+ref a_6
