@@ -1,9 +1,2 @@
-decl a_1
-decl b_2
-decl b_5
-decl c_8
-
-ref a_3
-ref c_4
-ref b_6
-ref d_7
+decls a_1, b_2, b_5, c_8
+refs a_3, c_4, b_6, d_7

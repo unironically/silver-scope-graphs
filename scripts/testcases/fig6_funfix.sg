@@ -1,16 +1,10 @@
-decl n_8
-decl f_1
-
-ref f_9
+decls n_8, f_1
+refs f_9
 
 {
-  decl f_2
+  decls f_2
   {
-    decl n_3
-    
-    ref n_4
-    ref n_5
-    ref n_7
-    ref f_6
+    decls n_3
+    refs n_4, n_5, n_7, f_6
   }
 }

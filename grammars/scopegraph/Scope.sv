@@ -110,3 +110,25 @@ it::Imps ::=
 {
   it.impsl = [];
 }
+
+{-====================-}
+
+function combine_decls
+Decls ::= ds1::Decls ds2::Decls
+{
+  return
+    case ds1 of
+    | decl_nil () -> ds2
+    | decl_cons (d, dt) -> decl_cons (d, combine_decls (dt, ds2))
+    end;
+}
+
+function combine_refs
+Refs ::= rs1::Refs rs2::Refs
+{
+  return
+    case rs1 of
+    | ref_nil () -> rs2
+    | ref_cons (r, rt) -> ref_cons (r, combine_refs (rt, rs2))
+    end;
+}
