@@ -31,6 +31,7 @@ synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
 synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
 
 synthesized attribute res :: [Decorated Decl] occurs on Ref;
+synthesized attribute all_res :: [(String, [String])] occurs on Graph, Scope;
 
 {-====================-}
 
@@ -38,6 +39,9 @@ abstract production mk_graph
 g::Graph ::= children::[Decorated Scope]
 {
   g.children = children;
+  g.all_res = foldl (
+    (\acc::[(String, [String])] s::Decorated Scope
+      -> acc ++ s.all_res), [], g.children);
 }
 
 {-====================-}
@@ -51,6 +55,11 @@ s::Scope ::= decls::Decls refs::Refs imps::Imps children::[Decorated Scope]
   s.children = children;
   s.id = genInt();
   s.name = toString(s.id);
+
+  s.all_res = foldl (
+    (\acc::[(String, [String])] r::Decorated Ref
+      -> (r.str, map((\d::Decorated Decl -> d.str), r.res)) :: acc), [], s.refsl ++ s.impsl
+  );
 }
 
 abstract production mk_decl
