@@ -1,19 +1,19 @@
 grammar scopegraph;
 
-synthesized attribute graph_c :: Decorated Graph;
-synthesized attribute scope_c :: Decorated Scope;
-synthesized attribute decl_c :: Decorated Decl;
+synthesized attribute graph_c :: Graph;
+synthesized attribute scope_c :: Scope;
+synthesized attribute decl_c :: Decl;
 synthesized attribute decls_c :: Decls;
-synthesized attribute ref_c :: Decorated Ref;
+synthesized attribute ref_c :: Ref;
 synthesized attribute refs_c :: Refs;
-synthesized attribute imp_c :: Decorated Ref;
+synthesized attribute imp_c :: Ref;
 synthesized attribute imps_c :: Imps;
-synthesized attribute children_c :: [Decorated Scope];
+synthesized attribute children_c :: Scopes;
 
-synthesized attribute all_scopes_c::[Decorated Scope] occurs on
+synthesized attribute root_scopes_c::Scopes occurs on
   NodeList_c, Decl_c, Qid_c, Refs_c;
 
-inherited attribute parent_c :: Decorated Scope occurs on 
+inherited attribute parent_c :: Scope occurs on 
   NodeList_c, Decl_c, Decls_c, Refs_c, Qid_c;
 
 nonterminal Program_c with graph_c;
@@ -29,10 +29,9 @@ concrete production program_c
 p::Program_c ::= sl::NodeList_c
 {
   local new_scope :: Scope = 
-    mk_scope (sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
-  new_scope.scope_parent = nothing();
+    mk_scope (genInt(), sl.decls_c, sl.refs_c, sl.imps_c, sl.children_c);
 
-  local new_graph :: Graph = mk_graph (new_scope :: sl.all_scopes_c);
+  local new_graph :: Graph = mk_graph (scope_cons (new_scope, sl.root_scopes_c));
   p.graph_c = new_graph;
   
   sl.parent_c = new_scope;
@@ -49,23 +48,21 @@ sl::NodeList_c ::= Decls_t dl::Decls_c slt::NodeList_c
   sl.refs_c = slt.refs_c;
   sl.imps_c = slt.imps_c;
   sl.children_c = slt.children_c;
-  sl.all_scopes_c = slt.all_scopes_c;
+  sl.root_scopes_c = slt.root_scopes_c;
 }
 
 concrete production decl_module_c
 sl::NodeList_c ::= Module_t id::ID_t LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
 {
-  local new_scope :: Scope = mk_scope (sub.decls_c, sub.refs_c, sub.imps_c, sub.children_c);
-  new_scope.scope_parent = just(sl.parent_c);
+  local new_scope :: Scope = mk_scope (genInt(), sub.decls_c, sub.refs_c, sub.imps_c, sub.children_c);
 
   local new_decl :: Decl = mk_decl (id.lexeme, just(new_scope));
-  new_decl.parent = sl.parent_c;
 
   sl.decls_c = decl_cons(new_decl, slt.decls_c);
   sl.refs_c = slt.refs_c;
   sl.imps_c = slt.imps_c;
-  sl.children_c = new_scope :: slt.children_c;
-  sl.all_scopes_c = new_scope :: (sub.all_scopes_c ++ slt.all_scopes_c);
+  sl.children_c = scope_cons(new_scope, slt.children_c);
+  sl.root_scopes_c = combine_scopes (sub.root_scopes_c, slt.root_scopes_c);
 
   sub.parent_c = new_scope;
   slt.parent_c = sl.parent_c;
@@ -80,7 +77,7 @@ sl::NodeList_c ::= Refs_t rl::Refs_c slt::NodeList_c
   sl.refs_c = combine_refs (rl.refs_c, slt.refs_c);
   sl.imps_c = slt.imps_c;
   sl.children_c = slt.children_c;
-  sl.all_scopes_c = rl.all_scopes_c ++ slt.all_scopes_c;
+  sl.root_scopes_c = combine_scopes (rl.root_scopes_c, slt.root_scopes_c);
 }
 
 concrete production nodelist_import_c
@@ -90,16 +87,15 @@ sl::NodeList_c ::= Import_t qid::Qid_c slt::NodeList_c
   sl.decls_c = slt.decls_c;
   sl.refs_c = ref_cons (qid.ref_c, slt.refs_c);
   sl.imps_c = imp_cons (qid.imp_c, slt.imps_c);
-  sl.children_c = qid.children_c ++ slt.children_c;
-  sl.all_scopes_c = qid.all_scopes_c ++ slt.all_scopes_c;
+  sl.children_c = combine_scopes(qid.children_c, slt.children_c);
+  sl.root_scopes_c = combine_scopes(qid.root_scopes_c, slt.root_scopes_c);
 }
 
 concrete production nodelist_subscope_c
 sl::NodeList_c ::= LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
 {
   local new_scope :: Scope = 
-    mk_scope (sub.decls_c, sub.refs_c, sub.imps_c, sub.children_c);
-  new_scope.scope_parent = just(sl.parent_c);
+    mk_scope (genInt(), sub.decls_c, sub.refs_c, sub.imps_c, sub.children_c);
 
   sub.parent_c = new_scope;
   slt.parent_c = sl.parent_c;
@@ -107,8 +103,8 @@ sl::NodeList_c ::= LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
   sl.decls_c = decl_nil ();
   sl.refs_c = ref_nil ();
   sl.imps_c = imp_nil ();
-  sl.children_c = [new_scope];
-  sl.all_scopes_c = new_scope :: (sub.all_scopes_c ++ slt.all_scopes_c);
+  sl.children_c = scope_cons(new_scope, scope_nil());
+  sl.root_scopes_c = combine_scopes (sub.root_scopes_c, slt.root_scopes_c);
 }
 
 concrete production nodelist_nothing_c
@@ -117,8 +113,8 @@ sl::NodeList_c ::=
   sl.decls_c = decl_nil ();
   sl.refs_c = ref_nil ();
   sl.imps_c = imp_nil ();
-  sl.children_c = [];
-  sl.all_scopes_c = [];
+  sl.children_c = scope_nil ();
+  sl.root_scopes_c = scope_nil ();
 }
 
 {- Decls -}
@@ -128,7 +124,6 @@ ds::Decls_c ::= id::ID_t Comma_t dst::Decls_c
 { 
   propagate parent_c;
   local new_decl :: Decl = mk_decl (id.lexeme, nothing ());
-  new_decl.parent = ds.parent_c;
   ds.decls_c = decl_cons (new_decl, dst.decls_c);
 }
 
@@ -136,7 +131,6 @@ concrete production decls_last_c
 ds::Decls_c ::= id::ID_t
 {
   local new_decl :: Decl = mk_decl (id.lexeme, nothing ());
-  new_decl.parent = ds.parent_c;
   ds.decls_c = decl_cons (new_decl, decl_nil ());
 }
 
@@ -146,7 +140,7 @@ concrete production refs_comma_c
 rs::Refs_c ::= qid::Qid_c Comma_t rst::Refs_c
 { 
   propagate parent_c;
-  rs.all_scopes_c = qid.all_scopes_c;
+  rs.root_scopes_c = qid.root_scopes_c;
   rs.refs_c = ref_cons (qid.ref_c, rst.refs_c);
 }
 
@@ -154,7 +148,7 @@ concrete production refs_last_c
 rs::Refs_c ::= qid::Qid_c
 {
   propagate parent_c;
-  rs.all_scopes_c = qid.all_scopes_c;
+  rs.root_scopes_c = qid.root_scopes_c;
   rs.refs_c = ref_cons (qid.ref_c, ref_nil ());
 }
 
@@ -164,19 +158,18 @@ concrete production qid_dot_c
 q::Qid_c ::= id::ID_t Dot_t qt::Qid_c
 {
   local new_ref_dot::Ref = mk_ref (id.lexeme);
-  new_ref_dot.parent = q.parent_c;
 
   local new_scope::Scope = mk_scope (
+    genInt(),
     decl_nil (), 
     ref_cons (qt.ref_c, ref_nil ()), 
     imp_cons (new_ref_dot, imp_nil ()), 
-    []);
-  new_scope.scope_parent = nothing ();
+    scope_nil());
 
   q.ref_c = new_ref_dot;
   q.imp_c = qt.imp_c;
-  q.children_c = new_scope :: qt.children_c;
-  q.all_scopes_c = new_scope :: qt.all_scopes_c;
+  q.children_c = scope_cons(new_scope, qt.children_c);
+  q.root_scopes_c = scope_cons (new_scope, qt.root_scopes_c);
 
   qt.parent_c = new_scope;
 }
@@ -185,10 +178,9 @@ concrete production qid_single_c
 q::Qid_c ::= id::ID_t
 {
   local new_ref::Ref = mk_ref (id.lexeme);
-  new_ref.parent = q.parent_c;
 
   q.ref_c = new_ref;
   q.imp_c = new_ref;
-  q.children_c = [];
-  q.all_scopes_c = [];
+  q.children_c = scope_nil ();
+  q.root_scopes_c = scope_nil ();
 }

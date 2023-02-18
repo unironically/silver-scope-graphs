@@ -11,7 +11,7 @@ global res_edge_format :: String = "edge [color=blue arrowhead=vee style=dashed]
 {-====================-}
 
 function graphviz_draw_graph
-String ::= g::Decorated Graph
+String ::= g::Graph
 {
   return "digraph {\n" ++ 
       "\t{" ++ scope_format ++ draw_scope_labels (g) ++ "}\n" ++
@@ -20,19 +20,25 @@ String ::= g::Decorated Graph
 }
 
 function draw_scope
-String ::= g::Decorated Graph
+String ::= g::Graph
 {
   return 
     foldl(
       (\acc::String cur::Decorated Scope -> 
-        acc ++ "{" ++ draw_scope_parent(cur) ++ draw_scope_children(cur) ++ "}"), 
-      "", g.children);
+        acc ++ "{" ++ draw_scope_children(cur) ++ "}"), 
+      "", g.childrenl);
 }
 
 function draw_scope_labels
-String ::= g::Decorated Graph
+String ::= g::Graph
 {
-  return implode (" ", map ((\s::Decorated Scope -> s.name), g.children));
+  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), "", g.childrenl);
+}
+
+function draw_scope_labels_scope
+String ::= s::Decorated Scope
+{
+  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), s.name, s.childrenl);
 }
 
 function draw_scope_parent
@@ -48,9 +54,11 @@ function draw_scope_children
 String ::= s::Decorated Scope
 {
   return
+    draw_scope_parent (s) ++
     draw_decls (s.declsl) ++
     draw_refs (s.refsl) ++
-    draw_imps (s.impsl, s);
+    draw_imps (s.impsl, s) ++
+    foldl ((\acc::String s1::Decorated Scope -> acc ++ " " ++ draw_scope_children(s1)), "",  s.childrenl);
 }
 
 function draw_decls
@@ -94,10 +102,10 @@ String ::= rs::[Decorated Ref] s::Decorated Scope
 {-====================-}
 
 function draw_declrefs_labels_graph
-String ::= g::Decorated Graph
+String ::= g::Graph
 {
   return
-    foldl (draw_declrefs_labels_scope, "", g.children);
+    foldl (draw_declrefs_labels_scope, "", g.childrenl);
 }
 
 function draw_declrefs_labels_scope
