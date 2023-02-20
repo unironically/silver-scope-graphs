@@ -123,5 +123,5 @@ Boolean ::=
   seen_scopes::[Decorated Scope]
 {
   return containsBy((\l::Decorated Scope r::Decorated Scope -> 
-    l.id == r.id), cur_scope, seen_scopes);
+    l.name == r.name), cur_scope, seen_scopes);
 }

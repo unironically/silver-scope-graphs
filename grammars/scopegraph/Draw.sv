@@ -38,7 +38,7 @@ String ::= g::Graph
 function draw_scope_labels_scope
 String ::= s::Decorated Scope
 {
-  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), s.name, s.childrenl);
+  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), scope_label (s), s.childrenl);
 }
 
 function draw_scope_parent
@@ -46,7 +46,7 @@ String ::= s::Decorated Scope
 {
   return case s.scope_parent of 
     | nothing () -> ""
-    | just(p) -> s.name ++ "->" ++ p.name
+    | just(p) -> scope_label (s) ++ "->" ++ scope_label (p)
   end;
 }
 
@@ -66,10 +66,10 @@ String ::= ds::[Decorated Decl]
 {
   return foldl (
     (\acc::String d::Decorated Decl -> 
-      acc ++ " " ++ d.parent.name ++ "->" ++ d.str ++ 
+      acc ++ " " ++ scope_label (d.parent) ++ "->" ++ d.str ++ 
       case d.assoc_scope of 
         | nothing () -> ""
-        | just (s) -> "{" ++ imp_edge_format ++ d.str ++ "->" ++ s.name ++ "}"
+        | just (s) -> "{" ++ imp_edge_format ++ d.str ++ "->" ++ scope_label (s) ++ "}"
       end
     ),
     "",
@@ -82,7 +82,7 @@ String ::= rs::[Decorated Ref]
 {
   return foldl (
     (\acc::String r::Decorated Ref -> 
-      acc ++ " " ++ r.str ++ "->" ++ r.parent.name ++ " " ++ 
+      acc ++ " " ++ r.str ++ "->" ++ scope_label (r.parent) ++ " " ++ 
       "{" ++ res_edge_format ++ foldl ((\acc::String d::Decorated Decl -> acc ++ " " ++ r.str ++ "->" ++ d.str), "", r.res) ++ "}"), 
     "", 
     rs);
@@ -95,7 +95,7 @@ String ::= rs::[Decorated Ref] s::Decorated Scope
     "{" ++ imp_edge_format ++ 
       foldl (
         (\acc::String r::Decorated Ref -> 
-          acc ++ " " ++ s.name ++ "->" ++ r.str), "", rs) ++ 
+          acc ++ " " ++ scope_label (s) ++ "->" ++ r.str), "", rs) ++ 
     "}";
 }
 
@@ -131,4 +131,10 @@ String ::= acc::String r::Decorated Ref
   return 
     acc ++ r.str ++ "[label=<" ++ r.name ++ 
       "<SUB>" ++ r.substr ++ "</SUB><SUP>R</SUP>>] ";
+}
+
+function scope_label
+String ::= s::Decorated Scope
+{
+  return "\"" ++ s.name ++ "\""; 
 }

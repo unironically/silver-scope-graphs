@@ -15,17 +15,13 @@ nonterminal Imps;
 {-====================-}
 
 inherited attribute scope_parent :: Maybe<Decorated Scope> occurs on Scope, Scopes;
-propagate scope_parent on Scopes;
 
 inherited attribute parent :: Decorated Scope occurs on 
   Decl, Decls, Ref, Refs, Imps;
 propagate parent on Decls, Refs, Imps;
 
-synthesized attribute id :: Integer occurs on Scope;
-synthesized attribute name :: String occurs on Scope, Ref, Decl;
-synthesized attribute str :: String occurs on Ref, Decl;
-synthesized attribute substr :: String occurs on Ref, Decl;
 synthesized attribute assoc_scope :: Maybe<Decorated Scope> occurs on Decl;
+synthesized attribute assoc_decl :: Maybe<Decl> occurs on Scope;
 
 synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
 synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
@@ -51,11 +47,20 @@ g::Graph ::= children::Scopes
 {-====================-}
 
 abstract production mk_scope
-s::Scope ::= id::Integer decls::Decls refs::Refs imps::Imps children::Scopes
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes
 {
-  s.id = id;
-  s.name = toString(s.id);
+  forwards to mk_scope_real (decls, refs, imps, children, nothing());
+}
 
+abstract production mk_scope_assoc
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Decl
+{
+  forwards to mk_scope_real (decls, refs, imps, children, just(assoc_decl));
+}
+
+abstract production mk_scope_real
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
+{
   s.declsl = decls.declsl;
   s.refsl = refs.refsl;
   s.impsl = imps.impsl;
@@ -64,37 +69,38 @@ s::Scope ::= id::Integer decls::Decls refs::Refs imps::Imps children::Scopes
   decls.parent = s;
   refs.parent = s;
   imps.parent = s;
-  children.scope_parent = just(s);
+  children.scope_parent = just (s);
 
   s.all_res = 
     foldl (
       (\acc::[(String, [String])] r::Decorated Ref
-        -> (r.str, map((\d::Decorated Decl -> d.str), r.res)) :: acc), 
+        -> (r.str, map ((\d::Decorated Decl -> d.str), r.res)) :: acc), 
       [], s.refsl ++ s.impsl
     ) ++
     foldl (
       (\acc::[(String, [String])] s::Decorated Scope -> acc ++ s.all_res),
       [], s.childrenl
     );
+
+  s.assoc_decl = assoc_decl;
 }
 
 abstract production mk_decl
-d::Decl ::= id::String assoc_scope::Maybe<Decorated Scope>
+d::Decl ::= id::String
 {
-  local parts::[String] = explode ("_", id);
-  d.str = id;
-  d.name = head(parts);
-  d.substr = head(tail(parts));
-  d.assoc_scope = assoc_scope;
+  d.assoc_scope = nothing();
+}
+
+abstract production mk_decl_assoc
+d::Decl ::= id::String s::Scope
+{
+  s.scope_parent = just(d.parent);
+  d.assoc_scope = just(s);
 }
 
 abstract production mk_ref
 r::Ref ::= id::String
 {
-  local parts::[String] = explode ("_", id);
-  r.str = id;
-  r.name = head(parts);
-  r.substr = head(tail(parts));
   r.res = resolve_visser([], r);
 }
 
@@ -104,6 +110,8 @@ abstract production scope_cons
 st::Scopes ::= s::Scope ss::Scopes
 {
   st.childrenl = s :: ss.childrenl;
+  s.scope_parent = st.scope_parent;
+  ss.scope_parent = st.scope_parent;
 }
 
 abstract production scope_nil

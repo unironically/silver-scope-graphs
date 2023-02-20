@@ -47,7 +47,7 @@ Decorated Graph ::= input::String
     local attribute result :: ParseResult<Program_c>;
     result = parse(input, "<<args>>");
     local r_cst::Program_c = result.parseTree;
-    local sg :: Decorated Graph = r_cst.graph_c;
+    local sg :: Graph = r_cst.graph_c;
     return sg;
 }
 
