@@ -49,16 +49,16 @@ g::Graph ::= children::Scopes
 abstract production mk_scope
 s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes
 {
-  forwards to mk_scope_real (decls, refs, imps, children, nothing());
+  forwards to mk_scope_aux (decls, refs, imps, children, nothing());
 }
 
 abstract production mk_scope_assoc
 s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Decl
 {
-  forwards to mk_scope_real (decls, refs, imps, children, just(assoc_decl));
+  forwards to mk_scope_aux (decls, refs, imps, children, just(assoc_decl));
 }
 
-abstract production mk_scope_real
+abstract production mk_scope_aux
 s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
 {
   s.declsl = decls.declsl;

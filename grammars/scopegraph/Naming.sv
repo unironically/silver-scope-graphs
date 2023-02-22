@@ -14,7 +14,7 @@ g::Graph ::= children::Scopes
   children.id = 0;
 }
 
-aspect production mk_scope_real
+aspect production mk_scope_aux
 s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
 {
   s.name = 
@@ -61,11 +61,11 @@ sl::Scopes ::= s::Scope st::Scopes
 {
   s.id = sl.id;
   st.id = sl.id + 1;
-  sl.assocDeclName = 
-    (\str::String -> case s.assoc_decl of
-                       | nothing () -> st.assocDeclName (str)
-                       | just(d) -> if d.str == str then s.id else st.assocDeclName (str)
-                     end);
+  sl.assocDeclName = (\str::String -> 
+    case s.assoc_decl of
+      | nothing () -> st.assocDeclName (str)
+      | just(d) -> if d.str == str then s.id else st.assocDeclName (str)
+    end);
 }
 
 aspect production scope_nil
