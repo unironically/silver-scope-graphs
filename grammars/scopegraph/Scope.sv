@@ -1,104 +1,189 @@
 grammar scopegraph;
 
-nonterminal Graph<d r> with root_scopes<d r>;
-nonterminal Scope<d r> with id, str, parent<d r>, decls<d r>, refs<d r>, imps<d r>;
-nonterminal Decl<d r> with str, name, line, column, in_scope<d r>, assoc_scope<d r>;
-nonterminal Ref<d r> with str, name, line, column, in_scope<d r>;
+nonterminal Graph;
+nonterminal Scope;
+nonterminal Scopes;
 
-synthesized attribute id::Integer;
-synthesized attribute str::String;
-synthesized attribute parent<d r>::Maybe<Scope<d r>>;
-synthesized attribute root_scopes<d r>::[Decorated Scope<d r>];
-synthesized attribute in_scope<d r>::Scope<d r>;
-synthesized attribute assoc_scope<d r>::Maybe<Decorated Scope<d r>>;
+nonterminal Decl;
+nonterminal Decls;
 
-synthesized attribute ast_decl<d>::Decorated d occurs on Decl<d r>;
-synthesized attribute ast_ref<r>::r occurs on Ref<d r>;
+nonterminal Ref;
+nonterminal Refs;
 
-synthesized attribute decls<d r>::[Decorated Decl<d r>];
-synthesized attribute refs<d r>::[Decorated Ref<d r>];
-synthesized attribute imps<d r>::[Decorated Ref<d r>];
+nonterminal Imps;
 
-synthesized attribute name::String;
-synthesized attribute line::Integer;
-synthesized attribute column::Integer;
+{-====================-}
 
---------------------
--- Graph
+inherited attribute scope_parent :: Maybe<Decorated Scope> occurs on Scope, Scopes;
+
+inherited attribute parent :: Decorated Scope occurs on 
+  Decl, Decls, Ref, Refs, Imps;
+propagate parent on Decls, Refs, Imps;
+
+synthesized attribute assoc_scope :: Maybe<Decorated Scope> occurs on Decl;
+synthesized attribute assoc_decl :: Maybe<Decl> occurs on Scope;
+
+synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
+synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
+synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
+synthesized attribute childrenl :: [Decorated Scope] occurs on Graph, Scope, Scopes;
+
+synthesized attribute res :: [Decorated Decl] occurs on Ref;
+synthesized attribute all_res :: [(String, [String])] occurs on Graph, Scope;
+
+{-====================-}
 
 abstract production mk_graph
-top::Graph<d r> ::=
-  root_scopes::[Decorated Scope<d r>]
+g::Graph ::= children::Scopes
 {
-  top.root_scopes = root_scopes;
+  g.childrenl = children.childrenl;
+  children.scope_parent = nothing();
+
+  g.all_res = foldl (
+    (\acc::[(String, [String])] s::Decorated Scope
+      -> acc ++ s.all_res), [], g.childrenl);
 }
 
---------------------
--- Scope nodes
+{-====================-}
 
 abstract production mk_scope
-top::Scope<d r> ::= 
-  parent::Maybe<Scope<d r>>
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes
 {
-  top.id = genInt();
-  top.parent = parent;
-  top.decls = decls;
-  top.refs = refs;
-  top.imps = imps;
-  top.str = toString(top.id);
+  forwards to mk_scope_aux (decls, refs, imps, children, nothing());
 }
 
-abstract production mk_scope_orphan
-top::Scope<d r> ::= 
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
-{ forwards to mk_scope(nothing(), decls, refs, imps); }
+abstract production mk_scope_assoc
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Decl
+{
+  forwards to mk_scope_aux (decls, refs, imps, children, just(assoc_decl));
+}
 
-abstract production mk_scope_disconnected
-top::Scope<d r> ::=
-  decls::[Decorated Decl<d r>]
-  refs::[Decorated Ref<d r>]
-  imps::[Decorated Ref<d r>]
-{ forwards to mk_scope(nothing(), decls, refs, imps); }
+abstract production mk_scope_aux
+s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
+{
+  s.declsl = decls.declsl;
+  s.refsl = refs.refsl;
+  s.impsl = imps.impsl;
+  s.childrenl = children.childrenl;
 
---------------------
--- Declaration nodes
+  decls.parent = s;
+  refs.parent = s;
+  imps.parent = s;
+  children.scope_parent = just (s);
+
+  s.all_res = 
+    foldl (
+      (\acc::[(String, [String])] r::Decorated Ref
+        -> (r.str, map ((\d::Decorated Decl -> d.str), r.res)) :: acc), 
+      [], s.refsl ++ s.impsl
+    ) ++
+    foldl (
+      (\acc::[(String, [String])] s::Decorated Scope -> acc ++ s.all_res),
+      [], s.childrenl
+    );
+
+  s.assoc_decl = assoc_decl;
+}
 
 abstract production mk_decl
-  attribute name i occurs on d,
-  attribute line i occurs on d,
-  attribute column i occurs on d =>
-top::Decl<d r> ::= 
-  in_scope::Scope<d r>
-  ast_node::Decorated d with i
+d::Decl ::= id::String
 {
-  top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
-  top.name = ast_node.name;
-  top.line = ast_node.line;
-  top.column = ast_node.column;
-  top.in_scope = in_scope;
-  top.ast_decl = ast_node;
+  d.assoc_scope = nothing();
 }
 
---------------------
--- Reference nodes
+abstract production mk_decl_assoc
+d::Decl ::= id::String s::Scope
+{
+  s.scope_parent = just(d.parent);
+  d.assoc_scope = just(s);
+}
 
 abstract production mk_ref
-  attribute name i occurs on r,
-  attribute line i occurs on r,
-  attribute column i occurs on r =>
-top::Ref<d r> ::=
-  in_scope::Scope<d r>
-  ast_node::Decorated r with i
+r::Ref ::= id::String
 {
-  top.str = top.name ++ "_" ++ toString(top.line) ++ "_" ++ toString(top.column);
-  top.name = ast_node.name;
-  top.line = ast_node.line;
-  top.column = ast_node.column;
-  top.in_scope = in_scope;
-  top.ast_ref = ast_node;
+  r.res = resolve_visser([], r);
+}
+
+{-====================-}
+
+abstract production scope_cons
+st::Scopes ::= s::Scope ss::Scopes
+{
+  st.childrenl = s :: ss.childrenl;
+  s.scope_parent = st.scope_parent;
+  ss.scope_parent = st.scope_parent;
+}
+
+abstract production scope_nil
+st::Scopes ::=
+{
+  st.childrenl = [];
+}
+
+abstract production decl_cons
+dt::Decls ::= d::Decl ds::Decls
+{
+  dt.declsl = d :: ds.declsl;
+}
+
+abstract production decl_nil
+dt::Decls ::= 
+{
+  dt.declsl = [];
+}
+
+abstract production ref_cons
+rt::Refs ::= r::Ref rs::Refs
+{
+  rt.refsl = r :: rs.refsl;
+}
+
+abstract production ref_nil
+rt::Refs ::= 
+{
+  rt.refsl = [];
+}
+
+abstract production imp_cons
+it::Imps ::= i::Ref is::Imps
+{
+  it.impsl = i :: is.impsl;
+}
+
+abstract production imp_nil
+it::Imps ::= 
+{
+  it.impsl = [];
+}
+
+{-====================-}
+
+function combine_decls
+Decls ::= ds1::Decls ds2::Decls
+{
+  return
+    case ds1 of
+    | decl_nil () -> ds2
+    | decl_cons (d, dt) -> decl_cons (d, combine_decls (dt, ds2))
+    end;
+}
+
+function combine_refs
+Refs ::= rs1::Refs rs2::Refs
+{
+  return
+    case rs1 of
+    | ref_nil () -> rs2
+    | ref_cons (r, rt) -> ref_cons (r, combine_refs (rt, rs2))
+    end;
+}
+
+function combine_scopes
+Scopes ::= ss1::Scopes ss2::Scopes
+{
+  return
+    case ss1 of
+    | scope_nil () -> ss2
+    | scope_cons (s, st) -> scope_cons (s, combine_scopes (st, ss2))
+  end;
 }
