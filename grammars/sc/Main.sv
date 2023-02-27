@@ -124,8 +124,8 @@ IO<Integer> ::= largs::[String]
                dcl_cons (dcl_tr ("b",6),
                dcl_nil())),
 
-               --ref_cons (ref_tr ("a",7), ref_nil()),
-               ref_nil(),
+               ref_cons (ref_tr ("a",7), ref_nil()),
+               -- ref_nil(),
 
                ref_cons (imp_tr ("A",4), 
                ref_cons (imp_tr ("B",5), 
@@ -187,16 +187,20 @@ IO<Integer> ::= largs::[String]
      print (show (60, e1.pp));
      print ("\n");
      print (report (e1.all_refs));
+
      print ("\n\nExample 2 (expect a 2) \n");
      print (report (e2.all_refs));
+
      print ("\n\nExample 3 (expect A 1, x 1\n");
      print (report (e3.all_refs));
 
      print ("\n\nExample 5 (expect A 1, a 0)\n");
      print (report (e5.all_refs));
+
      print ("\n\nExample 6 (expect A 1, A 1, a 1)\n");
      print (show (60, e6.pp) ++ "\n");
      print (report (e6.all_refs));
+
      print ("\n\nExample 7 (expect A 1, A 1, a 1)\n");
      print (report (e7.all_refs));
      return 0;
