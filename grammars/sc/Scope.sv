@@ -32,6 +32,9 @@ gs::Scope ::= main::Scope
   gs.pp = main.pp;
 }
 
+global empty_scope :: Decorated Scope =
+    decorate scope_tr (dcl_nil(), ref_nil(), ref_nil()) with {};
+
 function fold_scopes
 [(Maybe<String>, Decorated Scope)] ::=
    sofar::[(Maybe<String>, Decorated Scope)] d::Decorated Dcl
@@ -52,10 +55,9 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   s.imps = imps_tr.imps;
 
   local resolved_imports :: [Decorated Dcl] = 
-    foldl (\ sofar :: [Decorated Dcl] r::Decorated Ref -> 
+    foldl (\ sofar :: [Decorated Dcl]   r::Decorated Ref -> 
              r.visible ++ sofar, 
            [], s.imps) ;
-
 
   local imported_scopes :: [(Maybe<String>, Decorated Scope)] = 
     foldl (fold_scopes, [], resolved_imports);
@@ -78,21 +80,24 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   s.pp = braces(
           nestlines(2,
             ppConcat( [
-              dcls_doc,
-              text("_ = "), ppImplode (cat (comma(), space()), 
-                                          map ( (.pp), s.refs)),
+--              dcls_doc,
+--              text("_ = "), ppImplode (cat (comma(), space()), 
+--                                          map ( (.pp), s.refs)),
               line(),
               text("scope_paths"), line(),
               pp(length(s.scope_paths)), line(),
               pp(length(head(s.scope_paths))), line(),
-              pp(length(resolved_imports)), line()
+              pp(length(head(tail(s.scope_paths)))), line(),
+              pp(length(s.imps)), line(),
+              pp(length(resolved_imports)), 
+              line()
              ] )
             
          ));
 }
 
 function dcls_in_scope
-[Decorated Dcl] ::= r::Ref dcls::[Decorated Dcl]
+[Decorated Dcl] ::= r::Decorated Ref dcls::[Decorated Dcl]
 {
   return
     case dcls of
@@ -104,7 +109,7 @@ function dcls_in_scope
 }
 
 function local_resolutions
-[Decorated Dcl] ::= r::Ref  seen::[Ref]
+[Decorated Dcl] ::= r::Decorated Ref  seen::[Decorated Ref]
                     scopes::[(Maybe<String>,Decorated Scope)]
 {
    return
@@ -121,7 +126,7 @@ function local_resolutions
 }
 
 function resolutions
-[ [ Decorated Dcl] ] ::= r::Ref  seen::[Ref] 
+[ [ Decorated Dcl] ] ::= r::Decorated Ref  seen::[Decorated Ref] 
                          scope_paths::[ [(Maybe<String>,Decorated Scope)] ]
 {
   return 
@@ -204,7 +209,7 @@ i::Ref ::= n::String ind::Integer
 { i.name = n;
   i.index = ind;
   i.refs = [];
-  i.imps = if n == "B" then [] else [i];
+  i.imps = [i];
 
   -- resolutions must be Dcls with an associated scope
 
