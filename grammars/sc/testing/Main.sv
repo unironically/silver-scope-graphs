@@ -1,7 +1,8 @@
-grammar tester;
+grammar testing;
 
 imports silver:testing ;
-imports sc;
+imports scope_tree:ast;
+imports scope_tree:visser_scopes_path;
 
 mainTestSuite core_tests ;
 
@@ -13,9 +14,10 @@ equalityTest ( 31 + 10, 34 + 7 , Integer, core_tests ) ;
    def a_1 = ... b_5 ...
    def b_2 = a_3 ... a_4
 -}
-global e1 :: Scope = 
-    root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("a",1),
+global e1 :: ScopeGraph = 
+    root (
+      scope_tr ( 11,
+                 dcl_cons (dcl_tr ("a",1),
                  dcl_cons (dcl_tr ("b",2), dcl_nil())),
 
                  ref_cons (ref_tr ("a",3),
@@ -38,9 +40,10 @@ equalityTest (
    def a_2 = ...
    def b_3 = a_4
 -}
-global e2 :: Scope = 
-    root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("a",1),
+global e2 :: ScopeGraph = 
+    root (
+      scope_tr ( 11,
+                 dcl_cons (dcl_tr ("a",1),
                  dcl_cons (dcl_tr ("a",2),
                  dcl_cons (dcl_tr ("b",3), dcl_nil()))),
 
@@ -54,16 +57,18 @@ equalityTest (
 
 {- Example 3
    ---
-   module A_2 { def x_3 = ... }
+   module A_2 {_12 def x_3 = ... }
 
    import A_5;
    def b_1 = x_4
 -}
-global e3 :: Scope = 
-    root_scope (
-      scope_tr ( dcl_cons (dcl_tr ("b",1),
+global e3 :: ScopeGraph = 
+    root (
+      scope_tr ( 11,
+                 dcl_cons (dcl_tr ("b",1),
                  dcl_cons (dcl_scope_tr ("A",2, 
-                     scope_tr ( dcl_cons (dcl_tr ("x",3), dcl_nil()),
+                     scope_tr ( 12, 
+                                dcl_cons (dcl_tr ("x",3), dcl_nil()),
                                 ref_nil(),  ref_nil()
                        )
                      ), 
@@ -82,16 +87,17 @@ equalityTest (
 
 {- Example 4
    ---
-   module A_1 {
-     module A_2 { def a_3 = ... }
+   module A_1 {_12
+     module A_2 {_13 def a_3 = ... }
    }
    import A_4
    def b_5 = a_6
 -}
 
-  -- Root
-global e4 :: Scope = root_scope (
-    scope_tr ( dcl_cons (e4_a1, 
+  -- ScopeGraph
+global e4 :: ScopeGraph = root (
+    scope_tr ( 11,
+               dcl_cons (e4_a1, 
                dcl_cons (dcl_tr ("b",5),
                dcl_nil())),
 
@@ -100,13 +106,13 @@ global e4 :: Scope = root_scope (
 
   -- A1
 global e4_a1 :: Dcl = dcl_scope_tr ("A",1, 
-    scope_tr ( dcl_cons (e4_a2, dcl_nil()), 
+    scope_tr (12, dcl_cons (e4_a2, dcl_nil()), 
                                  ref_nil(), ref_nil() )
     );
 
   -- A2
 global e4_a2 :: Dcl = dcl_scope_tr ("A",2, 
-    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
+    scope_tr (13, dcl_cons (dcl_tr ("a",3), dcl_nil()),
                                  ref_nil(), ref_nil() )
    );
 
@@ -119,8 +125,8 @@ equalityTest (
 
 {- Example 5
    ---
-   module A_1 {
-     module B_2 { def a_3 = d_9 }
+   module A_1 {_12
+     module B_2 {_13 def a_3 = d_9 }
      def d_8 = ...
    }
    import A_4
@@ -128,9 +134,10 @@ equalityTest (
    def c_6 = a_7
  -}
 
--- Root
-global e5 :: Scope = root_scope (
-    scope_tr ( dcl_cons (e5_a1, 
+-- ScopeGraph
+global e5 :: ScopeGraph = root (
+    scope_tr ( 11,
+               dcl_cons (e5_a1, 
                dcl_cons (dcl_tr ("c",6),
                dcl_nil())),
 
@@ -142,16 +149,18 @@ global e5 :: Scope = root_scope (
                ref_nil()))
     ) );
 
--- A1
+-- A_1
 global e5_a1 :: Dcl = dcl_scope_tr ("A",1, 
-    scope_tr ( dcl_cons (e5_b2, 
+    scope_tr ( 12,
+               dcl_cons (e5_b2, 
                dcl_cons (dcl_tr("d",8), dcl_nil())), 
                ref_nil(), ref_nil() )
     );
 
--- A2
+-- B_2
 global e5_b2 :: Dcl = dcl_scope_tr ("B",2, 
-    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
+    scope_tr ( 13,
+               dcl_cons (dcl_tr ("a",3), dcl_nil()),
                ref_cons (ref_tr("d",9),ref_nil()), 
                ref_nil() )
    );
@@ -163,23 +172,25 @@ equalityTest (
 
 equalityTest (
   resolve (("A",4), e5), [("A",1)], [(String,Integer)], core_tests);
+
 equalityTest (
   resolve (("B",5), e5), [("B",2)], [(String,Integer)], core_tests);
 
 
 {- Example 6
    ---
-   module A_1 {
-     module A_2 { def a_3 = ... }
+   module A_1 {_12
+     module A_2 {_13 def a_3 = ... }
    }
    import A_4
    import A_5
    def b_6 = a_7
 -}
 
--- Root 
-global e6 :: Scope = root_scope (
-    scope_tr ( dcl_cons (e6_a1, 
+-- ScopeGraph 
+global e6 :: ScopeGraph = root (
+    scope_tr ( 11,
+               dcl_cons (e6_a1, 
                dcl_cons (dcl_tr ("b",6),
                dcl_nil())),
 
@@ -192,13 +203,13 @@ global e6 :: Scope = root_scope (
 
 -- A1
 global e6_a1 :: Dcl = dcl_scope_tr ("A",1, 
-    scope_tr ( dcl_cons (e6_a2, dcl_nil()), 
+    scope_tr (12, dcl_cons (e6_a2, dcl_nil()), 
                                  ref_nil(), ref_nil() )
     );
 
 -- A2
 global e6_a2 :: Dcl = dcl_scope_tr ("A",2, 
-    scope_tr ( dcl_cons (dcl_tr ("a",3), dcl_nil()),
+    scope_tr (13, dcl_cons (dcl_tr ("a",3), dcl_nil()),
                                  ref_nil(), ref_nil() )
    );
 
@@ -209,8 +220,6 @@ equalityTest (
   resolve (("A",4), e6), [("A",1)], [(String,Integer)], core_tests);
 equalityTest (
   resolve (("A",5), e6), [("A",1)], [(String,Integer)], core_tests);
-
-
 
 
 
@@ -234,26 +243,18 @@ equalityTest (
 
 
 
-function getNameIndexRef
-(String, Integer) ::= r::Decorated Ref
-{
-  return (r.name, r.index); 
-}
 
-function getNameIndexDcl
-(String, Integer) ::= d::Decorated Dcl
-{
- return (d.name, d.index); 
-}
 
-function resolve
+
+{-
+function resolve_version1
 [(String, Integer)] ::= r::(String, Integer) s::Scope
 {
-  return sort (map (getNameIndexDcl, resolutions (r, s)));
+  return sort (map (getNameIndexDcl, resolutions_here (r, s)));
 }
 
 
-function resolutions
+function resolutions_here
 [Decorated Dcl] ::= r::(String, Integer) s::Scope
 {
   return case r of
@@ -267,3 +268,4 @@ function resolutions
          end
     end;
 }
+-}

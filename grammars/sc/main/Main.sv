@@ -1,6 +1,15 @@
-grammar sc;
+grammar main;
 
-imports tester;
+{- This is a simple `main` grammar to run simple tests.
+
+   The better testing work is in the `testing` grammar.
+ -}
+
+imports silver:langutil;
+imports silver:langutil:pp;
+
+imports testing;
+imports scope_tree:ast;
 
 function main
 IO<Integer> ::= largs::[String] 
@@ -13,7 +22,7 @@ IO<Integer> ::= largs::[String]
 
 
 function display
-IO<Unit> ::= s::Scope name::String 
+IO<Unit> ::= s::ScopeGraph name::String 
 {
   return do {
     print ("\n------------------------------------------------------------\n" ++ 

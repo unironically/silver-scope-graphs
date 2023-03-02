@@ -1,4 +1,4 @@
-grammar sc;
+grammar scope_tree:ast;
 
 imports silver:langutil;
 imports silver:langutil:pp;
@@ -10,7 +10,9 @@ synthesized attribute refs :: [ Decorated Ref ] occurs on Scope, Refs, Ref;
 synthesized attribute imps :: [ Decorated Ref ] occurs on Scope, Refs, Ref;
 
 inherited attribute parent :: Decorated Scope
-  occurs on Ref, Refs, Dcl, Dcls, Scope;
+  occurs on Ref, Refs, Dcl, Dcls;
+
+inherited attribute scope_parent :: Maybe<Decorated Scope> occurs on Scope;
 
 synthesized attribute visible :: [ Decorated Dcl ] occurs on Ref;
 synthesized attribute reachable :: [ [ Decorated Dcl ] ] occurs on Ref;
@@ -19,21 +21,19 @@ synthesized attribute scope_paths :: [ [(Maybe<String>, Decorated Scope)] ]
   occurs on Ref, Scope;
 
 synthesized attribute name :: String occurs on Dcl, Ref;
-synthesized attribute index :: Integer occurs on Dcl, Ref;
+synthesized attribute index :: Integer occurs on Dcl, Ref, Scope;
 
 attribute pp occurs on Scope, Dcl, Dcls, Ref, Refs;
 
-production root_scope
-gs::Scope ::= main::Scope
-{
-  gs.scope_paths = [];
-  main.parent = gs; 
+nonterminal ScopeGraph with pp;
 
-  gs.pp = main.pp;
+production root
+r::ScopeGraph ::= main::Scope
+{
+  r.pp = main.pp;
+  main.scope_parent = nothing(); 
 }
 
-global empty_scope :: Decorated Scope =
-    decorate scope_tr (dcl_nil(), ref_nil(), ref_nil()) with {};
 
 function fold_scopes
 [(Maybe<String>, Decorated Scope)] ::=
@@ -45,8 +45,9 @@ function fold_scopes
 }
 
 production scope_tr
-s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
+s::Scope ::= id::Integer dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
 {
+  s.index = id;
   dcls_tr.parent = s; refs_tr.parent = s; imps_tr.parent = s;
 
   -- Decorated versions of the chilldren
@@ -66,7 +67,13 @@ s::Scope ::= dcls_tr::Dcls refs_tr::Refs imps_tr::Refs
   -- then parent of this scope, then imports on parent ...
   s.scope_paths = 
     [(nothing(),s)] :: imported_scopes    --Env_L
-    :: s.parent.scope_paths ;             --Env_P
+    :: parent_scope_paths ;               --Env_P
+
+  local parent_scope_paths :: [ [(Maybe<String>, Decorated Scope)] ] =
+    case s.scope_parent of
+      | nothing() -> []
+      | just(p) -> p.scope_paths
+    end;
 
   local dcls_doc :: Document =
      terminate (
@@ -163,7 +170,7 @@ d::Dcl ::= n::String ind::Integer s::Scope
 { d.name = n;
   d.index = ind;
   d.assoc_scope = just(s);
-  s.parent = d.parent;
+  s.scope_parent = just(d.parent);
 }
 
 
@@ -246,9 +253,9 @@ rs::Refs ::= h::Ref t::Refs
 
 
 -- collecting things to the top for reporting
-monoid attribute all_refs :: [Decorated Ref] occurs on Ref, Refs, Dcl, Dcls, Scope;
+monoid attribute all_refs :: [Decorated Ref] occurs on Ref, Refs, Dcl, Dcls, Scope, ScopeGraph;
 
-propagate all_refs on Ref, Refs, Dcl, Dcls, Scope;
+propagate all_refs on Ref, Refs, Dcl, Dcls, Scope, ScopeGraph;
 
 function report
 String ::= refs :: [Decorated Ref]
