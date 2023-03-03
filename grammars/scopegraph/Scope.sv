@@ -12,9 +12,12 @@ nonterminal Refs_sg;
 
 {-====================-}
 
-inherited attribute parent_sg :: Maybe<Decorated Scope_sg> occurs on Scope_sg, Scopes_sg;
+inherited attribute parent :: Maybe<Decorated Scope_sg> occurs on Scope_sg, Scopes_sg;
 inherited attribute scope :: Decorated Scope_sg occurs on Decl_sg, Decls_sg, Ref_sg, Refs_sg;
 
+inherited attribute qid_imp :: Maybe<Decorated Ref_sg> occurs on Scope_sg;
+
+synthesized attribute imps :: [Decorated Ref_sg] occurs on Ref_sg, Refs_sg, Scope_sg;
 synthesized attribute iqid_imps :: [Decorated Ref_sg] occurs on Ref_sg, Refs_sg, Scope_sg;
 
 synthesized attribute assoc_scope :: Maybe<Scope_sg> occurs on Decl_sg;
@@ -24,7 +27,8 @@ synthesized attribute assoc_scope :: Maybe<Scope_sg> occurs on Decl_sg;
 abstract production mk_graph
 g::Graph_sg ::= root::Scope_sg
 {
-  root.parent_sg = nothing ();
+  root.parent = nothing ();
+  root.qid_imp = nothing ();
 }
 
 {-====================-}
@@ -34,7 +38,9 @@ s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
 {
   decls.scope = s;
   refs.scope = s;
+  children.parent = just (s);
 
+  s.imps = case s.qid_imp of nothing () -> refs.iqid_imps | just (r) -> r::refs.iqid_imps end;
   s.iqid_imps = [];
 }
 
@@ -42,7 +48,7 @@ abstract production mk_scope_qid
 s::Scope_sg ::= ref::Ref_sg
 {
   ref.scope = s;
-
+  s.imps = case s.qid_imp of nothing () -> [] | just (r) -> [r] end;
   s.iqid_imps = ref.iqid_imps;
 }
 
@@ -57,7 +63,8 @@ d::Decl_sg ::= id::String
 abstract production mk_decl_assoc
 d::Decl_sg ::= id::String s::Scope_sg
 {
-  s.parent_sg = just (d.scope);
+  s.parent = just (d.scope);
+  s.qid_imp = nothing ();
   d.assoc_scope = just (s);
 }
 
@@ -65,16 +72,26 @@ d::Decl_sg ::= id::String s::Scope_sg
 abstract production mk_ref
 r::Ref_sg ::= id::String
 {
+  r.iqid_imps = [];
+  r.imps = [];
+}
+
+abstract production mk_imp
+r::Ref_sg ::= id::String
+{
   {- Below works for imports but not qualified references. See fig. 15 -}
   r.iqid_imps = [r];
+  r.imps = [];
 }
 
 abstract production mk_ref_qid
 r::Ref_sg ::= id::String s::Scope_sg
 {
   r.iqid_imps = s.iqid_imps;
+  r.imps = [r];
   
-  s.parent_sg = nothing ();
+  s.parent = nothing ();
+  s.qid_imp = just (r);
 }
 
 
@@ -83,8 +100,9 @@ r::Ref_sg ::= id::String s::Scope_sg
 abstract production scope_cons
 ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
 {
-  s.parent_sg = ss.parent_sg;
-  st.parent_sg = ss.parent_sg;
+  s.parent = ss.parent;
+  s.qid_imp = nothing ();
+  st.parent = ss.parent;
 }
 
 abstract production scope_nil
@@ -111,12 +129,14 @@ rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
   rt.scope = rs.scope;
 
   rs.iqid_imps = r.iqid_imps ++ rt.iqid_imps;
+  rs.imps = r.imps ++ rt.imps;
 }
 
 abstract production ref_nil
 rs::Refs_sg ::= 
 {
   rs.iqid_imps = [];
+  rs.imps = [];
 }
 
 {-====================-}

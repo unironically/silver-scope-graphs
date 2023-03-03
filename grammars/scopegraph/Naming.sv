@@ -27,7 +27,7 @@ s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
   decls.scope_id = children.last_id;
   refs.scope_id = s.scope_id;
   s.last_id = 0;
-  s.name = scope_name (s.parent_sg, s.scope_id);
+  s.name = scope_name (s.parent, s.scope_id);
 }
 
 aspect production mk_scope_qid
@@ -35,7 +35,7 @@ s::Scope_sg ::= ref::Ref_sg
 {
   ref.scope_id = s.scope_id + 1;
   s.last_id = max (s.scope_id, ref.last_id);
-  s.name = scope_name (s.parent_sg, s.scope_id);
+  s.name = scope_name (s.parent, s.scope_id);
 }
 
 
@@ -61,6 +61,16 @@ d::Decl_sg ::= id::String s::Scope_sg
 
 
 aspect production mk_ref
+r::Ref_sg ::= id::String
+{
+  local parts::[String] = explode ("_", id);
+  r.name = head(parts);
+  r.substr = head(tail(parts));
+  r.str = id;
+  r.last_id = 0;
+}
+
+aspect production mk_imp
 r::Ref_sg ::= id::String
 {
   local parts::[String] = explode ("_", id);
