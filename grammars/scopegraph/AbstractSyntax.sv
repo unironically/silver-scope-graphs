@@ -14,7 +14,7 @@ synthesized attribute graph::Graph_sg occurs on Program;
 synthesized attribute decls::Decls_sg occurs on NodeList, Decls;
 synthesized attribute refs::Refs_sg occurs on NodeList, Refs;
 synthesized attribute children::Scopes_sg occurs on NodeList;
-synthesized attribute root_scopes::Scopes_sg occurs on NodeList, Qid, Refs;
+--synthesized attribute root_scopes::Scopes_sg occurs on NodeList, Qid, Refs;
 
 synthesized attribute ref::Ref_sg occurs on Qid;
 
@@ -25,7 +25,7 @@ synthesized attribute ref::Ref_sg occurs on Qid;
 abstract production program
 p::Program ::= sl::NodeList
 {
-  local g::Graph_sg = mk_graph (scope_cons(s, sl.root_scopes));
+  local g::Graph_sg = mk_graph (s);
   local s::Scope_sg = mk_scope (sl.decls, sl.refs, sl.children);
   p.graph = g;
 }
@@ -38,7 +38,7 @@ sl::NodeList ::= dl::Decls slt::NodeList
   sl.decls = combine_decls (dl.decls, slt.decls);
   sl.refs = slt.refs;
   sl.children = slt.children;
-  sl.root_scopes = slt.root_scopes;
+  --sl.root_scopes = slt.root_scopes;
 }
 
 abstract production decl_module
@@ -48,8 +48,8 @@ sl::NodeList ::= id::String sub::NodeList slt::NodeList
   local d::Decl_sg = mk_decl_assoc (id, s);
   sl.decls = decl_cons (d, slt.decls);
   sl.refs = slt.refs;
-  sl.children = scope_cons (s, slt.children);
-  sl.root_scopes = combine_scopes (sub.root_scopes, slt.root_scopes);
+  sl.children = {-scope_cons (s, -}slt.children{-})-};
+  --sl.root_scopes = combine_scopes (sub.root_scopes, slt.root_scopes);
 }
 
 abstract production nodelist_refs
@@ -58,7 +58,7 @@ sl::NodeList ::= rl::Refs slt::NodeList
   sl.decls = slt.decls;
   sl.refs = combine_refs (rl.refs, slt.refs);
   sl.children = slt.children;
-  sl.root_scopes = combine_scopes (rl.root_scopes, slt.root_scopes);
+  --sl.root_scopes = combine_scopes (rl.root_scopes, slt.root_scopes);
 }
 
 abstract production nodelist_import
@@ -67,7 +67,7 @@ sl::NodeList ::= qid::Qid slt::NodeList
   sl.decls = slt.decls;
   sl.refs = ref_cons (qid.ref, slt.refs);
   sl.children = slt.children;
-  sl.root_scopes = combine_scopes (qid.root_scopes, slt.root_scopes);
+  --sl.root_scopes = combine_scopes (qid.root_scopes, slt.root_scopes);
 }
 
 abstract production nodelist_subscope
@@ -77,7 +77,7 @@ sl::NodeList ::= sub::NodeList slt::NodeList
   sl.decls = slt.decls;
   sl.refs = slt.refs;
   sl.children = scope_cons (s, slt.children);
-  sl.root_scopes = combine_scopes (sub.root_scopes, slt.root_scopes);
+  --sl.root_scopes = combine_scopes (sub.root_scopes, slt.root_scopes);
 }
 
 abstract production nodelist_nothing
@@ -86,7 +86,7 @@ sl::NodeList ::=
   sl.decls = decl_nil ();
   sl.refs = ref_nil ();
   sl.children = scope_nil ();
-  sl.root_scopes = scope_nil ();
+  --sl.root_scopes = scope_nil ();
 }
 
 {- Decls -}
@@ -111,14 +111,14 @@ abstract production refs_comma
 rs::Refs ::= qid::Qid rst::Refs
 { 
   rs.refs = ref_cons (qid.ref, rst.refs);
-  rs.root_scopes = combine_scopes (qid.root_scopes, rst.root_scopes);
+  --rs.root_scopes = combine_scopes (qid.root_scopes, rst.root_scopes);
 }
 
 abstract production refs_last
 rs::Refs ::= qid::Qid
 {
   rs.refs = ref_cons (qid.ref, ref_nil ());
-  rs.root_scopes = qid.root_scopes;
+  --rs.root_scopes = qid.root_scopes;
 }
 
 {- Qid -}
@@ -129,7 +129,7 @@ q::Qid ::= id::String qt::Qid
   local r::Ref_sg = mk_ref_qid (id, s);
   local s::Scope_sg = mk_scope_qid (qt.ref);
   q.ref = r;
-  q.root_scopes = scope_cons (s, qt.root_scopes);
+  --q.root_scopes = scope_cons (s, qt.root_scopes);
 }
 
 abstract production qid_single
@@ -137,5 +137,5 @@ q::Qid ::= id::String
 {
   local r::Ref_sg = mk_ref (id);
   q.ref = r;
-  q.root_scopes = scope_nil ();
+  --q.root_scopes = scope_nil ();
 }

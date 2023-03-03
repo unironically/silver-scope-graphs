@@ -22,9 +22,9 @@ synthesized attribute assoc_scope :: Maybe<Scope_sg> occurs on Decl_sg;
 {-====================-}
 
 abstract production mk_graph
-g::Graph_sg ::= roots::Scopes_sg
+g::Graph_sg ::= root::Scope_sg
 {
-  roots.parent_sg = nothing ();
+  root.parent_sg = nothing ();
 }
 
 {-====================-}
