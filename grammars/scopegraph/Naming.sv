@@ -33,7 +33,7 @@ s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
 aspect production mk_scope_qid
 s::Scope_sg ::= ref::Ref_sg
 {
-  ref.scope_id = s.scope_id + 1;
+  ref.scope_id = s.scope_id;
   s.last_id = max (s.scope_id, ref.last_id);
   s.name = scope_name (s.parent, s.scope_id);
 }
@@ -99,13 +99,13 @@ ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
 {
   s.scope_id = ss.scope_id + 1;
   st.scope_id = ss.scope_id + 1;
-  ss.last_id = st.last_id;
+  ss.last_id = 1 + st.last_id;
 }
 
 aspect production scope_nil
 ss::Scopes_sg ::=
 {
-  ss.last_id = ss.scope_id;
+  ss.last_id = 0;
 }
 
 aspect production decl_cons
@@ -123,7 +123,7 @@ ds::Decls_sg ::=
 aspect production ref_cons
 rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
 {
-  r.scope_id = rs.scope_id + 1;
+  r.scope_id = rs.scope_id;
   rt.scope_id = r.last_id;
 }
 
