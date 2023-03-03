@@ -1,5 +1,5 @@
 grammar scopegraph;
-
+{-
 global graphviz_font_size :: String = "12";
 
 global scope_format :: String = "node [shape=circle style=solid fontsize=" ++ graphviz_font_size ++ "]";
@@ -8,7 +8,6 @@ global edge_format :: String = "edge [arrowhead=normal]";
 global imp_edge_format :: String = "edge [arrowhead=onormal]";
 global res_edge_format :: String = "edge [color=blue arrowhead=vee style=dashed]";
 
-{-====================-}
 
 function graphviz_draw_graph
 String ::= g::Graph
@@ -99,8 +98,6 @@ String ::= rs::[Decorated Ref] s::Decorated Scope
     "}";
 }
 
-{-====================-}
-
 function draw_declrefs_labels_graph
 String ::= g::Graph
 {
@@ -138,3 +135,5 @@ String ::= s::Decorated Scope
 {
   return "\"" ++ s.name ++ "\""; 
 }
+
+-}
