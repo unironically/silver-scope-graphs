@@ -79,7 +79,6 @@ r::Ref_sg ::= id::String
 abstract production mk_imp
 r::Ref_sg ::= id::String
 {
-  {- Below works for imports but not qualified references. See fig. 15 -}
   r.iqid_imps = [r];
   r.imps = [];
 }
@@ -159,14 +158,4 @@ Refs_sg ::= rs1::Refs_sg rs2::Refs_sg
     | ref_nil () -> rs2
     | ref_cons (r, rt) -> ref_cons (r, combine_refs (rt, rs2))
     end;
-}
-
-function combine_scopes
-Scopes_sg ::= ss1::Scopes_sg ss2::Scopes_sg
-{
-  return
-    case ss1 of
-    | scope_nil () -> ss2
-    | scope_cons (s, st) -> scope_cons (s, combine_scopes (st, ss2))
-  end;
 }
