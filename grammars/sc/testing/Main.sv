@@ -2,7 +2,17 @@ grammar testing;
 
 imports silver:testing ;
 imports scope_tree:ast;
-imports scope_tree:visser_scopes_path;
+
+-- The Visser algorithm. This works for all tests.
+imports scope_tree:visser;
+
+-- An attempt at the scopes_path approach in a functional style.
+-- Some type errors need resolving here.
+-- imports scope_tree:visser_scopes_path;
+
+-- The first attempt at a RAG style. It works if one comments out 
+-- the e5 and e6 tests.
+-- imports scope_tree:rag_scopes_path;
 
 mainTestSuite core_tests ;
 
@@ -165,6 +175,7 @@ global e5_b2 :: Dcl = dcl_scope_tr ("B",2,
                ref_nil() )
    );
 
+
 equalityTest (
   resolve (("a",7), e5), [("a",3)], [(String,Integer)], core_tests);
 equalityTest (
@@ -241,31 +252,3 @@ equalityTest (
 
 
 
-
-
-
-
-
-{-
-function resolve_version1
-[(String, Integer)] ::= r::(String, Integer) s::Scope
-{
-  return sort (map (getNameIndexDcl, resolutions_here (r, s)));
-}
-
-
-function resolutions_here
-[Decorated Dcl] ::= r::(String, Integer) s::Scope
-{
-  return case r of
-    | (name, index) ->
-       case filter (
-              (\r::Decorated Ref -> r.name == name && r.index == index), 
-              s.all_refs) of
-         | [] -> []
-         | [r] -> r.visible
-         | _ -> error ("reference appeared multiple times in all_refs")
-         end
-    end;
-}
--}
