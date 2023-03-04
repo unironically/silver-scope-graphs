@@ -1,140 +1,141 @@
 grammar scopegraph;
 
 global graphviz_font_size :: String = "12";
+global graphviz_fill_colors :: [String] = 
+  ["#ffffff", "#ebebeb", "#d6d6d6", "#c0c0c0"];
 
-global scope_format :: String = "node [shape=circle style=solid fontsize=" ++ graphviz_font_size ++ "]";
-global node_format :: String = "node [shape=box fontsize=" ++ graphviz_font_size ++ "]";
-global edge_format :: String = "edge [arrowhead=normal]";
-global imp_edge_format :: String = "edge [arrowhead=onormal]";
-global res_edge_format :: String = "edge [color=blue arrowhead=vee style=dashed]";
+inherited attribute scope_color :: Integer occurs on 
+  Scope_sg, Scopes_sg, Ref_sg, Refs_sg, Decl_sg, Decls_sg;
 
 {-====================-}
 
-function graphviz_draw_graph
-String ::= g::Graph
+synthesized attribute string :: String occurs on 
+  Graph_sg, Scope_sg, Scopes_sg, Decl_sg, Decls_sg, Ref_sg, Refs_sg;
+
+{-====================-}
+
+aspect production mk_graph
+g::Graph_sg ::= root::Scope_sg
 {
-  return "digraph {\n" ++ 
-      "\t{" ++ scope_format ++ draw_scope_labels (g) ++ "}\n" ++
-      "\t{" ++ node_format ++ draw_declrefs_labels_graph (g) ++ "}\n" ++
-      "\t{" ++ node_format ++ edge_format ++ draw_scope (g) ++ "}\n}";
+  g.string = "digraph {" ++ root.string ++ "}";
+  root.scope_color = 0;
 }
 
-function draw_scope
-String ::= g::Graph
+{-====================-}
+
+aspect production mk_scope
+s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
 {
-  return 
-    foldl(
-      (\acc::String cur::Decorated Scope -> 
-        acc ++ "{" ++ draw_scope_children(cur) ++ "}"), 
-      "", g.childrenl);
+  s.string = 
+    "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.name ++ "\"}" ++
+    (case s.parent of nothing () -> "" | just (p) -> "\"" ++ s.name ++ "\"" ++ " -> " ++ "\"" ++ p.name ++ "\"" end) ++
+    decls.string ++ refs.string ++ children.string ++ 
+    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref_sg -> str ++ " \"" ++ s.name ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+  children.scope_color = s.scope_color;
+  decls.scope_color = s.scope_color;
+  refs.scope_color = s.scope_color;
 }
 
-function draw_scope_labels
-String ::= g::Graph
+aspect production mk_scope_qid
+s::Scope_sg ::= ref::Ref_sg
 {
-  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), "", g.childrenl);
+  s.string = 
+    "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.name ++ "\"}" ++
+    ref.string ++ 
+    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref_sg -> str ++ " \"" ++ s.name ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+  ref.scope_color = s.scope_color;
 }
 
-function draw_scope_labels_scope
-String ::= s::Decorated Scope
+aspect production mk_decl
+d::Decl_sg ::= id::String
 {
-  return foldl ((\acc::String s::Decorated Scope -> acc ++ " " ++ draw_scope_labels_scope(s)), scope_label (s), s.childrenl);
+  d.string = 
+    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++
+    "\"" ++ d.scope.name ++ "\" -> " ++ d.str;
 }
 
-function draw_scope_parent
-String ::= s::Decorated Scope
+aspect production mk_decl_assoc
+d::Decl_sg ::= id::String s::Scope_sg
 {
-  return case s.scope_parent of 
-    | nothing () -> ""
-    | just(p) -> scope_label (s) ++ "->" ++ scope_label (p)
-  end;
+  d.string = s.string ++ 
+    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++ 
+    "\"" ++ d.scope.name ++ "\" -> " ++ d.str ++
+    "{edge [arrowhead=onormal] " ++ d.str ++ " -> \"" ++ s.name ++"\"}";
+  s.scope_color = d.scope_color + 1;
 }
 
-function draw_scope_children
-String ::= s::Decorated Scope
+aspect production mk_ref
+r::Ref_sg ::= id::String
 {
-  return
-    draw_scope_parent (s) ++
-    draw_decls (s.declsl) ++
-    draw_refs (s.refsl) ++
-    draw_imps (s.impsl, s) ++
-    foldl ((\acc::String s1::Decorated Scope -> acc ++ " " ++ draw_scope_children(s1)), "",  s.childrenl);
+  r.string = 
+  "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++
+  r.str ++ " -> \"" ++ r.scope.name ++ "\"";
 }
 
-function draw_decls
-String ::= ds::[Decorated Decl]
+aspect production mk_imp
+r::Ref_sg ::= id::String
 {
-  return foldl (
-    (\acc::String d::Decorated Decl -> 
-      acc ++ " " ++ scope_label (d.parent) ++ "->" ++ d.str ++ 
-      case d.assoc_scope of 
-        | nothing () -> ""
-        | just (s) -> "{" ++ imp_edge_format ++ d.str ++ "->" ++ scope_label (s) ++ "}"
-      end
-    ),
-    "",
-    ds
+  r.string = 
+  "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++
+  r.str ++ " -> \"" ++ r.scope.name ++ "\"";
+}
+
+aspect production mk_ref_qid
+r::Ref_sg ::= id::String s::Scope_sg
+{
+  r.string =
+    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++ 
+    r.str ++ " -> \"" ++ r.scope.name ++ "\"" ++ s.stringj;
+  s.scope_color = r.scope_color + 1;
+}
+
+{-====================-}
+
+aspect production scope_cons
+ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
+{
+  ss.string = s.string ++ st.string;
+  s.scope_color = unsafeTrace(1 + ss.scope_color, printT(toString (1 + ss.scope_color) ++ "\n", unsafeIO()));
+  st.scope_color = 1 + ss.scope_color;
+}
+
+aspect production scope_nil
+ss::Scopes_sg ::=
+{
+  ss.string = "";
+}
+
+aspect production decl_cons
+ds::Decls_sg ::= d::Decl_sg dt::Decls_sg
+{ propagate scope_color;
+  ds.string = d.string ++ " " ++ dt.string;
+}
+
+aspect production decl_nil
+ds::Decls_sg ::= 
+{
+  ds.string = "";
+}
+
+aspect production ref_cons
+rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
+{ propagate scope_color;
+  rs.string = r.string ++ " " ++ rt.string;
+}
+
+aspect production ref_nil
+rs::Refs_sg ::= 
+{
+  rs.string = "";
+}
+
+{-====================-}
+
+function node_color
+String ::= i::Integer
+{
+  return unsafeTrace (
+    "\"" ++ head (drop (i % length(graphviz_fill_colors), graphviz_fill_colors)) ++ "\"",
+    printT ("", unsafeIO())
   );
-}
-
-function draw_refs
-String ::= rs::[Decorated Ref]
-{
-  return foldl (
-    (\acc::String r::Decorated Ref -> 
-      acc ++ " " ++ r.str ++ "->" ++ scope_label (r.parent) ++ " " ++ 
-      "{" ++ res_edge_format ++ foldl ((\acc::String d::Decorated Decl -> acc ++ " " ++ r.str ++ "->" ++ d.str), "", r.res) ++ "}"), 
-    "", 
-    rs);
-}
-
-function draw_imps
-String ::= rs::[Decorated Ref] s::Decorated Scope
-{
-  return 
-    "{" ++ imp_edge_format ++ 
-      foldl (
-        (\acc::String r::Decorated Ref -> 
-          acc ++ " " ++ scope_label (s) ++ "->" ++ r.str), "", rs) ++ 
-    "}";
-}
-
-{-====================-}
-
-function draw_declrefs_labels_graph
-String ::= g::Graph
-{
-  return
-    foldl (draw_declrefs_labels_scope, "", g.childrenl);
-}
-
-function draw_declrefs_labels_scope
-String ::= acc::String s::Decorated Scope
-{
-  return
-    acc ++
-    foldl (draw_decl_labels, "", s.declsl) ++
-    foldl (draw_ref_labels, "", s.refsl);
-}
-
-function draw_decl_labels
-String ::= acc::String d::Decorated Decl
-{
-  return 
-    acc ++ d.str ++ "[label=<" ++ d.name ++ 
-      "<SUB>" ++ d.substr ++ "</SUB><SUP>D</SUP>>] ";
-}
-
-function draw_ref_labels
-String ::= acc::String r::Decorated Ref
-{
-  return 
-    acc ++ r.str ++ "[label=<" ++ r.name ++ 
-      "<SUB>" ++ r.substr ++ "</SUB><SUP>R</SUP>>] ";
-}
-
-function scope_label
-String ::= s::Decorated Scope
-{
-  return "\"" ++ s.name ++ "\""; 
 }

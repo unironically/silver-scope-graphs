@@ -1,75 +1,145 @@
 grammar scopegraph;
 
-inherited attribute id :: Integer occurs on Scope, Scopes;
-synthesized attribute name :: String occurs on Scope, Ref, Decl;
+{-====================-}
 
-synthesized attribute str :: String occurs on Ref, Decl;
-synthesized attribute substr :: String occurs on Ref, Decl;
+inherited attribute scope_id :: Integer occurs on Scope_sg, Scopes_sg, Refs_sg, Ref_sg, Decls_sg, Decl_sg;
+synthesized attribute last_id :: Integer occurs on Ref_sg, Scope_sg, Scopes_sg;
 
-synthesized attribute assocDeclName :: (Integer ::= String) occurs on Scope, Scopes;
+synthesized attribute name :: String occurs on Scope_sg, Ref_sg, Decl_sg;
 
-aspect production mk_graph 
-g::Graph ::= children::Scopes
+synthesized attribute str :: String occurs on Ref_sg, Decl_sg;
+synthesized attribute substr :: String occurs on Ref_sg, Decl_sg;
+
+{-====================-}
+
+aspect production mk_graph
+g::Graph_sg ::= root::Scope_sg
 {
-  children.id = 0;
+  root.scope_id = 0;
 }
 
-aspect production mk_scope_aux
-s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
-{
-  s.name = 
-    case s.scope_parent of
-      | nothing () -> toString (s.id)
-      | just (p) -> p.name ++ "." ++ toString (s.id)
-    end;
-  children.id = 0;
+{-====================-}
 
-  s.assocDeclName = (\s::String -> children.assocDeclName (s));
+aspect production mk_scope
+s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
+{
+  children.scope_id = 0;
+  decls.scope_id = children.last_id;
+  refs.scope_id = s.scope_id;
+  s.last_id = 0;
+  s.name = scope_name (s.parent, s.scope_id);
 }
+
+aspect production mk_scope_qid
+s::Scope_sg ::= ref::Ref_sg
+{
+  ref.scope_id = s.scope_id;
+  s.last_id = max (s.scope_id, ref.last_id);
+  s.name = scope_name (s.parent, s.scope_id);
+}
+
 
 aspect production mk_decl
-d::Decl ::= id::String
+d::Decl_sg ::= id::String
 {
   local parts::[String] = explode ("_", id);
   d.name = head(parts);
   d.substr = head(tail(parts));
   d.str = id;
 }
+
 
 aspect production mk_decl_assoc
-d::Decl ::= id::String s::Scope
+d::Decl_sg ::= id::String s::Scope_sg
 {
   local parts::[String] = explode ("_", id);
   d.name = head(parts);
   d.substr = head(tail(parts));
   d.str = id;
-  
-  s.id = d.parent.assocDeclName(id);
+  s.scope_id = d.scope_id;
 }
 
+
 aspect production mk_ref
-r::Ref ::= id::String
+r::Ref_sg ::= id::String
 {
   local parts::[String] = explode ("_", id);
   r.name = head(parts);
   r.substr = head(tail(parts));
   r.str = id;
+  r.last_id = 0;
 }
 
-aspect production scope_cons
-sl::Scopes ::= s::Scope st::Scopes
+aspect production mk_imp
+r::Ref_sg ::= id::String
 {
-  s.id = sl.id;
-  st.id = sl.id + 1;
-  sl.assocDeclName = (\str::String -> 
-    case s.assoc_decl of
-      | nothing () -> st.assocDeclName (str)
-      | just(d) -> if d.str == str then s.id else st.assocDeclName (str)
-    end);
+  local parts::[String] = explode ("_", id);
+  r.name = head(parts);
+  r.substr = head(tail(parts));
+  r.str = id;
+  r.last_id = 0;
+}
+
+aspect production mk_ref_qid
+r::Ref_sg ::= id::String s::Scope_sg
+{
+  local parts::[String] = explode ("_", id);
+  r.name = head(parts);
+  r.substr = head(tail(parts));
+  r.str = id;
+  r.last_id = s.last_id;
+  s.scope_id = r.scope_id;
+}
+
+
+{-====================-}
+
+aspect production scope_cons
+ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
+{
+  s.scope_id = ss.scope_id + 1;
+  st.scope_id = ss.scope_id + 1;
+  ss.last_id = 1 + st.last_id;
 }
 
 aspect production scope_nil
-sl::Scopes ::=
+ss::Scopes_sg ::=
 {
-  sl.assocDeclName = (\s::String -> 0);
+  ss.last_id = 0;
+}
+
+aspect production decl_cons
+ds::Decls_sg ::= d::Decl_sg dt::Decls_sg
+{
+  d.scope_id = ds.scope_id + 1;
+  dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _) -> 1 | _ -> 0 end;
+}
+
+aspect production decl_nil
+ds::Decls_sg ::= 
+{
+}
+
+aspect production ref_cons
+rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
+{
+  r.scope_id = rs.scope_id;
+  rt.scope_id = r.last_id;
+}
+
+aspect production ref_nil
+rs::Refs_sg ::= 
+{
+}
+
+{-====================-}
+
+function scope_name
+String ::= par::Maybe<Decorated Scope_sg> id::Integer
+{
+  return
+    case par of
+      | nothing () -> toString (id)
+      | just (p) -> p.name ++ "." ++ toString (id)
+    end;
 }

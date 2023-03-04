@@ -1,5 +1,5 @@
 grammar scopegraph;
-
+{-
 function resolve_visser
 [Decorated Decl] ::= 
   seen_imports::[Decorated Ref] 
@@ -108,8 +108,6 @@ function env_p
     end;
 }
 
-{-====================-}
-
 function merge_declarations_with_shadowing
 [Decorated Decl] ::= l::[Decorated Decl] r::[Decorated Decl]
 {
@@ -125,3 +123,5 @@ Boolean ::=
   return containsBy((\l::Decorated Scope r::Decorated Scope -> 
     l.name == r.name), cur_scope, seen_scopes);
 }
+
+-}

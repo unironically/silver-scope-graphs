@@ -1,165 +1,147 @@
 grammar scopegraph;
 
-nonterminal Graph;
-nonterminal Scope;
-nonterminal Scopes;
+nonterminal Graph_sg;
+nonterminal Scope_sg;
+nonterminal Scopes_sg;
 
-nonterminal Decl;
-nonterminal Decls;
+nonterminal Decl_sg;
+nonterminal Decls_sg;
 
-nonterminal Ref;
-nonterminal Refs;
-
-nonterminal Imps;
+nonterminal Ref_sg;
+nonterminal Refs_sg;
 
 {-====================-}
 
-inherited attribute scope_parent :: Maybe<Decorated Scope> occurs on Scope, Scopes;
+inherited attribute parent :: Maybe<Decorated Scope_sg> occurs on Scope_sg, Scopes_sg;
+inherited attribute scope :: Decorated Scope_sg occurs on Decl_sg, Decls_sg, Ref_sg, Refs_sg;
 
-inherited attribute parent :: Decorated Scope occurs on 
-  Decl, Decls, Ref, Refs, Imps;
-propagate parent on Decls, Refs, Imps;
+inherited attribute qid_imp :: Maybe<Decorated Ref_sg> occurs on Scope_sg;
 
-synthesized attribute assoc_scope :: Maybe<Decorated Scope> occurs on Decl;
-synthesized attribute assoc_decl :: Maybe<Decl> occurs on Scope;
+synthesized attribute imps :: [Decorated Ref_sg] occurs on Ref_sg, Refs_sg, Scope_sg;
+synthesized attribute iqid_imps :: [Decorated Ref_sg] occurs on Ref_sg, Refs_sg, Scope_sg;
 
-synthesized attribute declsl :: [Decorated Decl] occurs on Scope, Decls;
-synthesized attribute refsl :: [Decorated Ref] occurs on Scope, Refs;
-synthesized attribute impsl :: [Decorated Ref] occurs on Scope, Imps;
-synthesized attribute childrenl :: [Decorated Scope] occurs on Graph, Scope, Scopes;
-
-synthesized attribute res :: [Decorated Decl] occurs on Ref;
-synthesized attribute all_res :: [(String, [String])] occurs on Graph, Scope;
+synthesized attribute assoc_scope :: Maybe<Scope_sg> occurs on Decl_sg;
 
 {-====================-}
 
 abstract production mk_graph
-g::Graph ::= children::Scopes
+g::Graph_sg ::= root::Scope_sg
 {
-  g.childrenl = children.childrenl;
-  children.scope_parent = nothing();
-
-  g.all_res = foldl (
-    (\acc::[(String, [String])] s::Decorated Scope
-      -> acc ++ s.all_res), [], g.childrenl);
+  root.parent = nothing ();
+  root.qid_imp = nothing ();
 }
 
 {-====================-}
 
 abstract production mk_scope
-s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes
+s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
 {
-  forwards to mk_scope_aux (decls, refs, imps, children, nothing());
+  decls.scope = s;
+  refs.scope = s;
+  children.parent = just (s);
+
+  s.imps = case s.qid_imp of nothing () -> refs.iqid_imps | just (r) -> r::refs.iqid_imps end;
+  s.iqid_imps = [];
 }
 
-abstract production mk_scope_assoc
-s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Decl
+abstract production mk_scope_qid
+s::Scope_sg ::= ref::Ref_sg
 {
-  forwards to mk_scope_aux (decls, refs, imps, children, just(assoc_decl));
+  ref.scope = s;
+  s.imps = case s.qid_imp of nothing () -> [] | just (r) -> [r] end;
+  s.iqid_imps = ref.iqid_imps;
 }
 
-abstract production mk_scope_aux
-s::Scope ::= decls::Decls refs::Refs imps::Imps children::Scopes assoc_decl::Maybe<Decl>
-{
-  s.declsl = decls.declsl;
-  s.refsl = refs.refsl;
-  s.impsl = imps.impsl;
-  s.childrenl = children.childrenl;
-
-  decls.parent = s;
-  refs.parent = s;
-  imps.parent = s;
-  children.scope_parent = just (s);
-
-  s.all_res = 
-    foldl (
-      (\acc::[(String, [String])] r::Decorated Ref
-        -> (r.str, map ((\d::Decorated Decl -> d.str), r.res)) :: acc), 
-      [], s.refsl ++ s.impsl
-    ) ++
-    foldl (
-      (\acc::[(String, [String])] s::Decorated Scope -> acc ++ s.all_res),
-      [], s.childrenl
-    );
-
-  s.assoc_decl = assoc_decl;
-}
 
 abstract production mk_decl
-d::Decl ::= id::String
+d::Decl_sg ::= id::String
 {
-  d.assoc_scope = nothing();
+  d.assoc_scope = nothing ();
 }
+
 
 abstract production mk_decl_assoc
-d::Decl ::= id::String s::Scope
+d::Decl_sg ::= id::String s::Scope_sg
 {
-  s.scope_parent = just(d.parent);
-  d.assoc_scope = just(s);
+  s.parent = just (d.scope);
+  s.qid_imp = nothing ();
+  d.assoc_scope = just (s);
 }
 
+
 abstract production mk_ref
-r::Ref ::= id::String
+r::Ref_sg ::= id::String
 {
-  r.res = resolve_visser([], r);
+  r.iqid_imps = [];
+  r.imps = [];
 }
+
+abstract production mk_imp
+r::Ref_sg ::= id::String
+{
+  r.iqid_imps = [r];
+  r.imps = [];
+}
+
+abstract production mk_ref_qid
+r::Ref_sg ::= id::String s::Scope_sg
+{
+  r.iqid_imps = s.iqid_imps;
+  r.imps = [r];
+  
+  s.parent = nothing ();
+  s.qid_imp = just (r);
+}
+
 
 {-====================-}
 
 abstract production scope_cons
-st::Scopes ::= s::Scope ss::Scopes
+ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
 {
-  st.childrenl = s :: ss.childrenl;
-  s.scope_parent = st.scope_parent;
-  ss.scope_parent = st.scope_parent;
+  s.parent = ss.parent;
+  s.qid_imp = nothing ();
+  st.parent = ss.parent;
 }
 
 abstract production scope_nil
-st::Scopes ::=
+ss::Scopes_sg ::=
 {
-  st.childrenl = [];
 }
 
 abstract production decl_cons
-dt::Decls ::= d::Decl ds::Decls
+ds::Decls_sg ::= d::Decl_sg dt::Decls_sg
 {
-  dt.declsl = d :: ds.declsl;
+  d.scope = ds.scope;
+  dt.scope = ds.scope;
 }
 
 abstract production decl_nil
-dt::Decls ::= 
+ds::Decls_sg ::= 
 {
-  dt.declsl = [];
 }
 
 abstract production ref_cons
-rt::Refs ::= r::Ref rs::Refs
+rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
 {
-  rt.refsl = r :: rs.refsl;
+  r.scope = rs.scope;
+  rt.scope = rs.scope;
+
+  rs.iqid_imps = r.iqid_imps ++ rt.iqid_imps;
+  rs.imps = r.imps ++ rt.imps;
 }
 
 abstract production ref_nil
-rt::Refs ::= 
+rs::Refs_sg ::= 
 {
-  rt.refsl = [];
-}
-
-abstract production imp_cons
-it::Imps ::= i::Ref is::Imps
-{
-  it.impsl = i :: is.impsl;
-}
-
-abstract production imp_nil
-it::Imps ::= 
-{
-  it.impsl = [];
+  rs.iqid_imps = [];
+  rs.imps = [];
 }
 
 {-====================-}
 
 function combine_decls
-Decls ::= ds1::Decls ds2::Decls
+Decls_sg ::= ds1::Decls_sg ds2::Decls_sg
 {
   return
     case ds1 of
@@ -169,21 +151,11 @@ Decls ::= ds1::Decls ds2::Decls
 }
 
 function combine_refs
-Refs ::= rs1::Refs rs2::Refs
+Refs_sg ::= rs1::Refs_sg rs2::Refs_sg
 {
   return
     case rs1 of
     | ref_nil () -> rs2
     | ref_cons (r, rt) -> ref_cons (r, combine_refs (rt, rs2))
     end;
-}
-
-function combine_scopes
-Scopes ::= ss1::Scopes ss2::Scopes
-{
-  return
-    case ss1 of
-    | scope_nil () -> ss2
-    | scope_cons (s, st) -> scope_cons (s, combine_scopes (st, ss2))
-  end;
 }
