@@ -27,7 +27,8 @@ synthesized attribute imps<a> :: [Decorated Ref<a>]
 synthesized attribute iqid_imps<a> :: [Decorated Ref<a>] 
   occurs on Ref<a>, Refs<a>, Scope<a>;
 
-synthesized attribute name :: String;
+synthesized attribute name :: String
+  occurs on Ref<a>, Decl<a>;
 
 {-====================-}
 
@@ -70,20 +71,20 @@ s::Scope<a> ::=
 
 abstract production mk_decl
   attribute name i occurs on a =>
-d::Decl<a> ::= 
-  id::String 
+d::Decl<a> ::=
   objlang_inst::Decorated a with i
 {
+  d.name = objlang_inst.name;
   d.assoc_scope = nothing ();
 }
 
 abstract production mk_decl_assoc
   attribute name i occurs on a =>
 d::Decl<a> ::= 
-  id::String 
-  s::Scope<a> 
   objlang_inst::Decorated a with i
+  s::Scope<a> 
 {
+  d.name = objlang_inst.name;
   s.parent = just (d.scope);
   s.qid_imp = nothing ();
   d.assoc_scope = just (s);
@@ -92,9 +93,9 @@ d::Decl<a> ::=
 abstract production mk_ref
   attribute name i occurs on a =>
 r::Ref<a> ::= 
-  id::String 
   objlang_inst::Decorated a with i
 {
+  r.name = objlang_inst.name;
   r.iqid_imps = [];
   r.imps = [];
 }
@@ -102,9 +103,9 @@ r::Ref<a> ::=
 abstract production mk_imp
   attribute name i occurs on a =>
 r::Ref<a> ::= 
-  id::String 
   objlang_inst::Decorated a with i
 {
+  r.name = objlang_inst.name;
   r.iqid_imps = [r];
   r.imps = [];
 }
@@ -112,10 +113,10 @@ r::Ref<a> ::=
 abstract production mk_ref_qid
   attribute name i occurs on a =>
 r::Ref<a> ::= 
-  id::String 
-  s::Scope<a> 
   objlang_inst::Decorated a with i
+  s::Scope<a> 
 {
+  r.name = objlang_inst.name;
   r.iqid_imps = s.iqid_imps;
   r.imps = [r];
   

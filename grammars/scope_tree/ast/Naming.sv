@@ -51,64 +51,59 @@ s::Scope<a> ::=
 
 aspect production mk_decl
 d::Decl<a> ::= 
-  id::String 
   _
 {
-  local parts::[String] = explode ("_", id);
+  local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
   d.substr = head(tail(parts));
-  d.str = id;
+  d.str = d.name;
 }
 
 
 aspect production mk_decl_assoc
 d::Decl<a> ::= 
-  id::String 
-  s::Scope<a> 
   _
+  s::Scope<a> 
 {
-  local parts::[String] = explode ("_", id);
+  local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
   d.substr = head(tail(parts));
-  d.str = id;
+  d.str = d.name;
   s.scope_id = d.scope_id;
 }
 
 
 aspect production mk_ref
 r::Ref<a> ::= 
-  id::String 
   _
 {
-  local parts::[String] = explode ("_", id);
+  local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
   r.substr = head(tail(parts));
-  r.str = id;
+  r.str = r.name;
   r.last_id = 0;
 }
 
 aspect production mk_imp
 r::Ref<a> ::= 
-  id::String 
   _
 {
-  local parts::[String] = explode ("_", id);
+  local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
   r.substr = head(tail(parts));
-  r.str = id;
+  r.str = r.name;
   r.last_id = 0;
 }
 
 aspect production mk_ref_qid
 r::Ref<a> ::= 
-  id::String 
-  s::Scope<a> 
   _
+  s::Scope<a> 
 {
-  local parts::[String] = explode ("_", id);
+  local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
   r.substr = head(tail(parts));
-  r.str = id;
+  r.str = r.name;
   r.last_id = s.last_id;
   s.scope_id = r.scope_id;
 }
@@ -137,7 +132,7 @@ ds::Decls<a> ::=
   dt::Decls<a>
 {
   d.scope_id = ds.scope_id + 1;
-  dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _, _) -> 1 | _ -> 0 end;
+  dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _) -> 1 | _ -> 0 end;
 }
 
 aspect production decl_nil

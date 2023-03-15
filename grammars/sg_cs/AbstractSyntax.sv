@@ -1,23 +1,30 @@
 grammar sg_cs;
 
+import scope_tree:ast as sg;
+
 nonterminal Program;
 nonterminal NodeList;
 nonterminal Decls;
 nonterminal Refs;
 nonterminal Decl;
 nonterminal Qid;
+nonterminal Name;
 
-{-====================-}
+{-====================-} 
 
---synthesized attribute graph::Graph_sg occurs on Program;
+synthesized attribute graph::sg:Graph<Name> occurs on Program;
 
---synthesized attribute decls::Decls_sg occurs on NodeList, Decls;
---synthesized attribute refs::Refs_sg occurs on NodeList, Refs;
---synthesized attribute children::Scopes_sg occurs on NodeList;
+synthesized attribute decls::sg:Decls<Name> occurs on NodeList, Decls;
+synthesized attribute refs::sg:Refs<Name> occurs on NodeList, Refs;
+synthesized attribute children::sg:Scopes<Name> occurs on NodeList;
 
---inherited attribute last_is_imp::Boolean occurs on Qid;
+inherited attribute last_is_imp::Boolean occurs on Qid;
 
---synthesized attribute ref::Ref_sg occurs on Qid;
+synthesized attribute ref::sg:Ref<Name> occurs on Qid;
+
+{- required by scope graph abstract syntax -}
+attribute sg:name occurs on Name;
+flowtype sg:name {} on Name;
 
 {-====================-}
 
@@ -25,98 +32,117 @@ nonterminal Qid;
 
 abstract production program
 p::Program ::= sl::NodeList
-{{-
-  local g::Graph_sg = mk_graph (s);
-  local s::Scope_sg = mk_scope (sl.decls, sl.refs, sl.children);
-  p.graph = g;-}}
+{
+  local g::sg:Graph<Name> = sg:mk_graph (s);
+  local s::sg:Scope<Name> = sg:mk_scope (sl.decls, sl.refs, sl.children);
+  p.graph = g;
+}
 
 {- Node List -}
 
 abstract production nodelist_decls
 sl::NodeList ::= dl::Decls slt::NodeList
-{{-
-  sl.decls = combine_decls (dl.decls, slt.decls);
+{
+  sl.decls = sg:combine_decls (dl.decls, slt.decls);
   sl.refs = slt.refs;
-  sl.children = slt.children;-}}
+  sl.children = slt.children;
+}
 
 abstract production decl_module
-sl::NodeList ::= id::String sub::NodeList slt::NodeList
-{{-
-  local s::Scope_sg = mk_scope (sub.decls, sub.refs, sub.children);
-  local d::Decl_sg = mk_decl_assoc (id, s);
-  sl.decls = decl_cons (d, slt.decls);
+sl::NodeList ::= id::Name sub::NodeList slt::NodeList
+{
+  local s::sg:Scope<Name> = sg:mk_scope (sub.decls, sub.refs, sub.children);
+  local d::sg:Decl<Name> = sg:mk_decl_assoc (id, s);
+  sl.decls = sg:decl_cons (d, slt.decls);
   sl.refs = slt.refs;
-  sl.children = slt.children;-}}
+  sl.children = slt.children;
+}
 
 abstract production nodelist_refs
 sl::NodeList ::= rl::Refs slt::NodeList
-{{-
+{
   sl.decls = slt.decls;
-  sl.refs = combine_refs (rl.refs, slt.refs);
-  sl.children = slt.children;-}}
+  sl.refs = sg:combine_refs (rl.refs, slt.refs);
+  sl.children = slt.children;
+}
 
 abstract production nodelist_import
 sl::NodeList ::= qid::Qid slt::NodeList
-{{-
+{
   sl.decls = slt.decls;
-  sl.refs = ref_cons (qid.ref, slt.refs);
+  sl.refs = sg:ref_cons (qid.ref, slt.refs);
   sl.children = slt.children;
-  qid.last_is_imp = true;-}}
+  qid.last_is_imp = true;
+}
 
 abstract production nodelist_subscope
 sl::NodeList ::= sub::NodeList slt::NodeList
-{{-
-  local s::Scope_sg = mk_scope (sub.decls, sub.refs, sub.children);
+{
+  local s::sg:Scope<Name> = sg:mk_scope (sub.decls, sub.refs, sub.children);
   sl.decls = slt.decls;
   sl.refs = slt.refs;
-  sl.children = scope_cons (s, slt.children);-}}
+  sl.children = sg:scope_cons (s, slt.children);
+}
 
 abstract production nodelist_nothing
 sl::NodeList ::= 
-{{-
-  sl.decls = decl_nil ();
-  sl.refs = ref_nil ();
-  sl.children = scope_nil ();-}}
+{
+  sl.decls = sg:decl_nil ();
+  sl.refs = sg:ref_nil ();
+  sl.children = sg:scope_nil ();
+}
 
 {- Decls -}
 
 abstract production decls_comma
-ds::Decls ::= id::String dst::Decls
-{{-
-  local d::Decl_sg = mk_decl (id);
-  ds.decls = decl_cons (d, dst.decls);-}}
+ds::Decls ::= id::Name dst::Decls
+{
+  local d::sg:Decl<Name> = sg:mk_decl (id);
+  ds.decls = sg:decl_cons (d, dst.decls);
+}
 
 abstract production decls_last
-ds::Decls ::= id::String
-{{-
-  local d::Decl_sg = mk_decl (id);
-  ds.decls = decl_cons (d, decl_nil ());-}}
+ds::Decls ::= id::Name
+{
+  local d::sg:Decl<Name> = sg:mk_decl (id);
+  ds.decls = sg:decl_cons (d, sg:decl_nil ());
+}
 
 {- Refs -}
 
 abstract production refs_comma
 rs::Refs ::= qid::Qid rst::Refs
-{{- 
-  rs.refs = ref_cons (qid.ref, rst.refs);
-  qid.last_is_imp = false;-}}
+{
+  rs.refs = sg:ref_cons (qid.ref, rst.refs);
+  qid.last_is_imp = false;
+}
 
 abstract production refs_last
 rs::Refs ::= qid::Qid
-{{-
-  rs.refs = ref_cons (qid.ref, ref_nil ());
-  qid.last_is_imp = false;-}}
+{
+  rs.refs = sg:ref_cons (qid.ref, sg:ref_nil ());
+  qid.last_is_imp = false;
+}
 
 {- Qid -}
 
 abstract production qid_dot
-q::Qid ::= id::String qt::Qid
-{{- propagate last_is_imp;
-  local r::Ref_sg = mk_ref_qid (id, s);
-  local s::Scope_sg = mk_scope_qid (qt.ref);
-  q.ref = r;-}}
+q::Qid ::= id::Name qt::Qid
+{ propagate last_is_imp;
+  local r::sg:Ref<Name> = sg:mk_ref_qid (id, s);
+  local s::sg:Scope<Name> = sg:mk_scope_qid (qt.ref);
+  q.ref = r;
+}
 
 abstract production qid_single
-q::Qid ::= id::String
-{{-
-  local r::Ref_sg = if q.last_is_imp then mk_imp (id) else mk_ref (id);
-  q.ref = r;-}}
+q::Qid ::= id::Name
+{
+  local r::sg:Ref<Name> = if q.last_is_imp then sg:mk_imp (id) else sg:mk_ref (id);
+  q.ref = r;
+}
+
+abstract production name
+n::Name ::= id::String
+{
+  n.sg:name = id;
+}

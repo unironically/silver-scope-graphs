@@ -51,7 +51,6 @@ s::Scope<a> ::=
 
 aspect production mk_decl
 d::Decl<a> ::= 
-  id::String 
   _
 {
   d.string = 
@@ -61,9 +60,8 @@ d::Decl<a> ::=
 
 aspect production mk_decl_assoc
 d::Decl<a> ::= 
-  id::String 
-  s::Scope<a> 
   _
+  s::Scope<a> 
 {
   d.string = s.string ++ 
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++ 
@@ -74,7 +72,6 @@ d::Decl<a> ::=
 
 aspect production mk_ref
 r::Ref<a> ::= 
-  id::String 
   _
 {
   r.string = 
@@ -84,7 +81,6 @@ r::Ref<a> ::=
 
 aspect production mk_imp
 r::Ref<a> ::= 
-  id::String 
   _
 {
   r.string = 
@@ -94,9 +90,8 @@ r::Ref<a> ::=
 
 aspect production mk_ref_qid
 r::Ref<a> ::= 
-  id::String 
-  s::Scope<a> 
   _
+  s::Scope<a> 
 {
   r.string =
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++ 
