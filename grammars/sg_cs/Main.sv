@@ -14,16 +14,16 @@ IO<Integer> ::= largs::[String]
     file :: String <- readFile(head(largs));
 
     let fileNameExt :: String = last(explode("/", filePath));
-    let fileName :: String = head(explode(".", fileNameExt));
+    let outFileName :: String = "sg_" ++ head(explode(".", fileNameExt)) ++ ".svg";
     
     let result :: ParseResult<Program_c> = parse (file, filePath);
 
     let graph :: sg:Graph<Name> = result.parseTree.ast.graph;
 
-    system ("echo '" ++ graph.sg:string ++ "' | dot -Tsvg > sg_" ++ fileName ++ ".svg");
+    system ("echo '" ++ graph.sg:string ++ "' | dot -Tsvg > " ++ outFileName);
     
     if result.parseSuccess
-      then do {print ("Success!\n"); return 0;}
+      then do {print ("Success! See " ++ outFileName ++ " for scope graph illustration. \n"); return 0;}
       else do {print ("Failure!\n"); return -1;};
   };
 }

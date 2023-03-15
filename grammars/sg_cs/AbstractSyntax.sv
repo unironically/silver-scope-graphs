@@ -1,7 +1,5 @@
 grammar sg_cs;
 
-import scope_tree:ast as sg;
-
 nonterminal Program;
 nonterminal NodeList;
 nonterminal Decls;
