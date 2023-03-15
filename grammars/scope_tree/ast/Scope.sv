@@ -1,6 +1,7 @@
 grammar scope_tree:ast;
 
 nonterminal Graph<a>;
+
 nonterminal Scope<a>;
 nonterminal Scopes<a>;
 
@@ -34,7 +35,8 @@ synthesized attribute name :: String;
 {-====================-}
 
 abstract production mk_graph
-g::Graph<a> ::= root::Scope<a>
+g::Graph<a> ::= 
+  root::Scope<a>
 {
   root.parent = nothing ();
   root.qid_imp = nothing ();
@@ -43,7 +45,10 @@ g::Graph<a> ::= root::Scope<a>
 {-====================-}
 
 abstract production mk_scope
-s::Scope<a> ::= decls::Decls<a> refs::Refs<a> children::Scopes<a>
+s::Scope<a> ::= 
+  decls::Decls<a> 
+  refs::Refs<a> 
+  children::Scopes<a>
 {
   decls.scope = s;
   refs.scope = s;
@@ -56,7 +61,8 @@ s::Scope<a> ::= decls::Decls<a> refs::Refs<a> children::Scopes<a>
 }
 
 abstract production mk_scope_qid
-s::Scope<a> ::= ref::Ref<a>
+s::Scope<a> ::= 
+  ref::Ref<a>
 {
   ref.scope = s;
   s.imps = case s.qid_imp of 
@@ -67,7 +73,9 @@ s::Scope<a> ::= ref::Ref<a>
 
 abstract production mk_decl
   attribute name {} occurs on a =>
-d::Decl<a> ::= id::String objlang_decl::Decorated a with {}
+d::Decl<a> ::= 
+  id::String 
+  obj::Decorated a with {}
 {
   d.assoc_scope = nothing ();
   d.object_name = obj;
@@ -75,7 +83,10 @@ d::Decl<a> ::= id::String objlang_decl::Decorated a with {}
 
 abstract production mk_decl_assoc
   attribute name {} occurs on a =>
-d::Decl<a> ::= id::String s::Scope<a> obj::Decorated a with {}
+d::Decl<a> ::= 
+  id::String 
+  s::Scope<a> 
+  obj::Decorated a with {}
 {
   s.parent = just (d.scope);
   s.qid_imp = nothing ();
@@ -85,7 +96,9 @@ d::Decl<a> ::= id::String s::Scope<a> obj::Decorated a with {}
 
 abstract production mk_ref
   attribute name {} occurs on a =>
-r::Ref<a> ::= id::String obj::Decorated a with {}
+r::Ref<a> ::= 
+  id::String 
+  obj::Decorated a with {}
 {
   r.iqid_imps = [];
   r.imps = [];
@@ -94,7 +107,9 @@ r::Ref<a> ::= id::String obj::Decorated a with {}
 
 abstract production mk_imp
   attribute name {} occurs on a =>
-r::Ref<a> ::= id::String obj::Decorated a with {}
+r::Ref<a> ::= 
+  id::String 
+  obj::Decorated a with {}
 {
   r.iqid_imps = [r];
   r.imps = [];
@@ -103,7 +118,10 @@ r::Ref<a> ::= id::String obj::Decorated a with {}
 
 abstract production mk_ref_qid
   attribute name {} occurs on a =>
-r::Ref<a> ::= id::String s::Scope<a> obj::Decorated a with {}
+r::Ref<a> ::= 
+  id::String 
+  s::Scope<a> 
+  obj::Decorated a with {}
 {
   r.iqid_imps = s.iqid_imps;
   r.imps = [r];
@@ -116,7 +134,9 @@ r::Ref<a> ::= id::String s::Scope<a> obj::Decorated a with {}
 {-====================-}
 
 abstract production scope_cons
-ss::Scopes<a> ::= s::Scope<a> st::Scopes<a>
+ss::Scopes<a> ::= 
+  s::Scope<a> 
+  st::Scopes<a>
 {
   s.parent = ss.parent;
   s.qid_imp = nothing ();
@@ -128,7 +148,9 @@ ss::Scopes<a> ::=
 {}
 
 abstract production decl_cons
-ds::Decls<a> ::= d::Decl<a> dt::Decls<a>
+ds::Decls<a> ::= 
+  d::Decl<a> 
+  dt::Decls<a>
 {
   d.scope = ds.scope;
   dt.scope = ds.scope;
@@ -139,7 +161,9 @@ ds::Decls<a> ::=
 {}
 
 abstract production ref_cons
-rs::Refs<a> ::= r::Ref<a> rt::Refs<a>
+rs::Refs<a> ::= 
+  r::Ref<a> 
+  rt::Refs<a>
 {
   r.scope = rs.scope;
   rt.scope = rs.scope;
@@ -158,7 +182,9 @@ rs::Refs<a> ::=
 {-====================-}
 
 function combine_decls
-Decls<a> ::= ds1::Decls<a> ds2::Decls<a>
+Decls<a> ::= 
+  ds1::Decls<a> 
+  ds2::Decls<a>
 {
   return
     case ds1 of
@@ -168,7 +194,9 @@ Decls<a> ::= ds1::Decls<a> ds2::Decls<a>
 }
 
 function combine_refs
-Refs<a> ::= rs1::Refs<a> rs2::Refs<a>
+Refs<a> ::= 
+  rs1::Refs<a> 
+  rs2::Refs<a>
 {
   return
     case rs1 of
