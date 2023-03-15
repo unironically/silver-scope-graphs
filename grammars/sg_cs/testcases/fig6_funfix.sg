@@ -1,0 +1,10 @@
+decls n_8, f_1
+refs f_9
+
+{
+  decls f_2
+  {
+    decls n_3
+    refs n_4, n_5, n_7, f_6
+  }
+}

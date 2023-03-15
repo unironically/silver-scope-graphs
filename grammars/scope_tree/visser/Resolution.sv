@@ -1,4 +1,5 @@
-grammar scopegraph;
+grammar scope_tree:visser;
+
 {-
 function resolve_visser
 [Decorated Decl] ::= 

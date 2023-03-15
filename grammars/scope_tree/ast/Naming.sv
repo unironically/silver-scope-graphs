@@ -1,19 +1,19 @@
-grammar scopegraph;
+grammar scope_tree:ast;
 
 {-====================-}
 
-inherited attribute scope_id :: Integer occurs on Scope_sg, Scopes_sg, Refs_sg, Ref_sg, Decls_sg, Decl_sg;
-synthesized attribute last_id :: Integer occurs on Ref_sg, Scope_sg, Scopes_sg;
+inherited attribute scope_id :: Integer occurs on Scope<a>, Scopes<a>, Refs<a>, Ref<a>, Decls<a>, Decl<a>;
+synthesized attribute last_id :: Integer occurs on Ref<a>, Scope<a>, Scopes<a>;
 
-synthesized attribute name :: String occurs on Scope_sg, Ref_sg, Decl_sg;
+synthesized attribute id :: String occurs on Scope<a>, Ref<a>, Decl<a>;
 
-synthesized attribute str :: String occurs on Ref_sg, Decl_sg;
-synthesized attribute substr :: String occurs on Ref_sg, Decl_sg;
+synthesized attribute str :: String occurs on Ref<a>, Decl<a>;
+synthesized attribute substr :: String occurs on Ref<a>, Decl<a>;
 
 {-====================-}
 
 aspect production mk_graph
-g::Graph_sg ::= root::Scope_sg
+g::Graph<a> ::= root::Scope<a>
 {
   root.scope_id = 0;
 }
@@ -21,39 +21,39 @@ g::Graph_sg ::= root::Scope_sg
 {-====================-}
 
 aspect production mk_scope
-s::Scope_sg ::= decls::Decls_sg refs::Refs_sg children::Scopes_sg
+s::Scope<a> ::= decls::Decls<a> refs::Refs<a> children::Scopes<a>
 {
   children.scope_id = 0;
   decls.scope_id = children.last_id;
   refs.scope_id = s.scope_id;
   s.last_id = 0;
-  s.name = scope_name (s.parent, s.scope_id);
+  s.id = scope_id (s.parent, s.scope_id);
 }
 
 aspect production mk_scope_qid
-s::Scope_sg ::= ref::Ref_sg
+s::Scope<a> ::= ref::Ref<a>
 {
   ref.scope_id = s.scope_id;
   s.last_id = max (s.scope_id, ref.last_id);
-  s.name = scope_name (s.parent, s.scope_id);
+  s.id = scope_id (s.parent, s.scope_id);
 }
 
 
 aspect production mk_decl
-d::Decl_sg ::= id::String
+d::Decl<a> ::= id::String _
 {
   local parts::[String] = explode ("_", id);
-  d.name = head(parts);
+  d.id = head(parts);
   d.substr = head(tail(parts));
   d.str = id;
 }
 
 
 aspect production mk_decl_assoc
-d::Decl_sg ::= id::String s::Scope_sg
+d::Decl<a> ::= id::String s::Scope<a> _
 {
   local parts::[String] = explode ("_", id);
-  d.name = head(parts);
+  d.id = head(parts);
   d.substr = head(tail(parts));
   d.str = id;
   s.scope_id = d.scope_id;
@@ -61,30 +61,30 @@ d::Decl_sg ::= id::String s::Scope_sg
 
 
 aspect production mk_ref
-r::Ref_sg ::= id::String
+r::Ref<a> ::= id::String _
 {
   local parts::[String] = explode ("_", id);
-  r.name = head(parts);
+  r.id = head(parts);
   r.substr = head(tail(parts));
   r.str = id;
   r.last_id = 0;
 }
 
 aspect production mk_imp
-r::Ref_sg ::= id::String
+r::Ref<a> ::= id::String _
 {
   local parts::[String] = explode ("_", id);
-  r.name = head(parts);
+  r.id = head(parts);
   r.substr = head(tail(parts));
   r.str = id;
   r.last_id = 0;
 }
 
 aspect production mk_ref_qid
-r::Ref_sg ::= id::String s::Scope_sg
+r::Ref<a> ::= id::String s::Scope<a> _
 {
   local parts::[String] = explode ("_", id);
-  r.name = head(parts);
+  r.id = head(parts);
   r.substr = head(tail(parts));
   r.str = id;
   r.last_id = s.last_id;
@@ -95,7 +95,7 @@ r::Ref_sg ::= id::String s::Scope_sg
 {-====================-}
 
 aspect production scope_cons
-ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
+ss::Scopes<a> ::= s::Scope<a> st::Scopes<a>
 {
   s.scope_id = ss.scope_id + 1;
   st.scope_id = ss.scope_id + 1;
@@ -103,43 +103,43 @@ ss::Scopes_sg ::= s::Scope_sg st::Scopes_sg
 }
 
 aspect production scope_nil
-ss::Scopes_sg ::=
+ss::Scopes<a> ::=
 {
   ss.last_id = 0;
 }
 
 aspect production decl_cons
-ds::Decls_sg ::= d::Decl_sg dt::Decls_sg
+ds::Decls<a> ::= d::Decl<a> dt::Decls<a>
 {
   d.scope_id = ds.scope_id + 1;
-  dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _) -> 1 | _ -> 0 end;
+  dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _, _) -> 1 | _ -> 0 end;
 }
 
 aspect production decl_nil
-ds::Decls_sg ::= 
+ds::Decls<a> ::= 
 {
 }
 
 aspect production ref_cons
-rs::Refs_sg ::= r::Ref_sg rt::Refs_sg
+rs::Refs<a> ::= r::Ref<a> rt::Refs<a>
 {
   r.scope_id = rs.scope_id;
   rt.scope_id = r.last_id;
 }
 
 aspect production ref_nil
-rs::Refs_sg ::= 
+rs::Refs<a> ::= 
 {
 }
 
 {-====================-}
 
-function scope_name
-String ::= par::Maybe<Decorated Scope_sg> id::Integer
+function scope_id
+String ::= par::Maybe<Decorated Scope<a>> id::Integer
 {
   return
     case par of
       | nothing () -> toString (id)
-      | just (p) -> p.name ++ "." ++ toString (id)
+      | just (p) -> p.id ++ "." ++ toString (id)
     end;
 }

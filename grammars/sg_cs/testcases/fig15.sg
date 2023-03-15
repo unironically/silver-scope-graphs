@@ -1,0 +1,9 @@
+module B_1 {
+  module C_2 {
+    decls c_3
+    refs D_4.f_5
+  }
+  module D_6 {
+    decls f_7
+  }
+}

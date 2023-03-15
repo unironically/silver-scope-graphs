@@ -1,4 +1,4 @@
-grammar scopegraph;
+grammar sg_cs;
 
 synthesized attribute ast<a> :: a;
 

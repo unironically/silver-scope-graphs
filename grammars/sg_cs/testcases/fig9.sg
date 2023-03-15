@@ -1,0 +1,12 @@
+decls a_1
+
+module B_2 {}
+
+module C_3 {
+  decls a_4
+  module D_5 {
+    import B_6
+    decls e_7
+    refs a_8
+  }
+}
