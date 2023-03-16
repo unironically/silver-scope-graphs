@@ -18,12 +18,19 @@ IO<Integer> ::= largs::[String]
     
     let result :: ParseResult<Program_c> = parse (file, filePath);
 
-    let graph :: sg:Graph<Name> = result.parseTree.ast.graph;
+    let ast :: Program = result.parseTree.ast;
+    let graph :: sg:Graph<IdDecl IdRef> = result.parseTree.ast.graph;
 
     system ("echo '" ++ graph.sg:string ++ "' | dot -Tsvg > " ++ outFileName);
     
     if result.parseSuccess
-      then do {print ("Success! See " ++ outFileName ++ " for scope graph illustration. \n"); return 0;}
+      then do {print ("Success!\n" ++ str_binds(ast.ress)); return 0;}
       else do {print ("Failure!\n"); return -1;};
   };
+}
+
+function str_binds
+String ::= binds::[(String, String)]
+{
+  return foldl ((\acc::String b::(String, String) -> acc ++ " - " ++ fst(b) ++ " -> " ++ snd(b) ++ "\n"), "", binds);
 }

@@ -3,23 +3,23 @@ grammar scope_tree:ast;
 {-====================-}
 
 inherited attribute scope_id :: Integer 
-  occurs on Scope<a>, Scopes<a>, Refs<a>, Ref<a>, Decls<a>, Decl<a>;
+  occurs on Scope<d r>, Scopes<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>;
 synthesized attribute last_id :: Integer 
-  occurs on Ref<a>, Scope<a>, Scopes<a>;
+  occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
 synthesized attribute id :: String 
-  occurs on Scope<a>, Ref<a>, Decl<a>;
+  occurs on Scope<d r>, Ref<d r>, Decl<d r>;
 
 synthesized attribute str :: String 
-  occurs on Ref<a>, Decl<a>;
+  occurs on Ref<d r>, Decl<d r>;
 synthesized attribute substr :: String 
-  occurs on Ref<a>, Decl<a>;
+  occurs on Ref<d r>, Decl<d r>;
 
 {-====================-}
 
 aspect production mk_graph
-g::Graph<a> ::= 
-  root::Scope<a>
+g::Graph<d r> ::= 
+  root::Scope<d r>
 {
   root.scope_id = 0;
 }
@@ -27,10 +27,10 @@ g::Graph<a> ::=
 {-====================-}
 
 aspect production mk_scope
-s::Scope<a> ::= 
-  decls::Decls<a> 
-  refs::Refs<a> 
-  children::Scopes<a>
+s::Scope<d r> ::= 
+  decls::Decls<d r> 
+  refs::Refs<d r> 
+  children::Scopes<d r>
 {
   children.scope_id = 0;
   decls.scope_id = children.last_id;
@@ -40,8 +40,8 @@ s::Scope<a> ::=
 }
 
 aspect production mk_scope_qid
-s::Scope<a> ::= 
-  ref::Ref<a>
+s::Scope<d r> ::= 
+  ref::Ref<d r>
 {
   ref.scope_id = s.scope_id;
   s.last_id = max (s.scope_id, ref.last_id);
@@ -50,7 +50,7 @@ s::Scope<a> ::=
 
 
 aspect production mk_decl
-d::Decl<a> ::= 
+d::Decl<d r> ::= 
   _
 {
   local parts::[String] = explode ("_", d.name);
@@ -61,9 +61,9 @@ d::Decl<a> ::=
 
 
 aspect production mk_decl_assoc
-d::Decl<a> ::= 
+d::Decl<d r> ::= 
   _
-  s::Scope<a> 
+  s::Scope<d r> 
 {
   local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
@@ -74,7 +74,7 @@ d::Decl<a> ::=
 
 
 aspect production mk_ref
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
 {
   local parts::[String] = explode ("_", r.name);
@@ -85,7 +85,7 @@ r::Ref<a> ::=
 }
 
 aspect production mk_imp
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
 {
   local parts::[String] = explode ("_", r.name);
@@ -96,9 +96,9 @@ r::Ref<a> ::=
 }
 
 aspect production mk_ref_qid
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
-  s::Scope<a> 
+  s::Scope<d r> 
 {
   local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
@@ -111,9 +111,9 @@ r::Ref<a> ::=
 {-====================-}
 
 aspect production scope_cons
-ss::Scopes<a> ::= 
-  s::Scope<a> 
-  st::Scopes<a>
+ss::Scopes<d r> ::= 
+  s::Scope<d r> 
+  st::Scopes<d r>
 {
   s.scope_id = ss.scope_id + 1;
   st.scope_id = ss.scope_id + 1;
@@ -121,42 +121,42 @@ ss::Scopes<a> ::=
 }
 
 aspect production scope_nil
-ss::Scopes<a> ::=
+ss::Scopes<d r> ::=
 {
   ss.last_id = 0;
 }
 
 aspect production decl_cons
-ds::Decls<a> ::= 
-  d::Decl<a> 
-  dt::Decls<a>
+ds::Decls<d r> ::= 
+  d::Decl<d r> 
+  dt::Decls<d r>
 {
   d.scope_id = ds.scope_id + 1;
   dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _) -> 1 | _ -> 0 end;
 }
 
 aspect production decl_nil
-ds::Decls<a> ::= 
+ds::Decls<d r> ::= 
 {}
 
 aspect production ref_cons
-rs::Refs<a> ::= 
-  r::Ref<a> 
-  rt::Refs<a>
+rs::Refs<d r> ::= 
+  r::Ref<d r> 
+  rt::Refs<d r>
 {
   r.scope_id = rs.scope_id;
   rt.scope_id = r.last_id;
 }
 
 aspect production ref_nil
-rs::Refs<a> ::= 
+rs::Refs<d r> ::= 
 {}
 
 {-====================-}
 
 function scope_id
 String ::= 
-  par::Maybe<Decorated Scope<a>> 
+  par::Maybe<Decorated Scope<d r>> 
   id::Integer
 {
   return

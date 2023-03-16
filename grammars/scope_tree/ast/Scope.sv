@@ -1,40 +1,50 @@
 grammar scope_tree:ast;
 
-nonterminal Graph<a>;
+import scope_tree:visser as res;
 
-nonterminal Scope<a>;
-nonterminal Scopes<a>;
+nonterminal Graph<d r>;
 
-nonterminal Decl<a>;
-nonterminal Decls<a>;
+nonterminal Scope<d r>;
+nonterminal Scopes<d r>;
 
-nonterminal Ref<a>;
-nonterminal Refs<a>;
+nonterminal Decl<d r>;
+nonterminal Decls<d r>;
+
+nonterminal Ref<d r>;
+nonterminal Refs<d r>;
 
 {-====================-}
 
-inherited attribute parent<a> :: Maybe<Decorated Scope<a>> 
-  occurs on Scope<a>, Scopes<a>;
-inherited attribute scope<a> :: Decorated Scope<a> 
-  occurs on Decl<a>, Decls<a>, Ref<a>, Refs<a>;
-synthesized attribute assoc_scope<a> :: Maybe<Scope<a>> 
-  occurs on Decl<a>;
+inherited attribute parent<d r> :: Maybe<Decorated Scope<d r>> 
+  occurs on Scope<d r>, Scopes<d r>;
+inherited attribute scope<d r> :: Decorated Scope<d r> 
+  occurs on Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+synthesized attribute assoc_scope<d r> :: Maybe<Decorated Scope<d r>> 
+  occurs on Decl<d r>;
 
-inherited attribute qid_imp<a> :: Maybe<Decorated Ref<a>> 
-  occurs on Scope<a>;
-synthesized attribute imps<a> :: [Decorated Ref<a>] 
-  occurs on Ref<a>, Refs<a>, Scope<a>;
-synthesized attribute iqid_imps<a> :: [Decorated Ref<a>] 
-  occurs on Ref<a>, Refs<a>, Scope<a>;
+synthesized attribute imps<d r> :: [Decorated Ref<d r>] 
+  occurs on Ref<d r>, Refs<d r>, Scope<d r>;
+synthesized attribute iqid_imps<d r> :: [Decorated Ref<d r>] 
+  occurs on Ref<d r>, Refs<d r>, Scope<d r>;
+inherited attribute qid_imp<d r> :: Maybe<Decorated Ref<d r>> 
+  occurs on Scope<d r>;
+
+synthesized attribute decls<d r> :: [Decorated Decl<d r>]
+  occurs on Scope<d r>, Decls<d r>;
 
 synthesized attribute name :: String
-  occurs on Ref<a>, Decl<a>;
+  occurs on Ref<d r>, Decl<d r>;
+
+synthesized attribute resolutions<d r> :: [Decorated Decl<d r>]
+  occurs on Ref<d r>;
+
+synthesized attribute dec_ref<d r> :: Decorated Ref<d r> occurs on Ref<d r>;
 
 {-====================-}
 
 abstract production mk_graph
-g::Graph<a> ::= 
-  root::Scope<a>
+g::Graph<d r> ::= 
+  root::Scope<d r>
 {
   root.parent = nothing ();
   root.qid_imp = nothing ();
@@ -43,10 +53,10 @@ g::Graph<a> ::=
 {-====================-}
 
 abstract production mk_scope
-s::Scope<a> ::= 
-  decls::Decls<a> 
-  refs::Refs<a> 
-  children::Scopes<a>
+s::Scope<d r> ::= 
+  decls::Decls<d r> 
+  refs::Refs<d r> 
+  children::Scopes<d r>
 {
   decls.scope = s;
   refs.scope = s;
@@ -56,33 +66,35 @@ s::Scope<a> ::=
              nothing () -> refs.iqid_imps 
            | just (r) -> r::refs.iqid_imps end;
   s.iqid_imps = [];
+  s.decls = decls.decls;
 }
 
 abstract production mk_scope_qid
-s::Scope<a> ::= 
-  ref::Ref<a>
+s::Scope<d r> ::= 
+  ref::Ref<d r>
 {
   ref.scope = s;
   s.imps = case s.qid_imp of 
              nothing () -> [] 
            | just (r) -> [r] end;
   s.iqid_imps = ref.iqid_imps;
+  s.decls = [];
 }
 
 abstract production mk_decl
-  attribute name i occurs on a =>
-d::Decl<a> ::=
-  objlang_inst::Decorated a with i
+  attribute name i occurs on d =>
+d::Decl<d r> ::=
+  objlang_inst::Decorated d with i
 {
   d.name = objlang_inst.name;
   d.assoc_scope = nothing ();
 }
 
 abstract production mk_decl_assoc
-  attribute name i occurs on a =>
-d::Decl<a> ::= 
-  objlang_inst::Decorated a with i
-  s::Scope<a> 
+  attribute name i occurs on d =>
+d::Decl<d r> ::= 
+  objlang_inst::Decorated d with i
+  s::Scope<d r> 
 {
   d.name = objlang_inst.name;
   s.parent = just (d.scope);
@@ -91,30 +103,42 @@ d::Decl<a> ::=
 }
 
 abstract production mk_ref
-  attribute name i occurs on a =>
-r::Ref<a> ::= 
-  objlang_inst::Decorated a with i
+  attribute name i occurs on r =>
+r::Ref<d r> ::= 
+  objlang_inst::Decorated r with i
 {
   r.name = objlang_inst.name;
   r.iqid_imps = [];
   r.imps = [];
+  r.resolutions = res:resolve_visser ([], r);
+
+  {- Ugly solution -}
+  local dec :: Ref<d r> = mk_ref (objlang_inst);
+  dec.scope = r.scope;
+  r.dec_ref = dec;
 }
 
 abstract production mk_imp
-  attribute name i occurs on a =>
-r::Ref<a> ::= 
-  objlang_inst::Decorated a with i
+  attribute name i occurs on r =>
+r::Ref<d r> ::= 
+  objlang_inst::Decorated r with i
 {
   r.name = objlang_inst.name;
   r.iqid_imps = [r];
   r.imps = [];
+  r.resolutions = res:resolve_visser ([], r);
+
+  {- Ugly solution -}
+  local dec :: Ref<d r> = mk_imp (objlang_inst);
+  dec.scope = r.scope;
+  r.dec_ref = dec;
 }
 
 abstract production mk_ref_qid
-  attribute name i occurs on a =>
-r::Ref<a> ::= 
-  objlang_inst::Decorated a with i
-  s::Scope<a> 
+  attribute name i occurs on r =>
+r::Ref<d r> ::= 
+  objlang_inst::Decorated r with i
+  s::Scope<d r> 
 {
   r.name = objlang_inst.name;
   r.iqid_imps = s.iqid_imps;
@@ -122,14 +146,21 @@ r::Ref<a> ::=
   
   s.parent = nothing ();
   s.qid_imp = just (r);
+
+  r.resolutions = res:resolve_visser ([], r);
+
+  {- Ugly solution -}
+  local dec :: Ref<d r> = mk_ref_qid (objlang_inst, s);
+  dec.scope = r.scope;
+  r.dec_ref = dec;  
 }
 
 {-====================-}
 
 abstract production scope_cons
-ss::Scopes<a> ::= 
-  s::Scope<a> 
-  st::Scopes<a>
+ss::Scopes<d r> ::= 
+  s::Scope<d r> 
+  st::Scopes<d r>
 {
   s.parent = ss.parent;
   s.qid_imp = nothing ();
@@ -137,26 +168,29 @@ ss::Scopes<a> ::=
 }
 
 abstract production scope_nil
-ss::Scopes<a> ::=
+ss::Scopes<d r> ::=
 {}
 
 abstract production decl_cons
-ds::Decls<a> ::= 
-  d::Decl<a> 
-  dt::Decls<a>
+ds::Decls<d r> ::= 
+  d::Decl<d r> 
+  dt::Decls<d r>
 {
   d.scope = ds.scope;
   dt.scope = ds.scope;
+  ds.decls = d :: dt.decls;
 }
 
 abstract production decl_nil
-ds::Decls<a> ::= 
-{}
+ds::Decls<d r> ::= 
+{
+  ds.decls = [];
+}
 
 abstract production ref_cons
-rs::Refs<a> ::= 
-  r::Ref<a> 
-  rt::Refs<a>
+rs::Refs<d r> ::= 
+  r::Ref<d r> 
+  rt::Refs<d r>
 {
   r.scope = rs.scope;
   rt.scope = rs.scope;
@@ -166,7 +200,7 @@ rs::Refs<a> ::=
 }
 
 abstract production ref_nil
-rs::Refs<a> ::= 
+rs::Refs<d r> ::= 
 {
   rs.iqid_imps = [];
   rs.imps = [];
@@ -175,9 +209,9 @@ rs::Refs<a> ::=
 {-====================-}
 
 function combine_decls
-Decls<a> ::= 
-  ds1::Decls<a> 
-  ds2::Decls<a>
+Decls<d r> ::= 
+  ds1::Decls<d r> 
+  ds2::Decls<d r>
 {
   return
     case ds1 of
@@ -187,9 +221,9 @@ Decls<a> ::=
 }
 
 function combine_refs
-Refs<a> ::= 
-  rs1::Refs<a> 
-  rs2::Refs<a>
+Refs<d r> ::= 
+  rs1::Refs<d r> 
+  rs2::Refs<d r>
 {
   return
     case rs1 of

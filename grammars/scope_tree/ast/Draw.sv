@@ -7,50 +7,50 @@ global graphviz_fill_colors :: [String] =
 {-====================-}
 
 inherited attribute scope_color :: Integer occurs on 
-  Scope<a>, Scopes<a>, Ref<a>, Refs<a>, Decl<a>, Decls<a>;
+  Scope<d r>, Scopes<d r>, Ref<d r>, Refs<d r>, Decl<d r>, Decls<d r>;
 
 synthesized attribute string :: String occurs on 
-  Graph<a>, Scope<a>, Scopes<a>, Decl<a>, Decls<a>, Ref<a>, Refs<a>;
+  Graph<d r>, Scope<d r>, Scopes<d r>, Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
 
 {-====================-}
 
 aspect production mk_graph
-g::Graph<a> ::= 
-  root::Scope<a>
+g::Graph<d r> ::= 
+  root::Scope<d r>
 {
   g.string = "digraph {" ++ root.string ++ "}";
   root.scope_color = 0;
 }
 
 aspect production mk_scope
-s::Scope<a> ::= 
-  decls::Decls<a> 
-  refs::Refs<a> 
-  children::Scopes<a>
+s::Scope<d r> ::= 
+  decls::Decls<d r> 
+  refs::Refs<d r> 
+  children::Scopes<d r>
 {
   s.string = 
     "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.id ++ "\"}" ++
     (case s.parent of nothing () -> "" | just (p) -> "\"" ++ s.id ++ "\"" ++ " -> " ++ "\"" ++ p.id ++ "\"" end) ++
     decls.string ++ refs.string ++ children.string ++ 
-    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<a> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
   children.scope_color = s.scope_color;
   decls.scope_color = s.scope_color;
   refs.scope_color = s.scope_color;
 }
 
 aspect production mk_scope_qid
-s::Scope<a> ::= 
-  ref::Ref<a>
+s::Scope<d r> ::= 
+  ref::Ref<d r>
 {
   s.string = 
     "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.id ++ "\"}" ++
     ref.string ++ 
-    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<a> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
   ref.scope_color = s.scope_color;
 }
 
 aspect production mk_decl
-d::Decl<a> ::= 
+d::Decl<d r> ::= 
   _
 {
   d.string = 
@@ -59,9 +59,9 @@ d::Decl<a> ::=
 }
 
 aspect production mk_decl_assoc
-d::Decl<a> ::= 
+d::Decl<d r> ::= 
   _
-  s::Scope<a> 
+  s::Scope<d r> 
 {
   d.string = s.string ++ 
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++ 
@@ -71,7 +71,7 @@ d::Decl<a> ::=
 }
 
 aspect production mk_ref
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
 {
   r.string = 
@@ -80,7 +80,7 @@ r::Ref<a> ::=
 }
 
 aspect production mk_imp
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
 {
   r.string = 
@@ -89,9 +89,9 @@ r::Ref<a> ::=
 }
 
 aspect production mk_ref_qid
-r::Ref<a> ::= 
+r::Ref<d r> ::= 
   _
-  s::Scope<a> 
+  s::Scope<d r> 
 {
   r.string =
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++ 
@@ -102,9 +102,9 @@ r::Ref<a> ::=
 {-====================-}
 
 aspect production scope_cons
-ss::Scopes<a> ::= 
-  s::Scope<a> 
-  st::Scopes<a>
+ss::Scopes<d r> ::= 
+  s::Scope<d r> 
+  st::Scopes<d r>
 {
   ss.string = s.string ++ st.string;
   s.scope_color = unsafeTrace(1 + ss.scope_color, printT(toString (1 + ss.scope_color) ++ "\n", unsafeIO()));
@@ -112,37 +112,37 @@ ss::Scopes<a> ::=
 }
 
 aspect production scope_nil
-ss::Scopes<a> ::=
+ss::Scopes<d r> ::=
 {
   ss.string = "";
 }
 
 aspect production decl_cons
-ds::Decls<a> ::= 
-  d::Decl<a> 
-  dt::Decls<a>
+ds::Decls<d r> ::= 
+  d::Decl<d r> 
+  dt::Decls<d r>
 { 
   propagate scope_color;
   ds.string = d.string ++ " " ++ dt.string;
 }
 
 aspect production decl_nil
-ds::Decls<a> ::= 
+ds::Decls<d r> ::= 
 {
   ds.string = "";
 }
 
 aspect production ref_cons
-rs::Refs<a> ::= 
-  r::Ref<a> 
-  rt::Refs<a>
+rs::Refs<d r> ::= 
+  r::Ref<d r> 
+  rt::Refs<d r>
 { 
   propagate scope_color;
   rs.string = r.string ++ " " ++ rt.string;
 }
 
 aspect production ref_nil
-rs::Refs<a> ::= 
+rs::Refs<d r> ::= 
 {
   rs.string = "";
 }

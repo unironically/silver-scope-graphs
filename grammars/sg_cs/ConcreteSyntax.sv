@@ -28,7 +28,7 @@ sl::NodeList_c ::= Decls_t dl::Decls_c slt::NodeList_c
 concrete production decl_module_c
 sl::NodeList_c ::= Module_t id::ID_t LBrace_t sub::NodeList_c RBrace_t slt::NodeList_c
 {
-  sl.ast = decl_module (name (id.lexeme), sub.ast, slt.ast);
+  sl.ast = decl_module (decl (id.lexeme), sub.ast, slt.ast);
 }
 
 concrete production nodelist_refs_c
@@ -60,13 +60,13 @@ sl::NodeList_c ::=
 concrete production decls_comma_c
 ds::Decls_c ::= id::ID_t Comma_t dst::Decls_c
 { 
-  ds.ast = decls_comma (name (id.lexeme), dst.ast);
+  ds.ast = decls_comma (decl (id.lexeme), dst.ast);
 }
 
 concrete production decls_last_c
 ds::Decls_c ::= id::ID_t
 {
-  ds.ast = decls_last (name (id.lexeme));
+  ds.ast = decls_last (decl (id.lexeme));
 }
 
 {- Refs -}
@@ -88,16 +88,16 @@ rs::Refs_c ::= qid::Qid_c
 concrete production qid_dot_c
 q::Qid_c ::= id::ID_t Dot_t qt::Qid_c
 {
-  q.ast = qid_dot (name (id.lexeme), qt.ast);
+  q.ast = qid_dot (ref (id.lexeme), qt.ast);
 }
 
 concrete production qid_single_c
 q::Qid_c ::= id::ID_t
 {
-  q.ast = qid_single (name (id.lexeme));
+  q.ast = qid_single (ref (id.lexeme));
 }
 
-{- -}
+{- Terminals -}
 
 terminal ID_t /[a-zA-Z]_[1-9][0-9]*/;
 terminal Int_t /(0|[1-9][0-9]*)/;
