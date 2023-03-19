@@ -7,7 +7,7 @@ function resolve_visser
   seen_imports::[Decorated Ref<d r>] 
   r::Decorated Ref<d r>
 {
-  return filter((\s::Decorated Decl<d r> -> s.name == r.name), 
+  return filter((\s::Decorated Decl<d r> -> s.id == r.id), 
     env_v (r::seen_imports, [], r.scope));
 }
 
@@ -113,7 +113,7 @@ function merge_declarations_with_shadowing
 [Decorated Decl<d r>] ::= l::[Decorated Decl<d r>] r::[Decorated Decl<d r>]
 {
   return unionBy(\mem_r::Decorated Decl<d r> mem_l::Decorated Decl<d r> -> 
-    mem_r.name == mem_l.name, r , l);
+    mem_r.id == mem_l.id, r , l);
 }
 
 function check_seen_scopes

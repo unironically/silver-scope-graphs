@@ -31,6 +31,8 @@ inherited attribute qid_imp<d r> :: Maybe<Decorated Ref<d r>>
 
 synthesized attribute decls<d r> :: [Decorated Decl<d r>]
   occurs on Scope<d r>, Decls<d r>;
+synthesized attribute refs<d r> :: [Decorated Ref<d r>]
+  occurs on Scope<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>, Scopes<d r>;
 
 synthesized attribute name :: String
   occurs on Ref<d r>, Decl<d r>;
@@ -38,7 +40,8 @@ synthesized attribute name :: String
 synthesized attribute resolutions<d r> :: [Decorated Decl<d r>]
   occurs on Ref<d r>;
 
-synthesized attribute dec_ref<d r> :: Decorated Ref<d r> occurs on Ref<d r>;
+synthesized attribute dec_ref<d r> :: (Decorated Ref<d r> ::= Ref<d r>)
+  occurs on Graph<d r>;
 
 {-====================-}
 
@@ -48,6 +51,8 @@ g::Graph<d r> ::=
 {
   root.parent = nothing ();
   root.qid_imp = nothing ();
+  g.dec_ref = (\r::Ref<d r> -> 
+    head (filter ((\dr::Decorated Ref<d r> -> dr.str == r.str), root.refs)));
 }
 
 {-====================-}
@@ -67,6 +72,7 @@ s::Scope<d r> ::=
            | just (r) -> r::refs.iqid_imps end;
   s.iqid_imps = [];
   s.decls = decls.decls;
+  s.refs = refs.refs ++ decls.refs ++ children.refs;
 }
 
 abstract production mk_scope_qid
@@ -79,6 +85,7 @@ s::Scope<d r> ::=
            | just (r) -> [r] end;
   s.iqid_imps = ref.iqid_imps;
   s.decls = [];
+  s.refs = [ref];
 }
 
 abstract production mk_decl
@@ -88,6 +95,7 @@ d::Decl<d r> ::=
 {
   d.name = objlang_inst.name;
   d.assoc_scope = nothing ();
+  d.refs = [];
 }
 
 abstract production mk_decl_assoc
@@ -100,38 +108,31 @@ d::Decl<d r> ::=
   s.parent = just (d.scope);
   s.qid_imp = nothing ();
   d.assoc_scope = just (s);
+  d.refs = s.refs;
 }
 
 abstract production mk_ref
-  attribute name i occurs on r =>
+  attribute name i occurs on objr =>
 r::Ref<d r> ::= 
-  objlang_inst::Decorated r with i
+  objlang_inst::Decorated objr with i
 {
   r.name = objlang_inst.name;
   r.iqid_imps = [];
   r.imps = [];
+  r.refs = [r];
   r.resolutions = res:resolve_visser ([], r);
-
-  {- Ugly solution -}
-  local dec :: Ref<d r> = mk_ref (objlang_inst);
-  dec.scope = r.scope;
-  r.dec_ref = dec;
 }
 
 abstract production mk_imp
-  attribute name i occurs on r =>
+  attribute name i occurs on objr =>
 r::Ref<d r> ::= 
-  objlang_inst::Decorated r with i
+  objlang_inst::Decorated objr with i
 {
   r.name = objlang_inst.name;
   r.iqid_imps = [r];
   r.imps = [];
+  r.refs = [r];
   r.resolutions = res:resolve_visser ([], r);
-
-  {- Ugly solution -}
-  local dec :: Ref<d r> = mk_imp (objlang_inst);
-  dec.scope = r.scope;
-  r.dec_ref = dec;
 }
 
 abstract production mk_ref_qid
@@ -143,16 +144,12 @@ r::Ref<d r> ::=
   r.name = objlang_inst.name;
   r.iqid_imps = s.iqid_imps;
   r.imps = [r];
+  r.refs = r :: s.refs;
   
   s.parent = nothing ();
   s.qid_imp = just (r);
 
   r.resolutions = res:resolve_visser ([], r);
-
-  {- Ugly solution -}
-  local dec :: Ref<d r> = mk_ref_qid (objlang_inst, s);
-  dec.scope = r.scope;
-  r.dec_ref = dec;  
 }
 
 {-====================-}
@@ -165,11 +162,14 @@ ss::Scopes<d r> ::=
   s.parent = ss.parent;
   s.qid_imp = nothing ();
   st.parent = ss.parent;
+  ss.refs = s.refs ++ st.refs;
 }
 
 abstract production scope_nil
 ss::Scopes<d r> ::=
-{}
+{
+  ss.refs = [];
+}
 
 abstract production decl_cons
 ds::Decls<d r> ::= 
@@ -179,12 +179,14 @@ ds::Decls<d r> ::=
   d.scope = ds.scope;
   dt.scope = ds.scope;
   ds.decls = d :: dt.decls;
+  ds.refs = d.refs ++ dt.refs;
 }
 
 abstract production decl_nil
 ds::Decls<d r> ::= 
 {
   ds.decls = [];
+  ds.refs = [];
 }
 
 abstract production ref_cons
@@ -197,6 +199,7 @@ rs::Refs<d r> ::=
 
   rs.iqid_imps = r.iqid_imps ++ rt.iqid_imps;
   rs.imps = r.imps ++ rt.imps;
+  rs.refs = r.refs ++ rt.refs;
 }
 
 abstract production ref_nil
@@ -204,6 +207,7 @@ rs::Refs<d r> ::=
 {
   rs.iqid_imps = [];
   rs.imps = [];
+  rs.refs = [];
 }
 
 {-====================-}

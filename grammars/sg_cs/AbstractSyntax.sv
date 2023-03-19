@@ -20,9 +20,13 @@ synthesized attribute children::sg:Scopes<IdDecl IdRef> occurs on NodeList;
 inherited attribute last_is_imp::Boolean occurs on Qid, IdRef;
 synthesized attribute ref::sg:Ref<IdDecl IdRef> occurs on Qid, IdRef;
 
-monoid attribute ress::[(String, String)] 
+monoid attribute ress::[(Decorated sg:Ref<IdDecl IdRef>, Decorated sg:Decl<IdDecl IdRef>)] 
   occurs on Program, NodeList, Refs, Qid, IdRef;
 propagate ress on Program, NodeList, Refs, Qid;
+
+inherited attribute dec_graph::sg:Graph<IdDecl IdRef> 
+  occurs on Program, NodeList, Refs, Qid, IdRef;
+propagate dec_graph on NodeList, Refs, Qid; 
 
 {- required by scope graph abstract syntax -}
 attribute sg:name occurs on IdDecl, IdRef;
@@ -38,6 +42,7 @@ p::Program ::= sl::NodeList
   local g::sg:Graph<IdDecl IdRef> = sg:mk_graph (s);
   local s::sg:Scope<IdDecl IdRef> = sg:mk_scope (sl.decls, sl.refs, sl.children);
   p.graph = g;
+  sl.dec_graph = g;
 }
 
 {- Node List -}
@@ -147,26 +152,16 @@ abstract production ref
 n::IdRef ::= id::String
 {
   local r::sg:Ref<IdDecl IdRef> = if n.last_is_imp then sg:mk_imp (n) else sg:mk_ref (n);
-  
   n.sg:name = id;
   n.ref = r;
-  n.ress := map ((\d::Decorated sg:Decl<IdDecl IdRef> -> (n.sg:name, obj_decl (d))), 
-                r.sg:dec_ref.sg:resolutions);
+
+  local dr::Decorated sg:Ref<IdDecl IdRef> = n.dec_graph.sg:dec_ref (r);
+  n.ress := map ((\d::Decorated sg:Decl<IdDecl IdRef> -> (dr, d)), 
+                 dr.sg:resolutions);
 }
 
 abstract production decl
 d::IdDecl ::= id::String
 {
   d.sg:name = id;
-}
-
-{- -}
-
-function obj_decl
-String ::= sg_decl::Decorated sg:Decl<IdDecl IdRef>
-{
-  return case sg_decl of
-         | sg:mk_decl (d) -> d.sg:name
-         | sg:mk_decl_assoc (d, _) -> d.sg:name
-         end;
 }

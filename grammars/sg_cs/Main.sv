@@ -30,7 +30,10 @@ IO<Integer> ::= largs::[String]
 }
 
 function str_binds
-String ::= binds::[(String, String)]
+String ::= binds::[(Decorated sg:Ref<IdDecl IdRef>, Decorated sg:Decl<IdDecl IdRef>)]
 {
-  return foldl ((\acc::String b::(String, String) -> acc ++ " - " ++ fst(b) ++ " -> " ++ snd(b) ++ "\n"), "", binds);
+  return case binds of 
+         | [] -> ""
+         | (r, d)::t -> r.sg:name ++ " -> " ++ d.sg:name ++ "\n" ++ str_binds(t)
+         end;
 }
