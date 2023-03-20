@@ -156,6 +156,7 @@ n::IdRef ::= id::String
   n.ref = r;
 
   local dr::Decorated sg:Ref<IdDecl IdRef> = n.dec_graph.sg:dec_ref (r);
+  
   n.ress := map ((\d::Decorated sg:Decl<IdDecl IdRef> -> (dr, d)), 
                  dr.sg:resolutions);
 }

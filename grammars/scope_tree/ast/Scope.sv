@@ -85,7 +85,7 @@ s::Scope<d r> ::=
            | just (r) -> [r] end;
   s.iqid_imps = ref.iqid_imps;
   s.decls = [];
-  s.refs = [ref];
+  s.refs = ref.refs;
 }
 
 abstract production mk_decl
