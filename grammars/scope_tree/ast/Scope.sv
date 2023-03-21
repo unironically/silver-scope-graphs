@@ -121,7 +121,7 @@ abstract production mk_decl
   attribute name i occurs on d =>
 d::Decl<d r> ::=
   objlang_inst::Decorated d with i
-{}
+{ d.name = objlang_inst.name; }
 
 @{--
  - Constructing a declaration which has an associated scope. For use in defining
