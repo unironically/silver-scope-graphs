@@ -4,6 +4,7 @@ grammar scope_tree:ast;
 
 inherited attribute scope_id :: Integer 
   occurs on Scope<d r>, Scopes<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>;
+
 synthesized attribute last_id :: Integer 
   occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
@@ -110,7 +111,7 @@ ss::Scopes<d r> ::=
 {
   s.scope_id = ss.scope_id + 1;
   st.scope_id = ss.scope_id + 1;
-  ss.last_id = 1 + st.last_id;
+  ss.last_id = st.last_id + 1;
 }
 
 aspect production scope_nil
