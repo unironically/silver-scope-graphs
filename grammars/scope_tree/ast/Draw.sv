@@ -4,6 +4,8 @@ global graphviz_font_size :: String = "12";
 global graphviz_fill_colors :: [String] = 
   ["#ffffff", "#ebebeb", "#d6d6d6", "#c0c0c0"];
 
+global import_edge_style :: String = "edge [arrowhead=onormal]";
+
 {-====================-}
 
 inherited attribute scope_color :: Integer occurs on 
@@ -12,13 +14,15 @@ inherited attribute scope_color :: Integer occurs on
 synthesized attribute string :: String occurs on 
   Graph<d r>, Scope<d r>, Scopes<d r>, Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
 
+flowtype str {} on Decl, Ref;
+
 {-====================-}
 
 aspect production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
 {
-  g.string = "digraph {" ++ root.string ++ "}";
+  g.string = "digraph {{" ++ root.string ++ "}}";
   root.scope_color = 0;
 }
 
@@ -29,10 +33,10 @@ s::Scope<d r> ::=
   children::Scopes<d r>
 {
   s.string = 
-    "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.id ++ "\"}" ++
+    "{" ++ node_style_scope(s) ++
     (case s.parent of nothing () -> "" | just (p) -> "\"" ++ s.id ++ "\"" ++ " -> " ++ "\"" ++ p.id ++ "\"" end) ++
     decls.string ++ refs.string ++ children.string ++ 
-    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+    import_edges (s) ++ "}";
   children.scope_color = s.scope_color;
   decls.scope_color = s.scope_color;
   refs.scope_color = s.scope_color;
@@ -43,9 +47,9 @@ s::Scope<d r> ::=
   ref::Ref<d r>
 {
   s.string = 
-    "{{node [shape=circle style=filled fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (s.scope_color) ++ "] \"" ++ s.id ++ "\"}" ++
+    "{" ++ node_style_scope (s) ++
     ref.string ++ 
-    "{edge [arrowhead=onormal] " ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}}";
+    import_edges(s) ++ "}";
   ref.scope_color = s.scope_color;
 }
 
@@ -54,7 +58,7 @@ d::Decl<d r> ::=
   _
 {
   d.string = 
-    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++
+    node_style_declref (d) ++
     "\"" ++ d.scope.id ++ "\" -> " ++ d.str;
 }
 
@@ -64,9 +68,9 @@ d::Decl<d r> ::=
   module::Scope<d r> 
 {
   d.string = module.string ++ 
-    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++ 
+   node_style_declref (d) ++ 
     "\"" ++ d.scope.id ++ "\" -> " ++ d.str ++
-    "{edge [arrowhead=onormal] " ++ d.str ++ " -> \"" ++ module.id ++"\"}";
+    "{" ++ import_edge_style ++ d.str ++ " -> \"" ++ module.id ++"\"}";
   module.scope_color = d.scope_color + 1;
 }
 
@@ -75,7 +79,7 @@ r::Ref<d r> ::=
   _
 {
   r.string = 
-  "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++
+  node_style_declref (r) ++
   r.str ++ " -> \"" ++ r.scope.id ++ "\"";
 }
 
@@ -84,7 +88,7 @@ r::Ref<d r> ::=
   _
 {
   r.string = 
-  "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++
+  node_style_declref (r) ++
   r.str ++ " -> \"" ++ r.scope.id ++ "\"";
 }
 
@@ -94,7 +98,7 @@ r::Ref<d r> ::=
   qid_scope::Scope<d r> 
 {
   r.string =
-    "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++ 
+    node_style_declref (r) ++ 
     r.str ++ " -> \"" ++ r.scope.id ++ "\"" ++ qid_scope.string;
   qid_scope.scope_color = r.scope_color + 1;
 }
@@ -107,8 +111,8 @@ ss::Scopes<d r> ::=
   st::Scopes<d r>
 {
   ss.string = s.string ++ st.string;
-  s.scope_color = unsafeTrace(1 + ss.scope_color, printT(toString (1 + ss.scope_color) ++ "\n", unsafeIO()));
-  st.scope_color = 1 + ss.scope_color;
+  s.scope_color = ss.scope_color + 1;
+  st.scope_color = ss.scope_color + 1;
 }
 
 aspect production scope_nil
@@ -148,6 +152,34 @@ rs::Refs<d r> ::=
 }
 
 {-====================-}
+
+function node_style_scope
+String ::= node::Decorated Scope<d r>
+{ return "{" ++ node_style_both (node, true) ++ "\"" ++  node.id ++ "\"j}"; }
+
+function node_style_declref
+  attribute scope_color occurs on a,
+  attribute str i occurs on a =>
+String ::= node::Decorated a with i
+{ return "{" ++ node_style_both (node, false) ++ "\"" ++ node.str ++ "\"}"; }
+
+function node_style_both
+  attribute scope_color occurs on a =>
+String ::= node::Decorated a with i  is_scope::Boolean
+{
+  local shape :: String = if is_scope then "circle" else "box";
+  return
+    "node [style=filled shape=" ++ shape ++ 
+          " fontsize=" ++ graphviz_font_size ++ 
+          " fillcolor=" ++ node_color (node.scope_color) ++ "]";
+}
+
+function import_edges
+String ::= s::Decorated Scope<d r>
+{
+  return
+    "{" ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}";
+}
 
 function node_color
 String ::= 

@@ -24,7 +24,7 @@ IO<Integer> ::= largs::[String]
     system ("echo '" ++ graph.sg:string ++ "' | dot -Tsvg > " ++ outFileName);
     
     if result.parseSuccess
-      then do {print ("Success!\n" ++ str_binds(ast.ress)); return 0;}
+      then do {print ("Success!\n" ++ str_binds(ast.ress) ++ graph.sg:string); return 0;}
       else do {print ("Failure!\n"); return -1;};
   };
 }
