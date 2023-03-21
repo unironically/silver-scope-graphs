@@ -63,13 +63,13 @@ d::Decl<d r> ::=
 aspect production mk_decl_assoc
 d::Decl<d r> ::= 
   _
-  s::Scope<d r> 
+  module::Scope<d r> 
 {
   local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
   d.substr = head(tail(parts));
   d.str = d.name;
-  s.scope_id = d.scope_id;
+  module.scope_id = d.scope_id;
 }
 
 
@@ -98,14 +98,14 @@ r::Ref<d r> ::=
 aspect production mk_ref_qid
 r::Ref<d r> ::= 
   _
-  s::Scope<d r> 
+  qid_scope::Scope<d r> 
 {
   local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
   r.substr = head(tail(parts));
   r.str = r.name;
-  r.last_id = s.last_id;
-  s.scope_id = r.scope_id;
+  r.last_id = qid_scope.last_id;
+  qid_scope.scope_id = r.scope_id;
 }
 
 {-====================-}

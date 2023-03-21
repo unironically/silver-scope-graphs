@@ -61,13 +61,13 @@ d::Decl<d r> ::=
 aspect production mk_decl_assoc
 d::Decl<d r> ::= 
   _
-  s::Scope<d r> 
+  module::Scope<d r> 
 {
-  d.string = s.string ++ 
+  d.string = module.string ++ 
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (d.scope_color) ++ "]" ++ d.str ++ "}" ++ 
     "\"" ++ d.scope.id ++ "\" -> " ++ d.str ++
-    "{edge [arrowhead=onormal] " ++ d.str ++ " -> \"" ++ s.id ++"\"}";
-  s.scope_color = d.scope_color + 1;
+    "{edge [arrowhead=onormal] " ++ d.str ++ " -> \"" ++ module.id ++"\"}";
+  module.scope_color = d.scope_color + 1;
 }
 
 aspect production mk_ref
@@ -91,12 +91,12 @@ r::Ref<d r> ::=
 aspect production mk_ref_qid
 r::Ref<d r> ::= 
   _
-  s::Scope<d r> 
+  qid_scope::Scope<d r> 
 {
   r.string =
     "{node [style=filled shape=box fontsize=" ++ graphviz_font_size ++ " fillcolor=" ++ node_color (r.scope_color) ++ "]" ++ r.str ++ "}" ++ 
-    r.str ++ " -> \"" ++ r.scope.id ++ "\"" ++ s.string;
-  s.scope_color = r.scope_color + 1;
+    r.str ++ " -> \"" ++ r.scope.id ++ "\"" ++ qid_scope.string;
+  qid_scope.scope_color = r.scope_color + 1;
 }
 
 {-====================-}

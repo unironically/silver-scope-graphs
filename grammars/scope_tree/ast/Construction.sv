@@ -77,12 +77,12 @@ d::Decl<d r> ::=
 aspect production mk_decl_assoc
 d::Decl<d r> ::= 
   _
-  s::Scope<d r> 
+  module::Scope<d r> 
 {
-  s.parent = just (d.scope);
-  s.qid_imp = nothing ();
-  d.assoc_scope = just (s);
-  d.refs = s.refs;
+  module.parent = just (d.scope);
+  module.qid_imp = nothing ();
+  d.assoc_scope = just (module);
+  d.refs = module.refs;
 }
 
 
@@ -107,14 +107,14 @@ r::Ref<d r> ::=
 aspect production mk_ref_qid
 r::Ref<d r> ::= 
   _
-  s::Scope<d r> 
+  qid_scope::Scope<d r> 
 {
-  r.iqid_imps = s.iqid_imps;
+  r.iqid_imps = qid_scope.iqid_imps;
   r.imps = [r];
-  r.refs = r :: s.refs;
+  r.refs = r :: qid_scope.refs;
   
-  s.parent = nothing ();
-  s.qid_imp = just (r);
+  qid_scope.parent = nothing ();
+  qid_scope.qid_imp = just (r);
 }
 
 {-====================-}

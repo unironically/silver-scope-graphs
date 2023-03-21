@@ -21,7 +21,7 @@ r::Ref<d r> ::=
 aspect production mk_ref_qid
 r::Ref<d r> ::= 
   _
-  s::Scope<d r> 
+  qid_scope::Scope<d r> 
 {
   r.resolutions = resolve_visser ([], r);
 }
