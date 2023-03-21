@@ -61,6 +61,8 @@ nonterminal Refs<d r>;
 synthesized attribute name :: String
   occurs on Ref<d r>, Decl<d r>;
 
+flowtype name {} on Decl, Ref;
+
 @{--
  - The list of declarations that a reference resolves to.
  -}
@@ -85,7 +87,7 @@ g::Graph<d r> ::=
   root::Scope<d r>
 {
   g.dec_ref = (\r::Ref<d r> -> 
-    head (filter ((\dr::Decorated Ref<d r> -> dr.str == r.str), root.refs)));
+    head (filter ((\dr::Decorated Ref<d r> -> dr.name == r.name), root.refs)));
 }
 
 @{--

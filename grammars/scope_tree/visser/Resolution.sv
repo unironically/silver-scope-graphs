@@ -83,7 +83,7 @@ function env_i
       -- Get all imports of current scope, remove names already seen in seen_imports
       let imp_list::[Decorated Ref<d r>] = removeAllBy (
         (\left_imp::Decorated Ref<d r> right_imp::Decorated Ref<d r>
-          -> left_imp.str == right_imp.str), 
+          -> left_imp.name == right_imp.name), 
         seen_imports,
         current_scope.imps)
       in

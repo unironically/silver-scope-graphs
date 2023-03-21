@@ -10,12 +10,8 @@ synthesized attribute last_id :: Integer
 synthesized attribute id :: String 
   occurs on Scope<d r>, Ref<d r>, Decl<d r>;
 
-synthesized attribute str :: String 
-  occurs on Ref<d r>, Decl<d r>;
 synthesized attribute substr :: String 
   occurs on Ref<d r>, Decl<d r>;
-
-flowtype str {} on Decl, Ref;
 
 {-====================-}
 
@@ -57,8 +53,7 @@ d::Decl<d r> ::=
 {
   local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
-  d.substr = head(tail(parts));
-  d.str = d.name;
+  d.substr = head (tail (parts));
 }
 
 
@@ -69,8 +64,7 @@ d::Decl<d r> ::=
 {
   local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
-  d.substr = head(tail(parts));
-  d.str = d.name;
+  d.substr = head (tail (parts));
   module.scope_id = d.scope_id;
 }
 
@@ -80,9 +74,8 @@ r::Ref<d r> ::=
   _
 {
   local parts::[String] = explode ("_", r.name);
-  r.id = head(parts);
-  r.substr = head(tail(parts));
-  r.str = r.name;
+  r.id = head (parts);
+  r.substr = head (tail (parts));
   r.last_id = 0;
 }
 
@@ -91,9 +84,8 @@ r::Ref<d r> ::=
   _
 {
   local parts::[String] = explode ("_", r.name);
-  r.id = head(parts);
-  r.substr = head(tail(parts));
-  r.str = r.name;
+  r.id = head (parts);
+  r.substr = head (tail (parts));
   r.last_id = 0;
 }
 
@@ -104,8 +96,7 @@ r::Ref<d r> ::=
 {
   local parts::[String] = explode ("_", r.name);
   r.id = head(parts);
-  r.substr = head(tail(parts));
-  r.str = r.name;
+  r.substr = head (tail (parts));
   r.last_id = qid_scope.last_id;
   qid_scope.scope_id = r.scope_id;
 }
