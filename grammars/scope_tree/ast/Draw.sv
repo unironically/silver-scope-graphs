@@ -1,11 +1,5 @@
 grammar scope_tree:ast;
 
-global graphviz_font_size :: String = "12";
-global graphviz_fill_colors :: [String] = 
-  ["#ffffff", "#ebebeb", "#d6d6d6", "#c0c0c0"];
-
-global import_edge_style :: String = "edge [arrowhead=onormal]";
-
 {-====================-}
 
 inherited attribute scope_color :: Integer occurs on 
@@ -14,15 +8,13 @@ inherited attribute scope_color :: Integer occurs on
 synthesized attribute string :: String occurs on 
   Graph<d r>, Scope<d r>, Scopes<d r>, Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
 
-flowtype str {} on Decl, Ref;
-
 {-====================-}
 
 aspect production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
 {
-  g.string = "digraph {{" ++ root.string ++ "}}";
+  g.string = "digraph {" ++ root.string ++ "}";
   root.scope_color = 0;
 }
 
@@ -32,11 +24,17 @@ s::Scope<d r> ::=
   refs::Refs<d r> 
   children::Scopes<d r>
 {
+  local parent_edge :: String = 
+    case s.parent of
+      nothing () -> ""
+    | just (p) -> scope_str (s) ++ "->" ++ scope_str (p)
+    end;
+
   s.string = 
     "{" ++ node_style_scope(s) ++
-    (case s.parent of nothing () -> "" | just (p) -> "\"" ++ s.id ++ "\"" ++ " -> " ++ "\"" ++ p.id ++ "\"" end) ++
-    decls.string ++ refs.string ++ children.string ++ 
-    import_edges (s) ++ "}";
+    parent_edge ++
+    decls.string ++ refs.string ++ children.string ++ import_edges (s) ++ "}";
+
   children.scope_color = s.scope_color;
   decls.scope_color = s.scope_color;
   refs.scope_color = s.scope_color;
@@ -49,7 +47,8 @@ s::Scope<d r> ::=
   s.string = 
     "{" ++ node_style_scope (s) ++
     ref.string ++ 
-    import_edges(s) ++ "}";
+    import_edges (s) ++ "}";
+
   ref.scope_color = s.scope_color;
 }
 
@@ -59,7 +58,7 @@ d::Decl<d r> ::=
 {
   d.string = 
     node_style_declref (d) ++
-    "\"" ++ d.scope.id ++ "\" -> " ++ d.str;
+    scope_str (d.scope) ++ "->" ++ d.str;
 }
 
 aspect production mk_decl_assoc
@@ -68,9 +67,10 @@ d::Decl<d r> ::=
   module::Scope<d r> 
 {
   d.string = module.string ++ 
-   node_style_declref (d) ++ 
-    "\"" ++ d.scope.id ++ "\" -> " ++ d.str ++
-    "{" ++ import_edge_style ++ d.str ++ " -> \"" ++ module.id ++"\"}";
+    node_style_declref (d) ++ 
+    scope_str (d.scope) ++ "->" ++ d.str ++
+    "{" ++ import_edge_style ++ d.str ++ "->" ++ scope_str (module) ++ "}";
+  
   module.scope_color = d.scope_color + 1;
 }
 
@@ -79,8 +79,8 @@ r::Ref<d r> ::=
   _
 {
   r.string = 
-  node_style_declref (r) ++
-  r.str ++ " -> \"" ++ r.scope.id ++ "\"";
+    node_style_declref (r) ++
+    r.str ++ "->" ++ scope_str (r.scope);
 }
 
 aspect production mk_imp
@@ -88,8 +88,8 @@ r::Ref<d r> ::=
   _
 {
   r.string = 
-  node_style_declref (r) ++
-  r.str ++ " -> \"" ++ r.scope.id ++ "\"";
+    node_style_declref (r) ++
+    r.str ++ "->" ++ scope_str (r.scope);
 }
 
 aspect production mk_ref_qid
@@ -99,7 +99,8 @@ r::Ref<d r> ::=
 {
   r.string =
     node_style_declref (r) ++ 
-    r.str ++ " -> \"" ++ r.scope.id ++ "\"" ++ qid_scope.string;
+    r.str ++ "->" ++ scope_str (r.scope) ++ qid_scope.string;
+  
   qid_scope.scope_color = r.scope_color + 1;
 }
 
@@ -153,9 +154,16 @@ rs::Refs<d r> ::=
 
 {-====================-}
 
+global graphviz_font_size :: String = "12";
+
+global graphviz_fill_colors :: [String] = 
+  ["#ffffff", "#ebebeb", "#d6d6d6", "#c0c0c0"];
+
+global import_edge_style :: String = "edge [arrowhead=onormal]";
+
 function node_style_scope
 String ::= node::Decorated Scope<d r>
-{ return "{" ++ node_style_both (node, true) ++ "\"" ++  node.id ++ "\"j}"; }
+{ return "{" ++ node_style_both (node, true) ++  scope_str(node) ++ "}"; }
 
 function node_style_declref
   attribute scope_color occurs on a,
@@ -178,15 +186,24 @@ function import_edges
 String ::= s::Decorated Scope<d r>
 {
   return
-    "{" ++ foldl ((\str::String r::Decorated Ref<d r> -> str ++ " \"" ++ s.id ++ "\" -> " ++ r.str), "", s.imps) ++ "}";
+    "{" ++ 
+    implode (" ", 
+      map ((\r::Decorated Ref<d r> -> scope_str (s) ++ "->" ++ r.str), s.imps)) ++
+    "}";
 }
 
 function node_color
 String ::= 
   i::Integer
 {
-  return unsafeTrace (
-    "\"" ++ head (drop (i % length(graphviz_fill_colors), graphviz_fill_colors)) ++ "\"",
-    printT ("", unsafeIO())
-  );
+  return 
+    "\"" ++ 
+    head (drop (i % length(graphviz_fill_colors), graphviz_fill_colors)) ++ 
+    "\"";
+}
+
+function scope_str
+String ::= s::Decorated Scope<d r>
+{
+  return "\"" ++ s.id ++ "\"";
 }

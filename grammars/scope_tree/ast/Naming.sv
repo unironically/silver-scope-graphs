@@ -15,6 +15,8 @@ synthesized attribute str :: String
 synthesized attribute substr :: String 
   occurs on Ref<d r>, Decl<d r>;
 
+flowtype str {} on Decl, Ref;
+
 {-====================-}
 
 aspect production mk_graph
