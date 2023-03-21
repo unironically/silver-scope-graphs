@@ -2,50 +2,54 @@ grammar scope_tree:ast;
 
 import scope_tree:visser as res;
 
-@@{--
- - @param d The declaration nonterminal of the object language.
- - @param r The reference nonterminal of the object language.
- -}
+-- Q: How to get rid of multiple identical @param declarations while still generating the correct .md documentation?
 
 @{--
  - The top-level graph.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Graph<d r>;
 
 @{--
  - A scope node.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Scope<d r>;
 
 @{--
  - A tree of scope nodes.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Scopes<d r>;
 
 @{--
  - A declaration node.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Decl<d r>;
 
 @{--
  - A tree of declaration nodes.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Decls<d r>;
 
 @{--
  - A reference/import node.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Ref<d r>;
 
 @{--
  - A tree of reference/import nodes.
- - Params: see above.
+ - @param d The declaration nonterminal of the object language.
+ - @param r The reference nonterminal of the object language.
  -}
 nonterminal Refs<d r>;
 
@@ -111,7 +115,7 @@ s::Scope<d r> ::=
 @{--
  - Constructing a declaration. Parameterized by a object language declaration.
  -
- - @param objland_inst The corresponding object language declaration.
+ - @param objlang_inst The corresponding object language declaration.
  -}
 abstract production mk_decl
   attribute name i occurs on d =>
@@ -160,8 +164,8 @@ r::Ref<d r> ::=
  - Distinguished from @link[mk_ref] by its use as an import in the enclosing
  - scope of the qualified identifier this reference appears at the end of.
  -
- - @param objlang_inst 
- - @param qid_scope 
+ - @param objlang_inst The corresponding object language reference.
+ - @param qid_scope The next scope in a qualified identifier.
  -}
 abstract production mk_ref_qid
   attribute name i occurs on r =>
@@ -213,8 +217,8 @@ ds::Decls<d r> ::=
 @{--
  - Constructing a tree of references.
  -
- - @param d A reference node.
- - @param dt The remaining tree of reference.
+ - @param r A reference node.
+ - @param rt The remaining tree of reference.
  -}
 abstract production ref_cons
 rs::Refs<d r> ::= 
