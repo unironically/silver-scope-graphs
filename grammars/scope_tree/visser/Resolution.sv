@@ -2,6 +2,32 @@ grammar scope_tree:visser;
 
 import scope_tree:ast;
 
+{-====================-}
+
+aspect production mk_ref
+r::Ref<d r> ::= 
+  _
+{
+  r.resolutions = resolve_visser ([], r);
+}
+
+aspect production mk_imp
+r::Ref<d r> ::= 
+  _
+{
+  r.resolutions = resolve_visser ([], r);
+}
+
+aspect production mk_ref_qid
+r::Ref<d r> ::= 
+  _
+  s::Scope<d r> 
+{
+  r.resolutions = resolve_visser ([], r);
+}
+
+{-====================-}
+
 function resolve_visser
 [Decorated Decl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
