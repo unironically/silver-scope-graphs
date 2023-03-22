@@ -14,6 +14,13 @@ synthesized attribute id :: String
 synthesized attribute substr :: String 
   occurs on Ref<d r>, Decl<d r>;
 
+@{--
+ - The name of a declaration or reference.
+ -}
+synthesized attribute name :: String
+  occurs on Ref<d r>, Decl<d r>;
+flowtype name {} on Decl, Ref;
+
 {-====================-}
 
 aspect production mk_graph
@@ -50,55 +57,60 @@ s::Scope<d r> ::=
 
 aspect production mk_decl
 d::Decl<d r> ::= 
-  _
+  objlang_inst::Decorated d with i
 {
-  local parts::[String] = explode ("_", d.name);
+  local parts::[String] = explode ("_", objlang_inst.name);
   d.id = head(parts);
   d.substr = head (tail (parts));
+  d.name = objlang_inst.name;
 }
 
 
 aspect production mk_decl_assoc
 d::Decl<d r> ::= 
-  _
+  objlang_inst::Decorated d with i
   module::Scope<d r> 
 {
   local parts::[String] = explode ("_", d.name);
   d.id = head(parts);
   d.substr = head (tail (parts));
   module.scope_id = d.scope_id;
+  d.name = objlang_inst.name;
 }
 
 
 aspect production mk_ref
 r::Ref<d r> ::= 
-  _
+  objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", r.name);
+  local parts::[String] = explode ("_", objlang_inst.name);
   r.id = head (parts);
   r.substr = head (tail (parts));
   r.last_id = 0;
+  r.name = objlang_inst.name;
 }
 
 aspect production mk_imp
 r::Ref<d r> ::= 
-  _
+  objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", r.name);
+  local parts::[String] = explode ("_", objlang_inst.name);
   r.id = head (parts);
   r.substr = head (tail (parts));
   r.last_id = 0;
+  r.name = objlang_inst.name;
 }
 
 aspect production mk_ref_qid
 r::Ref<d r> ::= 
-  _
+  objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
 {
-  local parts::[String] = explode ("_", r.name);
+  local parts::[String] = explode ("_", objlang_inst.name);
   r.id = head(parts);
   r.substr = head (tail (parts));
   r.last_id = qid_scope.last_id;
+  r.name = objlang_inst.name;
   qid_scope.scope_id = r.scope_id;
 }
 

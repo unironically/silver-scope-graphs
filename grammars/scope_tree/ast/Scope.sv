@@ -56,14 +56,6 @@ nonterminal Refs<d r>;
 {-====================-}
 
 @{--
- - The name of a declaration or reference.
- -}
-synthesized attribute name :: String
-  occurs on Ref<d r>, Decl<d r>;
-
-flowtype name {} on Decl, Ref;
-
-@{--
  - The list of declarations that a reference resolves to.
  -}
 synthesized attribute resolutions<d r> :: [Decorated Decl<d r>]
@@ -123,7 +115,7 @@ abstract production mk_decl
   attribute name i occurs on d =>
 d::Decl<d r> ::=
   objlang_inst::Decorated d with i
-{ d.name = objlang_inst.name; }
+{}
 
 @{--
  - Constructing a declaration which has an associated scope. For use in defining
@@ -137,7 +129,7 @@ abstract production mk_decl_assoc
 d::Decl<d r> ::= 
   objlang_inst::Decorated d with i
   module::Scope<d r> 
-{ d.name = objlang_inst.name; }
+{}
 
 @{--
  - Constructing a reference node. Parameterized by a object language reference.
@@ -145,10 +137,10 @@ d::Decl<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_ref
-  attribute name i occurs on objr =>
+  attribute name i occurs on r =>
 r::Ref<d r> ::= 
-  objlang_inst::Decorated objr with i
-{ r.name = objlang_inst.name; }
+  objlang_inst::Decorated r with i
+{}
 
 @{--
  - Constructing a reference node. Parameterized by a object language reference.
@@ -156,10 +148,10 @@ r::Ref<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_imp
-  attribute name i occurs on objr =>
+  attribute name i occurs on r =>
 r::Ref<d r> ::= 
-  objlang_inst::Decorated objr with i
-{ r.name = objlang_inst.name; }
+  objlang_inst::Decorated r with i
+{}
 
 @{--
  - Constructing an import node. Parameterized by a object language reference.
@@ -174,7 +166,7 @@ abstract production mk_ref_qid
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
-{ r.name = objlang_inst.name; }
+{}
 
 {-====================-}
 

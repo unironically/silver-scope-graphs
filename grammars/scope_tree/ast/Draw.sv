@@ -157,7 +157,7 @@ rs::Refs<d r> ::=
 global graphviz_font_size :: String = "12";
 
 global graphviz_fill_colors :: [String] = 
-  ["#ffffff", "#ebebeb", "#d6d6d6", "#c0c0c0"];
+  ["#ffffff", "#dddddd", "#bbbbbb", "#999999"];
 
 global import_edge_style :: String = "edge [arrowhead=onormal]";
 
