@@ -8,7 +8,7 @@ inherited attribute scope_id :: Integer
 synthesized attribute last_id :: Integer 
   occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
-synthesized attribute id :: String 
+synthesized attribute id :: String  -- swap name and id
   occurs on Scope<d r>, Ref<d r>, Decl<d r>;
 
 synthesized attribute substr :: String 

@@ -2,7 +2,8 @@ grammar scope_tree:ast;
 
 import scope_tree:visser as res;
 
--- Q: How to get rid of multiple identical @param declarations while still generating the correct .md documentation?
+-- Q: How to get rid of multiple identical @param declarations 
+--    while still generating the correct .md documentation?
 
 @{--
  - The top-level graph.
@@ -78,6 +79,8 @@ abstract production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
 {
+  --g.refs = ..
+  --g.dcls = .. (no e!)
   g.dec_ref = (\r::Ref<d r> -> 
     head (filter ((\dr::Decorated Ref<d r> -> dr.name == r.name), root.refs)));
 }
