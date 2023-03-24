@@ -2,9 +2,6 @@ grammar scope_tree:ast;
 
 import scope_tree:visser as res;
 
--- Q: How to get rid of multiple identical @param declarations 
---    while still generating the correct .md documentation?
-
 @{--
  - The top-level graph.
  - @param d The declaration nonterminal of the object language.
