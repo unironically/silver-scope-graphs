@@ -8,18 +8,18 @@ inherited attribute scope_id :: Integer
 synthesized attribute last_id :: Integer 
   occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
-synthesized attribute id :: String  -- swap name and id
+synthesized attribute name :: String  -- swap id and name
   occurs on Scope<d r>, Ref<d r>, Decl<d r>;
 
 synthesized attribute substr :: String 
   occurs on Ref<d r>, Decl<d r>;
 
 @{--
- - The name of a declaration or reference.
+ - The id of a declaration or reference.
  -}
-synthesized attribute name :: String
+synthesized attribute id :: String
   occurs on Ref<d r>, Decl<d r>;
-flowtype name {} on Decl, Ref;
+flowtype id {} on Decl, Ref;
 
 {-====================-}
 
@@ -42,7 +42,7 @@ s::Scope<d r> ::=
   decls.scope_id = children.last_id;
   refs.scope_id = s.scope_id;
   s.last_id = 0;
-  s.id = scope_id (s.parent, s.scope_id);
+  s.name = scope_id (s.parent, s.scope_id);
 }
 
 aspect production mk_scope_qid
@@ -51,7 +51,7 @@ s::Scope<d r> ::=
 {
   ref.scope_id = s.scope_id;
   s.last_id = max (s.scope_id, ref.last_id);
-  s.id = scope_id (s.parent, s.scope_id);
+  s.name = scope_id (s.parent, s.scope_id);
 }
 
 
@@ -59,10 +59,10 @@ aspect production mk_decl
 d::Decl<d r> ::= 
   objlang_inst::Decorated d with i
 {
-  local parts::[String] = explode ("_", objlang_inst.name);
-  d.id = head(parts);
+  local parts::[String] = explode ("_", objlang_inst.id);
+  d.name = head(parts);
   d.substr = head (tail (parts));
-  d.name = objlang_inst.name;
+  d.id = objlang_inst.id;
 }
 
 
@@ -71,11 +71,11 @@ d::Decl<d r> ::=
   objlang_inst::Decorated d with i
   module::Scope<d r> 
 {
-  local parts::[String] = explode ("_", d.name);
-  d.id = head(parts);
+  local parts::[String] = explode ("_", d.id);
+  d.name = head(parts);
   d.substr = head (tail (parts));
   module.scope_id = d.scope_id;
-  d.name = objlang_inst.name;
+  d.id = objlang_inst.id;
 }
 
 
@@ -83,22 +83,22 @@ aspect production mk_ref
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", objlang_inst.name);
-  r.id = head (parts);
+  local parts::[String] = explode ("_", objlang_inst.id);
+  r.name = head (parts);
   r.substr = head (tail (parts));
   r.last_id = 0;
-  r.name = objlang_inst.name;
+  r.id = objlang_inst.id;
 }
 
 aspect production mk_imp
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", objlang_inst.name);
-  r.id = head (parts);
+  local parts::[String] = explode ("_", objlang_inst.id);
+  r.name = head (parts);
   r.substr = head (tail (parts));
   r.last_id = 0;
-  r.name = objlang_inst.name;
+  r.id = objlang_inst.id;
 }
 
 aspect production mk_ref_qid
@@ -106,11 +106,11 @@ r::Ref<d r> ::=
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
 {
-  local parts::[String] = explode ("_", objlang_inst.name);
-  r.id = head(parts);
+  local parts::[String] = explode ("_", objlang_inst.id);
+  r.name = head(parts);
   r.substr = head (tail (parts));
   r.last_id = qid_scope.last_id;
-  r.name = objlang_inst.name;
+  r.id = objlang_inst.id;
   qid_scope.scope_id = r.scope_id;
 }
 
@@ -163,11 +163,11 @@ rs::Refs<d r> ::=
 function scope_id
 String ::= 
   par::Maybe<Decorated Scope<d r>> 
-  id::Integer
+  name::Integer
 {
   return
     case par of
-      | nothing () -> toString (id)
-      | just (p) -> p.id ++ "." ++ toString (id)
+      | nothing () -> toString (name)
+      | just (p) -> p.name ++ "." ++ toString (name)
     end;
 }

@@ -37,7 +37,7 @@ function resolve_visser
   seen_imports::[Decorated Ref<d r>] 
   r::Decorated Ref<d r>
 {
-  return filter((\s::Decorated Decl<d r> -> s.id == r.id), 
+  return filter((\s::Decorated Decl<d r> -> s.name == r.name), 
     env_v (r::seen_imports, [], r.scope));
 }
 
@@ -87,7 +87,7 @@ function env_i
       -- Get all imports of current scope, remove names already seen in seen_imports
       let imp_list::[Decorated Ref<d r>] = removeAllBy (
         (\left_imp::Decorated Ref<d r> right_imp::Decorated Ref<d r>
-          -> left_imp.name == right_imp.name), 
+          -> left_imp.id == right_imp.id), 
         seen_imports,
         current_scope.imps)
       in
@@ -143,7 +143,7 @@ function shadow
 [Decorated Decl<d r>] ::= l::[Decorated Decl<d r>] r::[Decorated Decl<d r>]
 {
   return unionBy (\mem_r::Decorated Decl<d r> mem_l::Decorated Decl<d r> -> 
-    mem_r.id == mem_l.id, r , l);
+    mem_r.name == mem_l.name, r , l);
 }
 
 function check_seen_scopes
@@ -152,5 +152,5 @@ Boolean ::=
   seen_scopes::[Decorated Scope<d r>]
 {
   return containsBy ((\l::Decorated Scope<d r> r::Decorated Scope<d r> -> 
-    l.id == r.id), cur_scope, seen_scopes);
+    l.name == r.name), cur_scope, seen_scopes);
 }

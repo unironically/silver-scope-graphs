@@ -58,7 +58,7 @@ d::Decl<d r> ::=
 {
   d.string = 
     node_style_declref (d) ++
-    scope_str (d.scope) ++ "->" ++ d.name;
+    scope_str (d.scope) ++ "->" ++ d.id;
 }
 
 aspect production mk_decl_assoc
@@ -68,8 +68,8 @@ d::Decl<d r> ::=
 {
   d.string = module.string ++ 
     node_style_declref (d) ++ 
-    scope_str (d.scope) ++ "->" ++ d.name ++
-    "{" ++ import_edge_style ++ d.name ++ "->" ++ scope_str (module) ++ "}";
+    scope_str (d.scope) ++ "->" ++ d.id ++
+    "{" ++ import_edge_style ++ d.id ++ "->" ++ scope_str (module) ++ "}";
   
   module.scope_color = d.scope_color + 1;
 }
@@ -80,7 +80,7 @@ r::Ref<d r> ::=
 {
   r.string = 
     node_style_declref (r) ++
-    r.name ++ "->" ++ scope_str (r.scope);
+    r.id ++ "->" ++ scope_str (r.scope);
 }
 
 aspect production mk_imp
@@ -89,7 +89,7 @@ r::Ref<d r> ::=
 {
   r.string = 
     node_style_declref (r) ++
-    r.name ++ "->" ++ scope_str (r.scope);
+    r.id ++ "->" ++ scope_str (r.scope);
 }
 
 aspect production mk_ref_qid
@@ -99,7 +99,7 @@ r::Ref<d r> ::=
 {
   r.string =
     node_style_declref (r) ++ 
-    r.name ++ "->" ++ scope_str (r.scope) ++ qid_scope.string;
+    r.id ++ "->" ++ scope_str (r.scope) ++ qid_scope.string;
   
   qid_scope.scope_color = r.scope_color + 1;
 }
@@ -167,9 +167,9 @@ String ::= node::Decorated Scope<d r>
 
 function node_style_declref
   attribute scope_color occurs on a,
-  attribute name i occurs on a =>
+  attribute id i occurs on a =>
 String ::= node::Decorated a with i
-{ return "{" ++ node_style_both (node, false) ++ "\"" ++ node.name ++ "\"}"; }
+{ return "{" ++ node_style_both (node, false) ++ "\"" ++ node.id ++ "\"}"; }
 
 function node_style_both
   attribute scope_color occurs on a =>
@@ -188,7 +188,7 @@ String ::= s::Decorated Scope<d r>
   return
     "{" ++ 
     implode (" ", 
-      map ((\r::Decorated Ref<d r> -> scope_str (s) ++ "->" ++ r.name), s.imps)) ++
+      map ((\r::Decorated Ref<d r> -> scope_str (s) ++ "->" ++ r.id), s.imps)) ++
     "}";
 }
 
@@ -205,5 +205,5 @@ String ::=
 function scope_str
 String ::= s::Decorated Scope<d r>
 {
-  return "\"" ++ s.id ++ "\"";
+  return "\"" ++ s.name ++ "\"";
 }

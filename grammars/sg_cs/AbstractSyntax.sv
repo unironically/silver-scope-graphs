@@ -29,8 +29,8 @@ inherited attribute dec_graph::sg:Graph<IdDecl IdRef>
 propagate dec_graph on NodeList, Refs, Qid; 
 
 {- required by scope graph abstract syntax -}
-attribute sg:name occurs on IdDecl, IdRef;
-flowtype sg:name {} on IdDecl, IdRef;
+attribute sg:id occurs on IdDecl, IdRef;
+flowtype sg:id {} on IdDecl, IdRef;
 
 {-====================-}
 
@@ -152,7 +152,7 @@ abstract production ref
 n::IdRef ::= id::String
 {
   local r::sg:Ref<IdDecl IdRef> = if n.last_is_imp then sg:mk_imp (n) else sg:mk_ref (n);
-  n.sg:name = id;
+  n.sg:id = id;
   n.ref = r;
 
   local dr::Decorated sg:Ref<IdDecl IdRef> = n.dec_graph.sg:dec_ref (r);
@@ -164,5 +164,5 @@ n::IdRef ::= id::String
 abstract production decl
 d::IdDecl ::= id::String
 {
-  d.sg:name = id;
+  d.sg:id = id;
 }

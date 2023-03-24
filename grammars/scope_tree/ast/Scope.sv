@@ -115,7 +115,7 @@ s::Scope<d r> ::=
  - @param objlang_inst The corresponding object language declaration.
  -}
 abstract production mk_decl
-  attribute name i occurs on d =>
+  attribute id i occurs on d =>
 d::Decl<d r> ::=
   objlang_inst::Decorated d with i
 {}
@@ -128,7 +128,7 @@ d::Decl<d r> ::=
  - @param module The scope of the module defined.
  -}
 abstract production mk_decl_assoc
-  attribute name i occurs on d =>
+  attribute id i occurs on d =>
 d::Decl<d r> ::= 
   objlang_inst::Decorated d with i
   module::Scope<d r> 
@@ -140,7 +140,7 @@ d::Decl<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_ref
-  attribute name i occurs on r =>
+  attribute id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {}
@@ -151,7 +151,7 @@ r::Ref<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_imp
-  attribute name i occurs on r =>
+  attribute id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {}
@@ -165,7 +165,7 @@ r::Ref<d r> ::=
  - @param qid_scope The next scope in a qualified identifier.
  -}
 abstract production mk_ref_qid
-  attribute name i occurs on r =>
+  attribute id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
