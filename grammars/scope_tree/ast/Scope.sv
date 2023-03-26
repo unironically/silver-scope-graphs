@@ -1,7 +1,5 @@
 grammar scope_tree:ast;
 
-import scope_tree:visser as res;
-
 @{--
  - The top-level graph.
  - @param d The declaration nonterminal of the object language.
@@ -56,7 +54,7 @@ nonterminal Refs<d r>;
 @{--
  - The list of declarations that a reference resolves to.
  -}
-synthesized attribute resolutions<d r> :: [Decorated Decl<d r>]
+synthesized attribute resolutions<d r> :: [Decorated Decl<d r>] with ++
   occurs on Ref<d r>;
 
 @{--
@@ -140,7 +138,9 @@ abstract production mk_ref
   attribute id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
-{}
+{
+  r.resolutions := [];
+}
 
 @{--
  - Constructing a reference node. Parameterized by a object language reference.
@@ -151,7 +151,9 @@ abstract production mk_imp
   attribute id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
-{}
+{
+  r.resolutions := [];
+}
 
 @{--
  - Constructing an import node. Parameterized by a object language reference.
@@ -166,7 +168,9 @@ abstract production mk_ref_qid
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
-{}
+{
+  r.resolutions := [];
+}
 
 {-====================-}
 

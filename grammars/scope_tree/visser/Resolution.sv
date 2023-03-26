@@ -8,14 +8,14 @@ aspect production mk_ref
 r::Ref<d r> ::= 
   _
 {
-  r.resolutions = resolve (r);
+  r.resolutions <- resolve (r);
 }
 
 aspect production mk_imp
 r::Ref<d r> ::= 
   _
 {
-  r.resolutions = resolve (r);
+  r.resolutions <- resolve (r);
 }
 
 aspect production mk_ref_qid
@@ -23,7 +23,7 @@ r::Ref<d r> ::=
   _
   qid_scope::Scope<d r> 
 {
-  r.resolutions = resolve (r);
+  r.resolutions <- resolve (r);
 }
 
 {-====================-}

@@ -1,6 +1,9 @@
 grammar sg_cs;
 
+-- import the grammar for making scope trees
+-- currenlty this includes the resolution algorithm
 imports scope_tree:ast as sg;
+imports scope_tree:visser as res;
 
 parser parse :: Program_c {
   sg_cs;
