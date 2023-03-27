@@ -1,4 +1,6 @@
-grammar sg_cs;
+grammar sg_cs:driver;
+
+imports sg_cs;
 
 -- import the grammar for making scope trees
 -- currenlty this includes the resolution algorithm

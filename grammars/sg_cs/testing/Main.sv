@@ -8,7 +8,12 @@ imports scope_tree:ast as sg;
 -- This import is not needed, but doesn't hurt. We may want to move
 -- sg_cs:Main.sv to some driver/main module that sits next to this
 -- testing one.
-imports scope_tree:visser as res;
+imports scope_tree:visser2 as res;
+
+
+parser parse :: Program_c {
+  sg_cs;
+}
 
 
 mainTestSuite core_tests ;
@@ -45,29 +50,28 @@ equalityTest (dcl_ids(e1_ast.graph.sg:all_dcls),
 
 
 {- Example 2 -}
-{-
-global e2 :: String = "decls a_1 b2 refs a_3 a4 b5";
+global e2 :: String = "decls a_1, b_2 refs a_3, a_4, b_5";
 
 equalityTest (
   parse (e2 , "text" ).parseSuccess, true, Boolean, core_tests );
 
 global e2_ast :: Program = parse (e2 , "text" ).parseTree.ast;
 
-equalityTest (bind_ids(e2_ast.ress), 
+equalityTest (sort (bind_ids(e2_ast.ress)), 
   [("a_3", "a_1"), ("a_4", "a_1"), ("b_5", "b_2")], 
   [(String,String)], core_tests
 );
 
-equalityTest (ref_ids(e2_ast.graph.sg:all_refs),
+equalityTest (sort (ref_ids(e2_ast.graph.sg:all_refs)),
   ["a_3", "a_4", "b_5"], 
   [String], core_tests
 );
 
-equalityTest (dcl_ids(e2_ast.graph.sg:all_dcls),
+equalityTest (sort (dcl_ids(e2_ast.graph.sg:all_dcls)),
   ["a_1", "b_2"], 
   [String], core_tests
 );
--}
+
 
 
 
