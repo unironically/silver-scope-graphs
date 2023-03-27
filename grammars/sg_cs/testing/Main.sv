@@ -4,6 +4,10 @@ imports silver:testing ;
 imports sg_cs;
 
 imports scope_tree:ast as sg;
+
+-- This import is not needed, but doesn't hurt. We may want to move
+-- sg_cs:Main.sv to some driver/main module that sits next to this
+-- testing one.
 imports scope_tree:visser as res;
 
 
@@ -21,14 +25,53 @@ equalityTest (
   parse (e1 , "text" ).parseSuccess, true, Boolean, core_tests );
 
 
--- Testing simple resolutions
+-- Testing simple resolutions, all_refs, all_dcls
 global e1_ast :: Program = parse (e1 , "text" ).parseTree.ast;
 
-equalityTest (
-  bind_ids(e1_ast.ress), 
+equalityTest (bind_ids(e1_ast.ress), 
   [("a_2", "a_1")], 
   [(String,String)], core_tests
 );
+
+equalityTest (ref_ids(e1_ast.graph.sg:all_refs),
+  ["a_2"], 
+  [String], core_tests
+);
+
+equalityTest (dcl_ids(e1_ast.graph.sg:all_dcls),
+  ["a_1"], 
+  [String], core_tests
+);
+
+
+{- Example 2 -}
+{-
+global e2 :: String = "decls a_1 b2 refs a_3 a4 b5";
+
+equalityTest (
+  parse (e2 , "text" ).parseSuccess, true, Boolean, core_tests );
+
+global e2_ast :: Program = parse (e2 , "text" ).parseTree.ast;
+
+equalityTest (bind_ids(e2_ast.ress), 
+  [("a_3", "a_1"), ("a_4", "a_1"), ("b_5", "b_2")], 
+  [(String,String)], core_tests
+);
+
+equalityTest (ref_ids(e2_ast.graph.sg:all_refs),
+  ["a_3", "a_4", "b_5"], 
+  [String], core_tests
+);
+
+equalityTest (dcl_ids(e2_ast.graph.sg:all_dcls),
+  ["a_1", "b_2"], 
+  [String], core_tests
+);
+-}
+
+
+
+
 
 
 
@@ -39,7 +82,27 @@ function bind_ids
 {
   return case binds of 
          | [] -> []
-         | (r, d)::t -> (r.sg:id, d.sg:id) :: bind_ids(t)
+         | (r, d)::t -> (r.sg:str_id, d.sg:str_id) :: bind_ids(t)
+         end;
+}
+
+function ref_ids
+[String] ::= 
+  refs::[Decorated sg:Ref<IdDecl IdRef>]
+{
+  return case refs of 
+         | [] -> []
+         | r::t -> r.sg:str_id :: ref_ids(t)
+         end;
+}
+
+function dcl_ids
+[String] ::= 
+  dcls::[Decorated sg:Decl<IdDecl IdRef>]
+{
+  return case dcls of 
+         | [] -> []
+         | d::t -> d.sg:str_id :: dcl_ids(t)
          end;
 }
 
@@ -56,10 +119,14 @@ function bind_ids
 - obj lang refs/dcls currently need
   - name : String
   - id : String - which contains the name and index
+  - these are scope graph attributes.
 
   They should/could have
-  - name : something that yeilds a string
-  - index/identifier
+  - name : String - something that yeilds a string
+  - index : String - makes refs/dcls with the same name unique
+  - id = (name,index) - is unique across ALL refs/dcls
+         or the string version of it, now called str_id
+
   - location : a  where this is some sort of location information
            we'll see what functions we need on this
 
@@ -69,7 +136,14 @@ function bind_ids
 - also productions for making the scope tree
 
 - the interface to resolutions
-  - collect all Ref and Dcl nodes at the top - raw data
+  - all_refs, all_dcls  - on Graph
+    collect all Ref and Dcl nodes at the top - raw data
+
+- Dcl and Ref have
+  `obj` - 
+
+  `obj` must have name, index, and id
+
 
 - *** what reference attributes do we have that complete the "graph" ?
   - Refs have `resolutions` - list of visible Dcls
@@ -77,6 +151,8 @@ function bind_ids
 
   - Scopes? Associated scopes?
 
+  - What ones are drawn by the scope-tree?
+  - What ones are drawn by a resolution algorithm?
 
 
 ** To Do
@@ -85,6 +161,12 @@ function bind_ids
   on rhs as was done in mk_decl and is still done in mk_ref
 
 - rename decl to dcl
+
+
+- in Resolution - replace .name with .obj.name
+  replace .str_id with .obj.str_id
+  but after making some more tests
+
 
 
  -}

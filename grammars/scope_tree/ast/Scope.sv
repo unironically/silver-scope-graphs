@@ -1,5 +1,10 @@
 grammar scope_tree:ast;
 
+{- This file provides the API for scope trees. It contains only 
+   the declarations that a user needs to know about.
+ -}
+
+
 @{--
  - The top-level graph.
  - @param d The declaration nonterminal of the object language.
@@ -63,6 +68,31 @@ synthesized attribute resolutions<d r> :: [Decorated Decl<d r>] with ++
 synthesized attribute dec_ref<d r> :: (Decorated Ref<d r> ::= Ref<d r>)
   occurs on Graph<d r>;
 
+@{--
+ - All reference nodes in the scope graph.
+ -}
+monoid attribute all_refs<d r> :: [Decorated Ref<d r>] with [], ++;
+attribute all_refs<d r> occurs on Graph<d r>;
+
+-- The following fails to parse:
+--  monoid attribute all_refs<d r> :: [Decorated Ref<d r>] with [], ++;
+--    occurs on Graph<d r>;
+
+@{--
+ - All declaration nodes in the scope graph.
+ -}
+monoid attribute all_dcls<d r> :: [Decorated Decl<d r>] with [], ++;
+attribute all_dcls<d r> occurs on Graph<d r>;
+
+
+@{--
+ - All declarations and refernces need a link, named `obj` that is
+   a reference to the object language declaration or link.
+ -}
+--synthesized attribute obj<a i> :: Decorated a with i;
+--attribute obj<d> occurs on Decl<d r>;
+--attribute obj<r> occurs on Ref<d r>;
+
 {-====================-}
 
 @{--
@@ -110,7 +140,7 @@ s::Scope<d r> ::=
  - @param objlang_inst The corresponding object language declaration.
  -}
 abstract production mk_decl
-  attribute id i occurs on d =>
+  attribute str_id i occurs on d =>
 d::Decl<d r> ::=
   objlang_inst::Decorated d with i
 {}
@@ -123,7 +153,7 @@ d::Decl<d r> ::=
  - @param module The scope of the module defined.
  -}
 abstract production mk_decl_assoc
-  attribute id i occurs on d =>
+  attribute str_id i occurs on d =>
 d::Decl<d r> ::= 
   objlang_inst::Decorated d with i
   module::Scope<d r> 
@@ -135,12 +165,10 @@ d::Decl<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_ref
-  attribute id i occurs on r =>
+  attribute str_id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
-{
-  r.resolutions := [];
-}
+{}
 
 @{--
  - Constructing a reference node. Parameterized by a object language reference.
@@ -148,12 +176,10 @@ r::Ref<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_imp
-  attribute id i occurs on r =>
+  attribute str_id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
-{
-  r.resolutions := [];
-}
+{}
 
 @{--
  - Constructing an import node. Parameterized by a object language reference.
@@ -164,13 +190,11 @@ r::Ref<d r> ::=
  - @param qid_scope The next scope in a qualified identifier.
  -}
 abstract production mk_ref_qid
-  attribute id i occurs on r =>
+  attribute str_id i occurs on r =>
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
-{
-  r.resolutions := [];
-}
+{}
 
 {-====================-}
 

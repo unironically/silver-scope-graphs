@@ -8,18 +8,22 @@ inherited attribute scope_id :: Integer
 synthesized attribute last_id :: Integer 
   occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
-synthesized attribute name :: String  -- swap id and name
-  occurs on Scope<d r>, Ref<d r>, Decl<d r>;
+-- `name` is simply the expected string name of a reference
+synthesized attribute name :: String
+  occurs on Scope<d r>;
 
-synthesized attribute substr :: String 
-  occurs on Ref<d r>, Decl<d r>;
+attribute name occurs on Ref<d r>, Decl<d r>; -- remove this
+
+synthesized attribute index :: String
+  occurs on Ref<d r>, Decl<d r>;  -- remove this
 
 @{--
- - The id of a declaration or reference.
+ - The identifier of a declaration or reference.
+ - This uniquely identifies a reference or declaration from all others.
  -}
-synthesized attribute id :: String
-  occurs on Ref<d r>, Decl<d r>;
-flowtype id {} on Decl, Ref;
+synthesized attribute str_id :: String
+  occurs on Ref<d r>, Decl<d r>;  -- remove  this
+flowtype str_id {} on Decl, Ref;  -- remove this
 
 {-====================-}
 
@@ -59,10 +63,12 @@ aspect production mk_decl
 d::Decl<d r> ::= 
   objlang_inst::Decorated d with i
 {
-  local parts::[String] = explode ("_", objlang_inst.id);
+--  d.obj = objlang_inst;
+
+  local parts::[String] = explode ("_", objlang_inst.str_id);
   d.name = head(parts);
-  d.substr = head (tail (parts));
-  d.id = objlang_inst.id;
+  d.index = head (tail (parts));
+  d.str_id = objlang_inst.str_id;
 }
 
 
@@ -71,11 +77,13 @@ d::Decl<d r> ::=
   objlang_inst::Decorated d with i
   module::Scope<d r> 
 {
-  local parts::[String] = explode ("_", d.id);
+--  d.obj = objlang_inst;
+
+  local parts::[String] = explode ("_", d.str_id);
   d.name = head(parts);
-  d.substr = head (tail (parts));
+  d.index = head (tail (parts));
   module.scope_id = d.scope_id;
-  d.id = objlang_inst.id;
+  d.str_id = objlang_inst.str_id;
 }
 
 
@@ -83,22 +91,26 @@ aspect production mk_ref
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", objlang_inst.id);
+--  r.obj = objlang_inst;
+
+  local parts::[String] = explode ("_", objlang_inst.str_id);
   r.name = head (parts);
-  r.substr = head (tail (parts));
+  r.index = head (tail (parts));
   r.last_id = 0;
-  r.id = objlang_inst.id;
+  r.str_id = objlang_inst.str_id;
 }
 
 aspect production mk_imp
 r::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
-  local parts::[String] = explode ("_", objlang_inst.id);
+--  r.obj = objlang_inst;
+
+  local parts::[String] = explode ("_", objlang_inst.str_id);
   r.name = head (parts);
-  r.substr = head (tail (parts));
+  r.index = head (tail (parts));
   r.last_id = 0;
-  r.id = objlang_inst.id;
+  r.str_id = objlang_inst.str_id;
 }
 
 aspect production mk_ref_qid
@@ -106,11 +118,13 @@ r::Ref<d r> ::=
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
 {
-  local parts::[String] = explode ("_", objlang_inst.id);
+--  r.obj = objlang_inst;
+
+  local parts::[String] = explode ("_", objlang_inst.str_id);
   r.name = head(parts);
-  r.substr = head (tail (parts));
+  r.index = head (tail (parts));
   r.last_id = qid_scope.last_id;
-  r.id = objlang_inst.id;
+  r.str_id = objlang_inst.str_id;
   qid_scope.scope_id = r.scope_id;
 }
 

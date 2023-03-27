@@ -16,10 +16,27 @@ synthesized attribute iqid_imps<d r> :: [Decorated Ref<d r>]
 inherited attribute qid_imp<d r> :: Maybe<Decorated Ref<d r>> 
   occurs on Scope<d r>;
 
+-- EVW: I believe that the following are the same as all_refs and all_dcls.
 synthesized attribute decls<d r> :: [Decorated Decl<d r>]
   occurs on Scope<d r>, Decls<d r>;
 synthesized attribute refs<d r> :: [Decorated Ref<d r>]
   occurs on Scope<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>, Scopes<d r>;
+
+
+-- These occurrences are used to collect these values for access on
+-- the Graph.
+attribute all_refs<d r> occurs on Scope<d r>, Scopes<d r>, 
+  Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+
+attribute all_dcls<d r> occurs on Scope<d r>, Scopes<d r>, 
+  Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+
+-- this leads to semantic errors
+-- propagate all_refs on Graph, Scope, Scopes, Decl, Decls, Refs;
+
+-- this leads to syntax erros
+-- propagate all_refs<d r> on Graph<d r>;
+
 
 {-====================-}
 
@@ -27,6 +44,7 @@ aspect production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
 {
+  propagate all_refs, all_dcls;
   root.parent = nothing ();
   root.qid_imp = nothing ();
 }
@@ -39,6 +57,7 @@ s::Scope<d r> ::=
   refs::Refs<d r> 
   children::Scopes<d r>
 {
+  propagate all_refs, all_dcls;
   decls.scope = s;
   refs.scope = s;
   children.parent = just (s);
@@ -55,6 +74,7 @@ aspect production mk_scope_qid
 s::Scope<d r> ::= 
   ref::Ref<d r>
 {
+  propagate all_refs, all_dcls;
   ref.scope = s;
   s.imps = case s.qid_imp of 
              nothing () -> [] 
@@ -69,8 +89,10 @@ aspect production mk_decl
 d::Decl<d r> ::= 
   _
 {
+  propagate all_refs;
   d.assoc_scope = nothing ();
   d.refs = [];
+  d.all_dcls := [d];
 }
 
 
@@ -79,10 +101,12 @@ d::Decl<d r> ::=
   _
   module::Scope<d r> 
 {
+  propagate all_refs;
   module.parent = just (d.scope);
   module.qid_imp = nothing ();
   d.assoc_scope = just (module);
   d.refs = module.refs;
+  d.all_dcls := [d];
 }
 
 
@@ -90,18 +114,24 @@ aspect production mk_ref
 r::Ref<d r> ::= 
   _
 {
+  propagate all_dcls;
   r.iqid_imps = [];
   r.imps = [];
   r.refs = [r];
+  r.resolutions := [];
+  r.all_refs := [r];
 }
 
 aspect production mk_imp
 r::Ref<d r> ::= 
   _
 {
+  propagate all_dcls;
   r.iqid_imps = [r];
   r.imps = [];
   r.refs = [r];
+  r.resolutions := [];
+  r.all_refs := [r];
 }
 
 aspect production mk_ref_qid
@@ -109,9 +139,12 @@ r::Ref<d r> ::=
   _
   qid_scope::Scope<d r> 
 {
+  propagate all_dcls;
   r.iqid_imps = qid_scope.iqid_imps;
   r.imps = [r];
   r.refs = r :: qid_scope.refs;
+  r.resolutions := [];
+  r.all_refs := [r];
   
   qid_scope.parent = nothing ();
   qid_scope.qid_imp = just (r);
@@ -124,6 +157,7 @@ ss::Scopes<d r> ::=
   s::Scope<d r> 
   st::Scopes<d r>
 {
+  propagate all_refs, all_dcls;
   s.parent = ss.parent;
   s.qid_imp = nothing ();
   st.parent = ss.parent;
@@ -133,6 +167,7 @@ ss::Scopes<d r> ::=
 aspect production scope_nil
 ss::Scopes<d r> ::=
 {
+  propagate all_refs, all_dcls;
   ss.refs = [];
 }
 
@@ -141,6 +176,7 @@ ds::Decls<d r> ::=
   d::Decl<d r> 
   dt::Decls<d r>
 {
+  propagate all_refs, all_dcls;
   d.scope = ds.scope;
   dt.scope = ds.scope;
   ds.decls = d :: dt.decls;
@@ -150,6 +186,7 @@ ds::Decls<d r> ::=
 aspect production decl_nil
 ds::Decls<d r> ::= 
 {
+  propagate all_refs, all_dcls;
   ds.decls = [];
   ds.refs = [];
 }
@@ -159,6 +196,7 @@ rs::Refs<d r> ::=
   r::Ref<d r> 
   rt::Refs<d r>
 {
+  propagate all_refs, all_dcls;
   r.scope = rs.scope;
   rt.scope = rs.scope;
 
@@ -170,6 +208,7 @@ rs::Refs<d r> ::=
 aspect production ref_nil
 rs::Refs<d r> ::= 
 {
+  propagate all_refs, all_dcls;
   rs.iqid_imps = [];
   rs.imps = [];
   rs.refs = [];
