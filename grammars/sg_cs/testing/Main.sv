@@ -1,15 +1,11 @@
 grammar sg_cs:testing;
 
 imports silver:testing ;
+
 imports sg_cs;
 
 imports scope_tree:ast as sg;
-
--- This import is not needed, but doesn't hurt. We may want to move
--- sg_cs:Main.sv to some driver/main module that sits next to this
--- testing one.
-imports scope_tree:visser2 as res;
-
+imports scope_tree:visser as res;
 
 parser parse :: Program_c {
   sg_cs;
@@ -50,14 +46,24 @@ equalityTest (dcl_ids(e1_ast.graph.sg:all_dcls),
 
 
 {- Example 2 -}
-global e2 :: String = "decls a_1, b_2 refs a_3, a_4, b_5";
+global e2 :: String = "decls a_1, b_2 refs a_4, a_3, b_5";
 
 equalityTest (
   parse (e2 , "text" ).parseSuccess, true, Boolean, core_tests );
 
 global e2_ast :: Program = parse (e2 , "text" ).parseTree.ast;
 
+-- resolutions on the AST
 equalityTest (sort (bind_ids(e2_ast.ress)), 
+  [("a_3", "a_1"), ("a_4", "a_1"), ("b_5", "b_2")], 
+  [(String,String)], core_tests
+);
+
+-- resolutions on the scope graph
+global e2_sg :: Decorated sg:Graph<IdDecl IdRef> = 
+  decorate e2_ast.graph with {} ;
+
+equalityTest (sort (bind_ids ( collect_dcls (e2_sg.sg:all_refs))),
   [("a_3", "a_1"), ("a_4", "a_1"), ("b_5", "b_2")], 
   [(String,String)], core_tests
 );
@@ -74,10 +80,22 @@ equalityTest (sort (dcl_ids(e2_ast.graph.sg:all_dcls)),
 
 
 
+function collect_dcls
+[(Decorated sg:Ref<IdDecl IdRef>, Decorated sg:Decl<IdDecl IdRef>)] ::=
+  refs::[Decorated sg:Ref<IdDecl IdRef>]
+{
+  local res :: [(Decorated sg:Ref<IdDecl IdRef>, 
+                 Decorated sg:Decl<IdDecl IdRef>)] =
+     concat (
+       map ( \r::Decorated sg:Ref<IdDecl IdRef> ->
+               map ( \d::Decorated sg:Decl<IdDecl IdRef> -> (r,d) , 
+                     r.sg:resolutions),  
+             refs ) 
+          );
 
+  return res;
 
-
-
+}
 
 -- Extract identifying strings from Refs and Decls
 function bind_ids
