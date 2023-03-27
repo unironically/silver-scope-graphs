@@ -74,8 +74,8 @@ synthesized attribute dec_ref<d r> :: (Decorated Ref<d r> ::= Ref<d r>)
 monoid attribute all_refs<d r> :: [Decorated Ref<d r>] with [], ++;
 attribute all_refs<d r> occurs on Graph<d r>;
 
--- The following fails to parse:
---  monoid attribute all_refs<d r> :: [Decorated Ref<d r>] with [], ++;
+-- The following fails to compile:
+--  monoid attribute all_refs<d r> :: [Decorated Ref<d r>] with [], ++
 --    occurs on Graph<d r>;
 
 @{--
@@ -107,7 +107,7 @@ g::Graph<d r> ::=
   --g.refs = ..
   --g.dcls = .. (no e!)
   g.dec_ref = (\r::Ref<d r> -> 
-    head (filter ((\dr::Decorated Ref<d r> -> dr.name == r.name), root.refs)));
+    head (filter ((\dr::Decorated Ref<d r> -> dr.str_id == r.str_id), root.refs)));
 }
 
 @{--

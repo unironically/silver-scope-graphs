@@ -12,7 +12,7 @@ synthesized attribute last_id :: Integer
 synthesized attribute name :: String
   occurs on Scope<d r>;
 
-attribute name occurs on Ref<d r>, Decl<d r>; -- remove this
+attribute name occurs on Ref<d r>, Decl<d r>; -- move this
 
 synthesized attribute index :: String
   occurs on Ref<d r>, Decl<d r>;  -- remove this
