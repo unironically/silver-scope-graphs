@@ -4,9 +4,9 @@ synthesized attribute ast<a> :: a;
 
 nonterminal Program_c   with ast<Program>;
 nonterminal NodeList_c  with ast<NodeList>;
-nonterminal Decls_c     with ast<Decls>;
+nonterminal Dcls_c     with ast<Dcls>;
 nonterminal Refs_c      with ast<Refs>;
-nonterminal Decl_c      with ast<Decl>;
+nonterminal Dcl_c      with ast<Dcl>;
 nonterminal Qid_c       with ast<Qid>;
 
 {- Program -}
@@ -20,7 +20,7 @@ p::Program_c ::= sl::NodeList_c
 {- Node List -}
 
 concrete production nodelist_decls_c
-sl::NodeList_c ::= Decls_t dl::Decls_c slt::NodeList_c
+sl::NodeList_c ::= Dcls_t dl::Dcls_c slt::NodeList_c
 {
   sl.ast = nodelist_decls (dl.ast, slt.ast);
 }
@@ -55,16 +55,16 @@ sl::NodeList_c ::=
   sl.ast = nodelist_nothing ();
 }
 
-{- Decls -}
+{- Dcls -}
 
 concrete production decls_comma_c
-ds::Decls_c ::= id::ID_t Comma_t dst::Decls_c
+ds::Dcls_c ::= id::ID_t Comma_t dst::Dcls_c
 { 
   ds.ast = decls_comma (decl (id.lexeme), dst.ast);
 }
 
 concrete production decls_last_c
-ds::Decls_c ::= id::ID_t
+ds::Dcls_c ::= id::ID_t
 {
   ds.ast = decls_last (decl (id.lexeme));
 }
@@ -104,7 +104,7 @@ terminal Int_t /(0|[1-9][0-9]*)/;
 
 terminal Module_t 'module';
 
-terminal Decls_t 'decls';
+terminal Dcls_t 'decls';
 terminal Refs_t 'refs';
 terminal Import_t 'import';
 

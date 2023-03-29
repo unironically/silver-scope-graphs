@@ -3,27 +3,20 @@ grammar scope_tree:ast;
 {-====================-}
 
 inherited attribute scope_id :: Integer 
-  occurs on Scope<d r>, Scopes<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>;
+  occurs on Scope<d r>, Scopes<d r>, Refs<d r>, Ref<d r>, Dcls<d r>, Dcl<d r>;
 
 synthesized attribute last_id :: Integer 
   occurs on Ref<d r>, Scope<d r>, Scopes<d r>;
 
--- `name` is simply the expected string name of a reference
-synthesized attribute name :: String
-  occurs on Scope<d r>;
+attribute name occurs on Scope<d r>;
 
-attribute name occurs on Ref<d r>, Decl<d r>; -- move this
-
+ -- remove this - not sure we need this index.
 synthesized attribute index :: String
-  occurs on Ref<d r>, Decl<d r>;  -- remove this
+  occurs on Ref<d r>, Dcl<d r>; 
 
-@{--
- - The identifier of a declaration or reference.
- - This uniquely identifies a reference or declaration from all others.
- -}
-synthesized attribute str_id :: String
-  occurs on Ref<d r>, Decl<d r>;  -- remove  this
-flowtype str_id {} on Decl, Ref;  -- remove this
+
+flowtype str_id {} on Dcl, Ref; 
+flowtype name {} on Dcl, Ref; 
 
 {-====================-}
 
@@ -38,7 +31,7 @@ g::Graph<d r> ::=
 
 aspect production mk_scope
 s::Scope<d r> ::= 
-  decls::Decls<d r> 
+  decls::Dcls<d r> 
   refs::Refs<d r> 
   children::Scopes<d r>
 {
@@ -60,72 +53,73 @@ s::Scope<d r> ::=
 
 
 aspect production mk_decl
-d::Decl<d r> ::= 
+dcl::Dcl<d r> ::= 
   objlang_inst::Decorated d with i
 {
---  d.obj = objlang_inst;
+  -- d.obj_dcl = objlang_inst;
 
-  local parts::[String] = explode ("_", objlang_inst.str_id);
-  d.name = head(parts);
-  d.index = head (tail (parts));
-  d.str_id = objlang_inst.str_id;
+  -- local parts::[String] = explode ("_", objlang_inst.str_id);
+  dcl.name = objlang_inst.name; -- head(parts);
+  -- dcl.index = head (tail (parts));
+  dcl.str_id = objlang_inst.str_id;
 }
 
 
 aspect production mk_decl_assoc
-d::Decl<d r> ::= 
+dcl::Dcl<d r> ::= 
   objlang_inst::Decorated d with i
   module::Scope<d r> 
 {
 --  d.obj = objlang_inst;
 
-  local parts::[String] = explode ("_", d.str_id);
-  d.name = head(parts);
-  d.index = head (tail (parts));
-  module.scope_id = d.scope_id;
-  d.str_id = objlang_inst.str_id;
+  --local parts::[String] = explode ("_", dcl.str_id);
+  dcl.name = objlang_inst.name; --head(parts);
+  --dcl.index = head (tail (parts));
+  module.scope_id = dcl.scope_id;
+  dcl.str_id = objlang_inst.str_id;
 }
 
 
 aspect production mk_ref
-r::Ref<d r> ::= 
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
 --  r.obj = objlang_inst;
 
-  local parts::[String] = explode ("_", objlang_inst.str_id);
-  r.name = head (parts);
-  r.index = head (tail (parts));
-  r.last_id = 0;
-  r.str_id = objlang_inst.str_id;
+  ref.name = objlang_inst.name;
+  ref.str_id = objlang_inst.str_id;
+
+  ref.last_id = 0;
+
+  -- ref.index = head (tail (parts));
 }
 
 aspect production mk_imp
-r::Ref<d r> ::= 
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {
---  r.obj = objlang_inst;
+--  ref.obj = objlang_inst;
 
-  local parts::[String] = explode ("_", objlang_inst.str_id);
-  r.name = head (parts);
-  r.index = head (tail (parts));
-  r.last_id = 0;
-  r.str_id = objlang_inst.str_id;
+  --local parts::[String] = explode ("_", objlang_inst.str_id);
+  ref.name = objlang_inst.name; -- head (parts);
+  --ref.index = head (tail (parts));
+  ref.last_id = 0;
+  ref.str_id = objlang_inst.str_id;
 }
 
 aspect production mk_ref_qid
-r::Ref<d r> ::= 
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
 {
---  r.obj = objlang_inst;
+--  ref.obj = objlang_inst;
 
-  local parts::[String] = explode ("_", objlang_inst.str_id);
-  r.name = head(parts);
-  r.index = head (tail (parts));
-  r.last_id = qid_scope.last_id;
-  r.str_id = objlang_inst.str_id;
-  qid_scope.scope_id = r.scope_id;
+  --local parts::[String] = explode ("_", objlang_inst.str_id);
+  ref.name = objlang_inst.name; --head(parts);
+  --ref.index = head (tail (parts));
+  ref.last_id = qid_scope.last_id;
+  ref.str_id = objlang_inst.str_id;
+  qid_scope.scope_id = ref.scope_id;
 }
 
 {-====================-}
@@ -147,16 +141,16 @@ ss::Scopes<d r> ::=
 }
 
 aspect production decl_cons
-ds::Decls<d r> ::= 
-  d::Decl<d r> 
-  dt::Decls<d r>
+ds::Dcls<d r> ::= 
+  d::Dcl<d r> 
+  dt::Dcls<d r>
 {
   d.scope_id = ds.scope_id + 1;
   dt.scope_id = ds.scope_id + case d of mk_decl_assoc (_, _) -> 1 | _ -> 0 end;
 }
 
 aspect production decl_nil
-ds::Decls<d r> ::= 
+ds::Dcls<d r> ::= 
 {}
 
 aspect production ref_cons

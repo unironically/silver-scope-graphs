@@ -3,10 +3,10 @@ grammar scope_tree:ast;
 {-====================-}
 
 inherited attribute scope_color :: Integer occurs on 
-  Scope<d r>, Scopes<d r>, Ref<d r>, Refs<d r>, Decl<d r>, Decls<d r>;
+  Scope<d r>, Scopes<d r>, Ref<d r>, Refs<d r>, Dcl<d r>, Dcls<d r>;
 
 synthesized attribute string :: String occurs on 
-  Graph<d r>, Scope<d r>, Scopes<d r>, Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+  Graph<d r>, Scope<d r>, Scopes<d r>, Dcl<d r>, Dcls<d r>, Ref<d r>, Refs<d r>;
 
 {-====================-}
 
@@ -20,7 +20,7 @@ g::Graph<d r> ::=
 
 aspect production mk_scope
 s::Scope<d r> ::= 
-  decls::Decls<d r> 
+  decls::Dcls<d r> 
   refs::Refs<d r> 
   children::Scopes<d r>
 {
@@ -53,7 +53,7 @@ s::Scope<d r> ::=
 }
 
 aspect production mk_decl
-d::Decl<d r> ::= 
+d::Dcl<d r> ::= 
   _
 {
   d.string = 
@@ -62,7 +62,7 @@ d::Decl<d r> ::=
 }
 
 aspect production mk_decl_assoc
-d::Decl<d r> ::= 
+d::Dcl<d r> ::= 
   _
   module::Scope<d r> 
 {
@@ -123,16 +123,16 @@ ss::Scopes<d r> ::=
 }
 
 aspect production decl_cons
-ds::Decls<d r> ::= 
-  d::Decl<d r> 
-  dt::Decls<d r>
+ds::Dcls<d r> ::= 
+  d::Dcl<d r> 
+  dt::Dcls<d r>
 { 
   propagate scope_color;
   ds.string = d.string ++ " " ++ dt.string;
 }
 
 aspect production decl_nil
-ds::Decls<d r> ::= 
+ds::Dcls<d r> ::= 
 {
   ds.string = "";
 }

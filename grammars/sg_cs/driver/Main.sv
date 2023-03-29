@@ -24,7 +24,7 @@ IO<Integer> ::= largs::[String]
     let result :: ParseResult<Program_c> = parse (file, filePath);
 
     let ast :: Program = result.parseTree.ast;
-    let graph :: sg:Graph<IdDecl IdRef> = result.parseTree.ast.graph;
+    let graph :: sg:Graph<IdDcl IdRef> = result.parseTree.ast.graph;
 
     system ("echo '" ++ graph.sg:string ++ "' | dot -Tsvg > " ++ outFileName);
     
@@ -35,7 +35,7 @@ IO<Integer> ::= largs::[String]
 }
 
 function str_binds
-String ::= binds::[(Decorated sg:Ref<IdDecl IdRef>, Decorated sg:Decl<IdDecl IdRef>)]
+String ::= binds::[(Decorated sg:Ref<IdDcl IdRef>, Decorated sg:Dcl<IdDcl IdRef>)]
 {
   return case binds of 
          | [] -> ""

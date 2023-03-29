@@ -1,7 +1,51 @@
 grammar scope_tree:ast;
 
-{- This file provides the API for scope trees. It contains only 
-   the declarations that a user needs to know about.
+{- 
+
+This file provides the API for scope trees. It contains only the
+declarations that a user needs to know about.
+
+Name resolution is a ubiquitous problem in analysing programs and
+other structures in which entities are declared, given a name, and, in
+other locations, refereneced by that name.
+
+Visser et al. proposed scope graphs as a common structure for
+representing the scoping structure of a program such that common name
+resolution algorithms could be used on it. The object language
+constructs a scope graph for a program that captures the name
+declarations, uses, and scoping structure of the program.  The
+algorithm completes the graph by adding edges from name references to
+their declaration.
+
+In reference attribute grammars, name resolution is accomplished in a
+similar, but ad-hoc, fashion by defining a reference attribute on name
+use productions that points to the declaration of that name. In this
+approach, however, each object language typically implements its own
+environment for use in name resolution.
+
+The obvious question is how these approaches can be brought together.
+
+The approach taken here to implement scope graphs using reference
+attribute grammars.
+
+The object language program constructs a "scope tree" that also
+captures the name uses, name declarations, and scoping structure of
+the program.
+
+This tree is decorated with attribute values, some of which are
+reference attributes. This is to construct a Visser-style scope graph
+out of tree nodes in the scope-tree with reference attributes
+implementing the edges.
+
+
+We also use reference attributes to link - in both directions -
+relevant object language AST nodes with nodes in the scope-tree/graph.
+
+This file is the API for this scope-tree library, specifying the
+nonterminals, productions, and attributes that users of this library
+will use.
+
+
  -}
 
 
@@ -31,14 +75,14 @@ nonterminal Scopes<d r>;
  - @param d The declaration nonterminal of the object language.
  - @param r The reference nonterminal of the object language.
  -}
-nonterminal Decl<d r>;
+nonterminal Dcl<d r>;
 
 @{--
  - A tree of declaration nodes.
  - @param d The declaration nonterminal of the object language.
  - @param r The reference nonterminal of the object language.
  -}
-nonterminal Decls<d r>;
+nonterminal Dcls<d r>;
 
 @{--
  - A reference/import node.
@@ -59,11 +103,12 @@ nonterminal Refs<d r>;
 @{--
  - The list of declarations that a reference resolves to.
  -}
-synthesized attribute resolutions<d r> :: [Decorated Decl<d r>] with ++
+synthesized attribute resolutions<d r> :: [Decorated Dcl<d r>] with ++
   occurs on Ref<d r>;
 
 @{--
  - Function used to query for the decorated version of a scope graph reference node.
+ - TODO: maybe instead search by the identifier - currently the str_id attribute.
  -}
 synthesized attribute dec_ref<d r> :: (Decorated Ref<d r> ::= Ref<d r>)
   occurs on Graph<d r>;
@@ -81,17 +126,35 @@ attribute all_refs<d r> occurs on Graph<d r>;
 @{--
  - All declaration nodes in the scope graph.
  -}
-monoid attribute all_dcls<d r> :: [Decorated Decl<d r>] with [], ++;
+monoid attribute all_dcls<d r> :: [Decorated Dcl<d r>] with [], ++;
 attribute all_dcls<d r> occurs on Graph<d r>;
 
+@{--
+ - A attribute or references and declarations for the expected string name of the entity.
+ -}
+synthesized attribute name :: String
+  occurs on Ref<d r>, Dcl<d r>;
 
 @{--
+ - The identifier of a declaration or reference.
+ - This uniquely identifies a reference or declaration from all others.
+ -}
+synthesized attribute str_id :: String
+  occurs on Ref<d r>, Dcl<d r>;
+
+@@{--
  - All declarations and refernces need a link, named `obj` that is
    a reference to the object language declaration or link.
  -}
---synthesized attribute obj<a i> :: Decorated a with i;
---attribute obj<d> occurs on Decl<d r>;
---attribute obj<r> occurs on Ref<d r>;
+
+--synthesized attribute obj_dcl<d r> :: Decorated d with i;
+--attribute obj_Dcl<d r> occurs on Dcl<d r>;
+
+--attribute obj<r d i> occurs on Rf<d r i>;
+
+--nonterminal Dcl<d r i>;
+--nonterminal Rf<d r i>;
+
 
 {-====================-}
 
@@ -119,7 +182,7 @@ g::Graph<d r> ::=
  -}
 abstract production mk_scope
 s::Scope<d r> ::= 
-  decls::Decls<d r> 
+  decls::Dcls<d r> 
   refs::Refs<d r> 
   children::Scopes<d r>
 {}
@@ -140,8 +203,9 @@ s::Scope<d r> ::=
  - @param objlang_inst The corresponding object language declaration.
  -}
 abstract production mk_decl
-  attribute str_id i occurs on d =>
-d::Decl<d r> ::=
+  attribute str_id i occurs on d,
+  attribute name i occurs on d =>
+dcl::Dcl<d r> ::=
   objlang_inst::Decorated d with i
 {}
 
@@ -153,8 +217,9 @@ d::Decl<d r> ::=
  - @param module The scope of the module defined.
  -}
 abstract production mk_decl_assoc
-  attribute str_id i occurs on d =>
-d::Decl<d r> ::= 
+  attribute str_id i occurs on d,
+  attribute name i occurs on d =>
+dcl::Dcl<d r> ::= 
   objlang_inst::Decorated d with i
   module::Scope<d r> 
 {}
@@ -165,8 +230,9 @@ d::Decl<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_ref
-  attribute str_id i occurs on r =>
-r::Ref<d r> ::= 
+  attribute str_id i occurs on r,
+  attribute name i occurs on r =>
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {}
 
@@ -176,8 +242,9 @@ r::Ref<d r> ::=
  - @param objlang_inst The corresponding object language reference.
  -}
 abstract production mk_imp
-  attribute str_id i occurs on r =>
-r::Ref<d r> ::= 
+  attribute str_id i occurs on r,
+  attribute name i occurs on r =>
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
 {}
 
@@ -190,8 +257,9 @@ r::Ref<d r> ::=
  - @param qid_scope The next scope in a qualified identifier.
  -}
 abstract production mk_ref_qid
-  attribute str_id i occurs on r =>
-r::Ref<d r> ::= 
+  attribute str_id i occurs on r,
+  attribute name i occurs on r =>
+ref::Ref<d r> ::= 
   objlang_inst::Decorated r with i
   qid_scope::Scope<d r> 
 {}
@@ -224,16 +292,16 @@ ss::Scopes<d r> ::=
  - @param dt The remaining tree of declarations.
  -}
 abstract production decl_cons
-ds::Decls<d r> ::= 
-  d::Decl<d r> 
-  dt::Decls<d r>
+ds::Dcls<d r> ::= 
+  d::Dcl<d r> 
+  dt::Dcls<d r>
 {}
 
 @{--
  - A node representing the end of a declaration tree.
  -}
 abstract production decl_nil
-ds::Decls<d r> ::= 
+ds::Dcls<d r> ::= 
 {}
 
 @{--

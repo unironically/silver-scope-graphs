@@ -5,9 +5,9 @@ grammar scope_tree:ast;
 inherited attribute parent<d r> :: Maybe<Decorated Scope<d r>> 
   occurs on Scope<d r>, Scopes<d r>;
 inherited attribute scope<d r> :: Decorated Scope<d r> 
-  occurs on Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+  occurs on Dcl<d r>, Dcls<d r>, Ref<d r>, Refs<d r>;
 synthesized attribute assoc_scope<d r> :: Maybe<Decorated Scope<d r>> 
-  occurs on Decl<d r>;
+  occurs on Dcl<d r>;
 
 synthesized attribute imps<d r> :: [Decorated Ref<d r>] 
   occurs on Ref<d r>, Refs<d r>, Scope<d r>;
@@ -17,22 +17,22 @@ inherited attribute qid_imp<d r> :: Maybe<Decorated Ref<d r>>
   occurs on Scope<d r>;
 
 -- EVW: I believe that the following are the same as all_refs and all_dcls.
-synthesized attribute decls<d r> :: [Decorated Decl<d r>]
-  occurs on Scope<d r>, Decls<d r>;
+synthesized attribute decls<d r> :: [Decorated Dcl<d r>]
+  occurs on Scope<d r>, Dcls<d r>;
 synthesized attribute refs<d r> :: [Decorated Ref<d r>]
-  occurs on Scope<d r>, Refs<d r>, Ref<d r>, Decls<d r>, Decl<d r>, Scopes<d r>;
+  occurs on Scope<d r>, Refs<d r>, Ref<d r>, Dcls<d r>, Dcl<d r>, Scopes<d r>;
 
 
 -- These occurrences are used to collect these values for access on
 -- the Graph.
 attribute all_refs<d r> occurs on Scope<d r>, Scopes<d r>, 
-  Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+  Dcl<d r>, Dcls<d r>, Ref<d r>, Refs<d r>;
 
 attribute all_dcls<d r> occurs on Scope<d r>, Scopes<d r>, 
-  Decl<d r>, Decls<d r>, Ref<d r>, Refs<d r>;
+  Dcl<d r>, Dcls<d r>, Ref<d r>, Refs<d r>;
 
 -- this leads to semantic errors
--- propagate all_refs on Graph, Scope, Scopes, Decl, Decls, Refs;
+-- propagate all_refs on Graph, Scope, Scopes, Dcl, Dcls, Refs;
 
 -- this leads to syntax erros
 -- propagate all_refs<d r> on Graph<d r>;
@@ -53,7 +53,7 @@ g::Graph<d r> ::=
 
 aspect production mk_scope
 s::Scope<d r> ::= 
-  decls::Decls<d r> 
+  decls::Dcls<d r> 
   refs::Refs<d r> 
   children::Scopes<d r>
 {
@@ -86,7 +86,7 @@ s::Scope<d r> ::=
 
 
 aspect production mk_decl
-d::Decl<d r> ::= 
+d::Dcl<d r> ::= 
   _
 {
   propagate all_refs;
@@ -97,7 +97,7 @@ d::Decl<d r> ::=
 
 
 aspect production mk_decl_assoc
-d::Decl<d r> ::= 
+d::Dcl<d r> ::= 
   _
   module::Scope<d r> 
 {
@@ -106,7 +106,7 @@ d::Decl<d r> ::=
   module.qid_imp = nothing ();
   d.assoc_scope = just (module);
   d.refs = module.refs;
-  d.all_dcls := [d];
+  d.all_dcls := [d] ++ module.all_dcls;
 }
 
 
@@ -172,9 +172,9 @@ ss::Scopes<d r> ::=
 }
 
 aspect production decl_cons
-ds::Decls<d r> ::= 
-  d::Decl<d r> 
-  dt::Decls<d r>
+ds::Dcls<d r> ::= 
+  d::Dcl<d r> 
+  dt::Dcls<d r>
 {
   propagate all_refs, all_dcls;
   d.scope = ds.scope;
@@ -184,7 +184,7 @@ ds::Decls<d r> ::=
 }
 
 aspect production decl_nil
-ds::Decls<d r> ::= 
+ds::Dcls<d r> ::= 
 {
   propagate all_refs, all_dcls;
   ds.decls = [];
@@ -217,9 +217,9 @@ rs::Refs<d r> ::=
 {-====================-}
 
 function combine_decls
-Decls<d r> ::= 
-  ds1::Decls<d r> 
-  ds2::Decls<d r>
+Dcls<d r> ::= 
+  ds1::Dcls<d r> 
+  ds2::Dcls<d r>
 {
   return
     case ds1 of

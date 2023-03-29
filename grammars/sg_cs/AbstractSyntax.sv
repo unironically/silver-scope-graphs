@@ -4,41 +4,41 @@ imports scope_tree:ast as sg;
 
 nonterminal Program;
 nonterminal NodeList;
-nonterminal Decls;
+nonterminal Dcls;
 nonterminal Refs;
-nonterminal Decl;
+nonterminal Dcl;
 nonterminal Qid;
-nonterminal IdDecl;
+nonterminal IdDcl;
 nonterminal IdRef;
 
 {-====================-} 
 
-synthesized attribute graph::sg:Graph<IdDecl IdRef> occurs on Program;
+synthesized attribute graph::sg:Graph<IdDcl IdRef> occurs on Program;
 
-synthesized attribute decls::sg:Decls<IdDecl IdRef> occurs on NodeList, Decls;
-synthesized attribute refs::sg:Refs<IdDecl IdRef> occurs on NodeList, Refs;
-synthesized attribute children::sg:Scopes<IdDecl IdRef> occurs on NodeList;
+synthesized attribute decls::sg:Dcls<IdDcl IdRef> occurs on NodeList, Dcls;
+synthesized attribute refs::sg:Refs<IdDcl IdRef> occurs on NodeList, Refs;
+synthesized attribute children::sg:Scopes<IdDcl IdRef> occurs on NodeList;
 
 inherited attribute last_is_imp::Boolean occurs on Qid, IdRef;
-synthesized attribute ref::sg:Ref<IdDecl IdRef> occurs on Qid, IdRef;
+synthesized attribute ref::sg:Ref<IdDcl IdRef> occurs on Qid, IdRef;
 
-monoid attribute ress::[(Decorated sg:Ref<IdDecl IdRef>, Decorated sg:Decl<IdDecl IdRef>)] 
+monoid attribute ress::[(Decorated sg:Ref<IdDcl IdRef>, Decorated sg:Dcl<IdDcl IdRef>)] 
   occurs on Program, NodeList, Refs, Qid, IdRef;
 propagate ress on Program, NodeList, Refs, Qid;
 
-inherited attribute dec_graph::sg:Graph<IdDecl IdRef> 
+inherited attribute dec_graph::sg:Graph<IdDcl IdRef> 
   occurs on Program, NodeList, Refs, Qid, IdRef;
 propagate dec_graph on NodeList, Refs, Qid; 
 
 {- required by scope graph abstract syntax -}
-attribute sg:str_id occurs on IdDecl, IdRef;
-flowtype sg:str_id {} on IdDecl, IdRef;
+attribute sg:str_id occurs on IdDcl, IdRef;
+flowtype sg:str_id {} on IdDcl, IdRef;
 
-attribute sg:name occurs on IdDecl, IdRef;
-flowtype sg:name {} on IdDecl, IdRef;
+attribute sg:name occurs on IdDcl, IdRef;
+flowtype sg:name {} on IdDcl, IdRef;
 
-attribute sg:index occurs on IdDecl, IdRef;
-flowtype sg:index {} on IdDecl, IdRef;
+attribute sg:index occurs on IdDcl, IdRef;
+flowtype sg:index {} on IdDcl, IdRef;
 
 {-====================-}
 
@@ -47,8 +47,8 @@ flowtype sg:index {} on IdDecl, IdRef;
 abstract production program
 p::Program ::= sl::NodeList
 {
-  local g::sg:Graph<IdDecl IdRef> = sg:mk_graph (s);
-  local s::sg:Scope<IdDecl IdRef> = sg:mk_scope (sl.decls, sl.refs, sl.children);
+  local g::sg:Graph<IdDcl IdRef> = sg:mk_graph (s);
+  local s::sg:Scope<IdDcl IdRef> = sg:mk_scope (sl.decls, sl.refs, sl.children);
   p.graph = g;
   sl.dec_graph = g;
 }
@@ -56,7 +56,7 @@ p::Program ::= sl::NodeList
 {- Node List -}
 
 abstract production nodelist_decls
-sl::NodeList ::= dl::Decls slt::NodeList
+sl::NodeList ::= dl::Dcls slt::NodeList
 {
   sl.decls = sg:combine_decls (dl.decls, slt.decls);
   sl.refs = slt.refs;
@@ -64,10 +64,10 @@ sl::NodeList ::= dl::Decls slt::NodeList
 }
 
 abstract production decl_module
-sl::NodeList ::= id::IdDecl sub::NodeList slt::NodeList
+sl::NodeList ::= id::IdDcl sub::NodeList slt::NodeList
 {
-  local s::sg:Scope<IdDecl IdRef> = sg:mk_scope (sub.decls, sub.refs, sub.children);
-  local d::sg:Decl<IdDecl IdRef> = sg:mk_decl_assoc (id, s);
+  local s::sg:Scope<IdDcl IdRef> = sg:mk_scope (sub.decls, sub.refs, sub.children);
+  local d::sg:Dcl<IdDcl IdRef> = sg:mk_decl_assoc (id, s);
   sl.decls = sg:decl_cons (d, slt.decls);
   sl.refs = slt.refs;
   sl.children = slt.children;
@@ -93,7 +93,7 @@ sl::NodeList ::= qid::Qid slt::NodeList
 abstract production nodelist_subscope
 sl::NodeList ::= sub::NodeList slt::NodeList
 {
-  local s::sg:Scope<IdDecl IdRef> = sg:mk_scope (sub.decls, sub.refs, sub.children);
+  local s::sg:Scope<IdDcl IdRef> = sg:mk_scope (sub.decls, sub.refs, sub.children);
   sl.decls = slt.decls;
   sl.refs = slt.refs;
   sl.children = sg:scope_cons (s, slt.children);
@@ -107,19 +107,19 @@ sl::NodeList ::=
   sl.children = sg:scope_nil ();
 }
 
-{- Decls -}
+{- Dcls -}
 
 abstract production decls_comma
-ds::Decls ::= id::IdDecl dst::Decls
+ds::Dcls ::= id::IdDcl dst::Dcls
 {
-  local d::sg:Decl<IdDecl IdRef> = sg:mk_decl (id);
+  local d::sg:Dcl<IdDcl IdRef> = sg:mk_decl (id);
   ds.decls = sg:decl_cons (d, dst.decls);
 }
 
 abstract production decls_last
-ds::Decls ::= id::IdDecl
+ds::Dcls ::= id::IdDcl
 {
-  local d::sg:Decl<IdDecl IdRef> = sg:mk_decl (id);
+  local d::sg:Dcl<IdDcl IdRef> = sg:mk_decl (id);
   ds.decls = sg:decl_cons (d, sg:decl_nil ());
 }
 
@@ -144,7 +144,7 @@ rs::Refs ::= qid::Qid
 abstract production qid_dot
 q::Qid ::= id::IdRef qt::Qid
 { propagate last_is_imp;
-  local s::sg:Scope<IdDecl IdRef> = sg:mk_scope_qid (qt.ref);
+  local s::sg:Scope<IdDcl IdRef> = sg:mk_scope_qid (qt.ref);
   q.ref = id.ref;
 }
 
@@ -165,18 +165,18 @@ n::IdRef ::= id::String
   n.sg:str_id = id;
 
 
-  local r::sg:Ref<IdDecl IdRef> = if n.last_is_imp then sg:mk_imp (n) else sg:mk_ref (n);
+  local r::sg:Ref<IdDcl IdRef> = if n.last_is_imp then sg:mk_imp (n) else sg:mk_ref (n);
 
   n.ref = r;
 
-  local dr::Decorated sg:Ref<IdDecl IdRef> = n.dec_graph.sg:dec_ref (r);
+  local dr::Decorated sg:Ref<IdDcl IdRef> = n.dec_graph.sg:dec_ref (r);
   
-  n.ress := map ((\d::Decorated sg:Decl<IdDecl IdRef> -> (dr, d)), 
+  n.ress := map ((\d::Decorated sg:Dcl<IdDcl IdRef> -> (dr, d)), 
                  dr.sg:resolutions);
 }
 
 abstract production decl
-d::IdDecl ::= id::String
+d::IdDcl ::= id::String
 {
   local parts::[String] = explode ("_", id);
   d.sg:name = head(parts);

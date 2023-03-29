@@ -29,20 +29,20 @@ r::Ref<d r> ::=
 {-====================-}
 
 function resolve
-[Decorated Decl<d r>] ::= r::Decorated Ref<d r>
+[Decorated Dcl<d r>] ::= r::Decorated Ref<d r>
 { return resolve_visser ([], r); }
 
 function resolve_visser
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   r::Decorated Ref<d r>
 {
-  return filter((\s::Decorated Decl<d r> -> s.name == r.name), 
+  return filter((\s::Decorated Dcl<d r> -> s.name == r.name), 
     env_v (r::seen_imports, [], r.scope));
 }
 
 function env_v
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
@@ -52,7 +52,7 @@ function env_v
 }
 
 function env_l
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
@@ -62,7 +62,7 @@ function env_l
 }
 
 function env_d
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
@@ -74,7 +74,7 @@ function env_d
 }
 
 function env_i
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
@@ -93,8 +93,8 @@ function env_i
       in
 
       -- Resolve each of the known imports in the current scope collected from the above
-      let imp_res_list::[Decorated Decl<d r>] = foldl (
-        (\imp_res_list::[Decorated Decl<d r>] imp::Decorated Ref<d r>
+      let imp_res_list::[Decorated Dcl<d r>] = foldl (
+        (\imp_res_list::[Decorated Dcl<d r>] imp::Decorated Ref<d r>
           -> imp_res_list ++ 
             resolve_visser (seen_imports, imp)),  -- this is where decorated will come in when time to implement
         [],
@@ -103,7 +103,7 @@ function env_i
 
       -- Get all the 'associated scope' nodes from declarations in imp_res_list generated above
       let scope_list::[Decorated Scope<d r>] = foldl (
-        (\scope_list::[Decorated Scope<d r>] decl::Decorated Decl<d r>
+        (\scope_list::[Decorated Scope<d r>] decl::Decorated Dcl<d r>
           -> scope_list ++ case decl.assoc_scope of 
             | nothing () -> [] | just (p) -> [p] end), 
         [],
@@ -111,8 +111,8 @@ function env_i
       in
 
       -- Get results of calling env_l on each of the scopes found above, with the current scope in each seen scopes list
-      let final_res_list::[Decorated Decl<d r>] = foldl (
-        (\final_res_list::[Decorated Decl<d r>] scope::Decorated Scope<d r>
+      let final_res_list::[Decorated Dcl<d r>] = foldl (
+        (\final_res_list::[Decorated Dcl<d r>] scope::Decorated Scope<d r>
           -> final_res_list ++ env_l (seen_imports, seen_scopes ++ [current_scope], scope)), 
         [],
         scope_list)
@@ -124,7 +124,7 @@ function env_i
 }
 
 function env_p
-[Decorated Decl<d r>] ::= 
+[Decorated Dcl<d r>] ::= 
   seen_imports::[Decorated Ref<d r>] 
   seen_scopes::[Decorated Scope<d r>] 
   current_scope::Decorated Scope<d r>
@@ -140,9 +140,9 @@ function env_p
 }
 
 function shadow
-[Decorated Decl<d r>] ::= l::[Decorated Decl<d r>] r::[Decorated Decl<d r>]
+[Decorated Dcl<d r>] ::= l::[Decorated Dcl<d r>] r::[Decorated Dcl<d r>]
 {
-  return unionBy (\mem_r::Decorated Decl<d r> mem_l::Decorated Decl<d r> -> 
+  return unionBy (\mem_r::Decorated Dcl<d r> mem_l::Decorated Dcl<d r> -> 
     mem_r.name == mem_l.name, r , l);
 }
 
