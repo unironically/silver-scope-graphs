@@ -1,4 +1,4 @@
-grammar sg_cs;
+grammar sg_cs:lang;
 
 imports scope_tree:ast as sg;
 

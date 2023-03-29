@@ -1,4 +1,4 @@
-grammar sg_cs;
+grammar sg_cs:lang;
 
 synthesized attribute ast<a> :: a;
 

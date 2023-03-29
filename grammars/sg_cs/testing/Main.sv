@@ -2,13 +2,13 @@ grammar sg_cs:testing;
 
 imports silver:testing ;
 
-imports sg_cs;
+imports sg_cs:lang;
 
 imports scope_tree:ast as sg;
 imports scope_tree:visser as res;
 
 parser parse :: Program_c {
-  sg_cs;
+  sg_cs:lang;
 }
 
 
@@ -18,12 +18,20 @@ mainTestSuite core_tests ;
 equalityTest ( 1 + 10, 4 + 7, Integer, core_tests ) ;
 equalityTest ( 31 + 10, 34 + 7 , Integer, core_tests ) ;
 
+global ee :: String = s"""a
 
+asdf
+
+
+sdf""" ;
 
 {- Example 1
  ----------------------------------------------------------------------
  -}
-global e1 :: String = "decls a_1  refs  a_2";
+global e1 :: String = s"""
+  decls a_1
+  refs  a_2
+""";
 
 -- Testing the parser
 equalityTest (
@@ -53,7 +61,10 @@ equalityTest (dcl_ids(e1_ast.graph.sg:all_dcls),
 {- Example 2
  ----------------------------------------------------------------------
  -}
-global e2 :: String = "decls a_1, b_2 refs a_4, a_3, b_5";
+global e2 :: String = s"""
+  decls a_1, b_2 
+  refs a_4, a_3, b_5
+""";
 
 equalityTest (
   parse (e2 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -92,7 +103,10 @@ equalityTest (sort (bind_ids(e2_ast.ress)),
 {- Example 3
  ----------------------------------------------------------------------
  -}
-global e3 :: String = "decls a_1, a_2, b_3 refs a_4";
+global e3 :: String = s"""
+  decls a_1, a_2, b_3 
+  refs a_4
+""";
 
 equalityTest (
   parse (e3 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -130,8 +144,14 @@ equalityTest (sort (bind_ids(e3_ast.ress)),
 {- Example 4
  ----------------------------------------------------------------------
  -}
-global e4 :: String = 
-  "module A_2 { decls x_3} import A_5 decls b_1 refs x_4";
+global e4 :: String = s"""
+  module A_2 { 
+    decls x_3
+  } 
+  import A_5 
+  decls b_1 
+  refs x_4
+""";
 
 equalityTest (
   parse (e4 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -169,8 +189,16 @@ equalityTest (sort (bind_ids(e4_ast.ress)),
 {- Example 5
  ----------------------------------------------------------------------
   -}
-global e5 :: String = 
-  "module A_1 { module A_2 { decls a_3} } import A_4 decls b_5 refs a_6";
+global e5 :: String = s"""
+  module A_1 { 
+    module A_2 { 
+      decls a_3
+    }
+  } 
+  import A_4 
+  decls b_5 
+  refs a_6
+""";
 
 equalityTest (
   parse (e5 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -208,8 +236,20 @@ equalityTest (sort (bind_ids(e5_ast.ress)),
 {- Example 6
  ----------------------------------------------------------------------
   -}
-global e6 :: String = 
-  "module A_1 { module B_2 { decls a_3 refs d_9 } decls d_8 } import A_4 import B_5  decls c_6 refs a_7";
+global e6 :: String = s"""
+  module A_1 { 
+    module B_2 { 
+      decls a_3 
+      refs d_9 
+    }
+    decls d_8
+  } 
+  import A_4 
+  import B_5  
+
+  decls c_6 
+  refs a_7
+""";
 
 equalityTest (
   parse (e6 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -247,8 +287,17 @@ equalityTest (sort (bind_ids(e6_ast.ress)),
 {- Example 7
  ----------------------------------------------------------------------
   -}
-global e7 :: String = 
-  "module A_1 { module A_2 { decls a_3 } } import A_4 import A_5  decls b_6 refs a_7";
+global e7 :: String = s"""
+  module A_1 { 
+    module A_2 {
+      decls a_3 
+    }
+  }
+  import A_4 
+  import A_5
+  decls b_6
+  refs a_7
+""";
 
 equalityTest (
   parse (e7 , "text" ).parseSuccess, true, Boolean, core_tests );
@@ -283,6 +332,53 @@ equalityTest (sort (bind_ids(e7_ast.ress)),
 );
 
 
+{- Example 8
+ ----------------------------------------------------------------------
+  -}
+global e8 :: String = s"""
+  module A_1 { 
+    module A_2 {
+      decls a_3 
+    }
+  }
+  import A_4.A_5
+  decls b_6
+  refs a_7
+""";
+
+equalityTest (
+  parse (e8 , "text" ).parseSuccess, true, Boolean, core_tests );
+
+global e8_ast :: Program = parse (e8 , "text" ).parseTree.ast;
+
+-- correct ref nodes
+equalityTest (sort (ref_ids(e8_ast.graph.sg:all_refs)),
+  ["A_4", "A_5", "a_7" ], 
+  [String], core_tests
+);
+
+-- correct dcl nodes
+equalityTest (sort (dcl_ids(e8_ast.graph.sg:all_dcls)),
+  ["A_1", "A_2", "a_3", "b_6"], 
+  [String], core_tests
+);
+{-
+-- resolutions on the scope graph
+global e8_sg :: Decorated sg:Graph<IdDcl IdRef> = 
+  decorate e8_ast.graph with {} ;
+
+equalityTest (sort (bind_ids ( collect_dcls (e8_sg.sg:all_refs))),
+  [("A_4", "A_1"), ("A_5", "A_1")],
+  [(String,String)], core_tests
+);
+
+-- resolutions on the AST
+equalityTest (sort (bind_ids(e8_ast.ress)), 
+  [("A_4", "A_1"), ("A_5", "A_1")],
+  [(String,String)], core_tests
+);
+
+-}
 
 
 function collect_dcls
@@ -310,6 +406,18 @@ function bind_ids
   return case binds of 
          | [] -> []
          | (r, d)::t -> (r.sg:str_id, d.sg:str_id) :: bind_ids(t)
+         end;
+}
+
+function bind_idss
+[(String,[String])] ::= 
+  binds:: [ ( Decorated sg:Ref<IdDcl IdRef>, 
+              [ Decorated sg:Dcl<IdDcl IdRef> ]
+            ) ]
+{
+  return case binds of 
+         | [] -> []
+         | (r, d)::t -> (r.sg:str_id, dcl_ids (d)) :: bind_idss(t)
          end;
 }
 
