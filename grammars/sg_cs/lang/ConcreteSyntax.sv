@@ -115,3 +115,7 @@ terminal Comma_t ',';
 terminal Dot_t '.';
 
 ignore terminal Whitespace_t /[\n\r\t ]+/;
+
+
+ignore terminal BlockComment_t
+  /[/][*]([^*]|[\r\n]|([*]+([^*/]|[\r\n])))*[*]+[/]/ ;
