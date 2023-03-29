@@ -336,14 +336,22 @@ equalityTest (sort (bind_ids(e7_ast.ress)),
  ----------------------------------------------------------------------
   -}
 global e8 :: String = s"""
+/*
   module A_1 { 
-    module A_2 {
-      decls a_3 
-    }
+    def a_2 = b_4 + 3
+    def b_4 = 4
   }
-  import A_4.A_5
-  decls b_6
-  refs a_7
+  import A_5
+  def c_7 = a_7 + b_8
+*/
+
+  module A_1 { 
+    decls a_2, b_3
+    refs b_4
+  }
+  import A_5
+  decls c_6
+  refs a_7, b_8
 """;
 
 equalityTest (
@@ -353,15 +361,16 @@ global e8_ast :: Program = parse (e8 , "text" ).parseTree.ast;
 
 -- correct ref nodes
 equalityTest (sort (ref_ids(e8_ast.graph.sg:all_refs)),
-  ["A_4", "A_5", "a_7" ], 
+  ["A_5", "a_7", "b_4", "b_8"], 
   [String], core_tests
 );
 
 -- correct dcl nodes
 equalityTest (sort (dcl_ids(e8_ast.graph.sg:all_dcls)),
-  ["A_1", "A_2", "a_3", "b_6"], 
+  ["A_1", "a_2", "b_3", "c_6" ], 
   [String], core_tests
 );
+
 {-
 -- resolutions on the scope graph
 global e8_sg :: Decorated sg:Graph<IdDcl IdRef> = 
@@ -374,6 +383,56 @@ equalityTest (sort (bind_ids ( collect_dcls (e8_sg.sg:all_refs))),
 
 -- resolutions on the AST
 equalityTest (sort (bind_ids(e8_ast.ress)), 
+  [("A_4", "A_1"), ("A_5", "A_1")],
+  [(String,String)], core_tests
+);
+
+-}
+
+
+{- Example 9
+ ----------------------------------------------------------------------
+  -}
+global e9 :: String = s"""
+  module A_1 { 
+    module A_2 {
+      decls a_3 
+    }
+  }
+  import A_4.A_5
+  decls b_6
+  refs a_7
+""";
+
+equalityTest (
+  parse (e9 , "text" ).parseSuccess, true, Boolean, core_tests );
+
+global e9_ast :: Program = parse (e9 , "text" ).parseTree.ast;
+
+-- correct ref nodes
+equalityTest (sort (ref_ids(e9_ast.graph.sg:all_refs)),
+  ["A_4", "A_5", "a_7" ], 
+  [String], core_tests
+);
+
+{-
+-- correct dcl nodes
+equalityTest (sort (dcl_ids(e9_ast.graph.sg:all_dcls)),
+  ["A_1", "A_2", "a_3", "b_6"], 
+  [String], core_tests
+);
+
+-- resolutions on the scope graph
+global e9_sg :: Decorated sg:Graph<IdDcl IdRef> = 
+  decorate e9_ast.graph with {} ;
+
+equalityTest (sort (bind_ids ( collect_dcls (e9_sg.sg:all_refs))),
+  [("A_4", "A_1"), ("A_5", "A_1")],
+  [(String,String)], core_tests
+);
+
+-- resolutions on the AST
+equalityTest (sort (bind_ids(e9_ast.ress)), 
   [("A_4", "A_1"), ("A_5", "A_1")],
   [(String,String)], core_tests
 );
