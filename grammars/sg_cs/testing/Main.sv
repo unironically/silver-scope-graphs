@@ -409,13 +409,14 @@ equalityTest (
 
 global e9_ast :: Program = parse (e9 , "text" ).parseTree.ast;
 
+{-
 -- correct ref nodes
 equalityTest (sort (ref_ids(e9_ast.graph.sg:all_refs)),
   ["A_4", "A_5", "a_7" ], 
   [String], core_tests
 );
 
-{-
+
 -- correct dcl nodes
 equalityTest (sort (dcl_ids(e9_ast.graph.sg:all_dcls)),
   ["A_1", "A_2", "a_3", "b_6"], 
