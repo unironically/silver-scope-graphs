@@ -1,6 +1,6 @@
 grammar sg_cs:driver;
 
-imports sg_cs;
+imports sg_cs:lang;
 
 -- import the grammar for making scope trees
 -- currenlty this includes the resolution algorithm
@@ -8,7 +8,7 @@ imports scope_tree:ast as sg;
 imports scope_tree:visser as res;
 
 parser parse :: Program_c {
-  sg_cs;
+  sg_cs:lang;
 }
 
 function main

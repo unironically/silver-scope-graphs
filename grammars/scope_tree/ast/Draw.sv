@@ -27,13 +27,13 @@ s::Scope<d r> ::=
   local parent_edge :: String = 
     case s.parent of
       nothing () -> ""
-    | just (p) -> scope_str (s) ++ "->" ++ scope_str (p)
+    | just (p) -> "{" ++ par_edge_style ++ scope_str (s) ++ "->" ++ scope_str (p) ++ "}"
     end;
 
   s.string = 
     "{" ++ node_style_scope(s) ++
     parent_edge ++
-    decls.string ++ refs.string ++ children.string ++ import_edges (s) ++ "}";
+    decls.string ++ refs.string ++ children.string ++ "{" ++ import_edge_style ++ import_edges (s) ++ "}}";
 
   children.scope_color = s.scope_color;
   decls.scope_color = s.scope_color;
@@ -58,7 +58,7 @@ d::Dcl<d r> ::=
 {
   d.string = 
     node_style_declref (d) ++
-    scope_str (d.scope) ++ "->" ++ d.str_id;
+    "{" ++ dcl_edge_style ++ scope_str (d.scope) ++ "->" ++ d.str_id ++ "}";
 }
 
 aspect production mk_decl_assoc
@@ -68,7 +68,7 @@ d::Dcl<d r> ::=
 {
   d.string = module.string ++ 
     node_style_declref (d) ++ 
-    scope_str (d.scope) ++ "->" ++ d.str_id ++
+    "{" ++ dcl_edge_style ++ scope_str (d.scope) ++ "->" ++ d.str_id ++ "}" ++
     "{" ++ import_edge_style ++ d.str_id ++ "->" ++ scope_str (module) ++ "}";
   
   module.scope_color = d.scope_color + 1;
@@ -80,7 +80,7 @@ r::Ref<d r> ::=
 {
   r.string = 
     node_style_declref (r) ++
-    r.str_id ++ "->" ++ scope_str (r.scope);
+    "{" ++ ref_edge_style ++ r.str_id ++ "->" ++ scope_str (r.scope) ++ "}";
 }
 
 aspect production mk_imp
@@ -89,7 +89,7 @@ r::Ref<d r> ::=
 {
   r.string = 
     node_style_declref (r) ++
-    r.str_id ++ "->" ++ scope_str (r.scope);
+    "{" ++ ref_edge_style ++ r.str_id ++ "->" ++ scope_str (r.scope) ++ "}";
 }
 
 aspect production mk_ref_qid
@@ -99,7 +99,7 @@ r::Ref<d r> ::=
 {
   r.string =
     node_style_declref (r) ++ 
-    r.str_id ++ "->" ++ scope_str (r.scope) ++ qid_scope.string;
+    "{" ++ ref_edge_style ++ r.str_id ++ "->" ++ scope_str (r.scope) ++ "}" ++ qid_scope.string;
   
   qid_scope.scope_color = r.scope_color + 1;
 }
@@ -154,12 +154,20 @@ rs::Refs<d r> ::=
 
 {-====================-}
 
+global imp_edge_col :: String = "brown";
+global dcl_edge_col :: String = "blue";
+global ref_edge_col :: String = "green";
+global par_edge_col :: String = "red";
+
 global graphviz_font_size :: String = "12";
 
 global graphviz_fill_colors :: [String] = 
   ["#ffffff", "#dddddd", "#bbbbbb", "#999999"];
 
-global import_edge_style :: String = "edge [arrowhead=onormal]";
+global import_edge_style :: String = "edge [arrowhead=onormal color=\"" ++ imp_edge_col ++ "\"]";
+global dcl_edge_style :: String = "edge [arrowhead=normal color=\"" ++ dcl_edge_col ++ "\"]";
+global ref_edge_style :: String = "edge [arrowhead=normal color=\"" ++ ref_edge_col ++ "\"]";
+global par_edge_style :: String = "edge [arrowhead=normal color=\"" ++ par_edge_col ++ "\"]";
 
 function node_style_scope
 String ::= node::Decorated Scope<d r>
