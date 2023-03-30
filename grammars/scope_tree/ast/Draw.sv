@@ -10,6 +10,15 @@ synthesized attribute string :: String occurs on
 
 {-====================-}
 
+global graphviz_font_size :: String = "12";
+
+global imp_edge_col :: String = "brown";
+global dcl_edge_col :: String = "blue";
+global ref_edge_col :: String = "green";
+global par_edge_col :: String = "red";
+
+{-====================-}
+
 aspect production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
@@ -153,13 +162,6 @@ rs::Refs<d r> ::=
 }
 
 {-====================-}
-
-global imp_edge_col :: String = "brown";
-global dcl_edge_col :: String = "blue";
-global ref_edge_col :: String = "green";
-global par_edge_col :: String = "red";
-
-global graphviz_font_size :: String = "12";
 
 global graphviz_fill_colors :: [String] = 
   ["#ffffff", "#dddddd", "#bbbbbb", "#999999"];
