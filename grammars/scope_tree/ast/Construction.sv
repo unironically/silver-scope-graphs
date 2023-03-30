@@ -106,7 +106,7 @@ d::Dcl<d r> ::=
   module.qid_imp = nothing ();
   d.assoc_scope = just (module);
   d.refs = module.refs;
-  d.all_dcls := [d] ++ module.all_dcls;
+  d.all_dcls := d :: module.all_dcls;
 }
 
 
@@ -142,9 +142,11 @@ r::Ref<d r> ::=
   propagate all_dcls;
   r.iqid_imps = qid_scope.iqid_imps;
   r.imps = [r];
+  
   r.refs = r :: qid_scope.refs;
+
   r.resolutions := [];
-  r.all_refs := [r];
+  r.all_refs := r :: qid_scope.all_refs;
   
   qid_scope.parent = nothing ();
   qid_scope.qid_imp = just (r);

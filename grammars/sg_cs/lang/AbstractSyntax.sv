@@ -20,6 +20,7 @@ synthesized attribute refs::sg:Refs<IdDcl IdRef> occurs on NodeList, Refs;
 synthesized attribute children::sg:Scopes<IdDcl IdRef> occurs on NodeList;
 
 inherited attribute last_is_imp::Boolean occurs on Qid, IdRef;
+inherited attribute dot_scope :: Maybe<sg:Scope<IdDcl IdRef>> occurs on IdRef;
 synthesized attribute ref::sg:Ref<IdDcl IdRef> occurs on Qid, IdRef;
 
 monoid attribute ress::[(Decorated sg:Ref<IdDcl IdRef>, Decorated sg:Dcl<IdDcl IdRef>)] 
@@ -145,12 +146,14 @@ abstract production qid_dot
 q::Qid ::= id::IdRef qt::Qid
 { propagate last_is_imp;
   local s::sg:Scope<IdDcl IdRef> = sg:mk_scope_qid (qt.ref);
+  id.dot_scope = just (s);
   q.ref = id.ref;
 }
 
 abstract production qid_single
 q::Qid ::= id::IdRef
 { propagate last_is_imp;
+  id.dot_scope = nothing ();
   q.ref = id.ref;
 }
 
@@ -164,8 +167,11 @@ n::IdRef ::= id::String
   n.sg:index = head(tail(parts));
   n.sg:str_id = id;
 
-
-  local r::sg:Ref<IdDcl IdRef> = if n.last_is_imp then sg:mk_imp (n) else sg:mk_ref (n);
+  local r :: sg:Ref<IdDcl IdRef> = 
+    case (n.dot_scope, n.last_is_imp) of
+      (just (s), _) -> sg:mk_ref_qid (n, s)
+    | (_, b) ->  if b then sg:mk_imp (n) else sg:mk_ref (n)
+    end;
 
   n.ref = r;
 

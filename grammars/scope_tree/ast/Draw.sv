@@ -196,7 +196,7 @@ function import_edges
 String ::= s::Decorated Scope<d r>
 {
   return
-    "{" ++ 
+    "{" ++ import_edge_style ++ 
     implode (" ", 
       map ((\r::Decorated Ref<d r> -> scope_str (s) ++ "->" ++ r.str_id), s.imps)) ++
     "}";
