@@ -23,7 +23,7 @@ aspect production mk_graph
 g::Graph<d r> ::= 
   root::Scope<d r>
 {
-  g.string = "digraph {" ++ root.string ++ "}";
+  g.string = "digraph {" ++ root.string ++ "}\n";
   root.scope_color = 0;
 }
 
