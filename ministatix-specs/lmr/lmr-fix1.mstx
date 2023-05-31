@@ -43,9 +43,6 @@ super(s, sup, s_rec) :- sup match
 seq-binds(s, bs, s_def) :- bs match
   { []   ->
       s_def -[ `LEX ]-> s
-  | b:[] -> {}
-      s_def -[ `LEX ]-> s,
-      seq-bind(s, b, s_def)
   | b:bs -> {s_def'}
       new s_def',
       s_def' -[ `LEX ]-> s,
@@ -60,7 +57,7 @@ seq-bind(s, b, s_def) :- b match
       expr(s, e, ty)
   | DefBindTyped(x, tyann, e) -> {s_var, ty}
       new s_var -> (x, ty),
-      s -[ `VAR ]-> s_var,
+      s_def -[ `VAR ]-> s_var,
       type(s, tyann, ty),
       expr(s, e, ty)
   }.
