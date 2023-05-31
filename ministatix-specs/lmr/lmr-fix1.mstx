@@ -43,6 +43,9 @@ super(s, sup, s_rec) :- sup match
 seq-binds(s, bs, s_def) :- bs match
   { []   ->
       s_def -[ `LEX ]-> s
+  | b:[] ->
+      s_def -[ `LEX ]-> s,
+      seq-bind(s, b, s_def)
   | b:bs -> {s_def'}
       new s_def',
       s_def' -[ `LEX ]-> s,
