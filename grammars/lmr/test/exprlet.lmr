@@ -1,0 +1,2 @@
+def a = 1;
+def b = let x = a y = x + a z = x + y + a in x + y + z + a;
