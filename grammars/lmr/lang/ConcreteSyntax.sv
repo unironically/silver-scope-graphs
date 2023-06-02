@@ -15,7 +15,7 @@ nonterminal FldBinds_c  with ast<FldBinds>;
 nonterminal FldBind_c   with ast<FldBind>;
 nonterminal FldDecls_c  with ast<FldDecls>;
 nonterminal FldDecl_c   with ast<FldDecl>;
---nonterminal ArgDecl_c   with ast<ArgDecl>;
+nonterminal ArgDecl_c   with ast<ArgDecl>;
 nonterminal Type_c      with ast<Type>;
 nonterminal ModRef_c    with ast<ModRef>;
 nonterminal TypeRef_c   with ast<TypeRef>;
@@ -84,6 +84,11 @@ top::Super_c ::= t::TypeRef_c
 }
 
 {- Seq_Binds -}
+concrete production seq_binds_empty_c
+top::SeqBinds_c ::=
+{
+  top.ast = seq_binds_empty ();
+}
 
 concrete production seq_binds_single_c
 top::SeqBinds_c ::= b::SeqBind_c
@@ -224,9 +229,9 @@ top::Expr_c ::= 'if' e1::Expr_c 'then' e2::Expr_c 'else' e3::Expr_c
 }
 
 concrete production expr_fun_c
-top::Expr_c ::= 'fun' '(' {-d::ArgDecl_c-} ')' '{' e::Expr_c '}'
+top::Expr_c ::= 'fun' '(' d::ArgDecl_c ')' '{' e::Expr_c '}'
 {
-  top.ast = expr_fun ({-d.ast,-} e.ast);
+  top.ast = expr_fun (d.ast, e.ast);
 }
 
 concrete production expr_let_c
@@ -236,13 +241,13 @@ top::Expr_c ::= 'let' bs::SeqBinds_c 'in' e::Expr_c
 }
 
 concrete production expr_letrec_c
-top::Expr_c ::= 'letrec' bs::SeqBinds_c 'in' e::Expr_c
+top::Expr_c ::= 'letrec' bs::ParBinds_c 'in' e::Expr_c
 {
   top.ast = expr_letrec (bs.ast, e.ast);
 }
 
 concrete production expr_letpar_c
-top::Expr_c ::= 'letpar' bs::SeqBinds_c 'in' e::Expr_c
+top::Expr_c ::= 'letpar' bs::ParBinds_c 'in' e::Expr_c
 {
   top.ast = expr_letpar (bs.ast, e.ast);
 }
@@ -317,11 +322,11 @@ top::FldDecl_c ::= x::Id_t ':' tyann::Type_c
 
 {- Arg_Decl -}
 
-{-concrete production arg_decl_c
+concrete production arg_decl_c
 top::ArgDecl_c ::= x::Id_t ':' tyann::Type_c
 {
   top.ast = arg_decl (x.lexeme, tyann.ast);
-}-}
+}
 
 {- Type -}
 

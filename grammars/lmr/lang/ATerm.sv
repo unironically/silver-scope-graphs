@@ -95,6 +95,12 @@ top::Super ::= r::TypeRef
 
 {- Seq_Binds -}
 
+abstract production seq_binds_empty
+top::SeqBinds ::= 
+{
+  top.pp = "";
+}
+
 abstract production seq_binds_single
 top::SeqBinds ::= b::SeqBind
 {
@@ -227,7 +233,7 @@ top::Expr ::= e1::Expr e2::Expr e3::Expr
 }
 
 abstract production expr_fun
-top::Expr ::= {-d::ArgDecl-} e::Expr
+top::Expr ::= d::ArgDecl e::Expr
 {
   top.pp = "Fun (" {-++ d.pp-} ++ ", " ++ e.pp ++ ")";
 }
@@ -239,13 +245,13 @@ top::Expr ::= bs::SeqBinds e::Expr
 }
 
 abstract production expr_letrec
-top::Expr ::= bs::SeqBinds e::Expr
+top::Expr ::= bs::ParBinds e::Expr
 {
   top.pp = "LetRec ([" ++ bs.pp ++ "], " ++ e.pp ++ ")";
 }
 
 abstract production expr_letpar
-top::Expr ::= bs::SeqBinds e::Expr
+top::Expr ::= bs::ParBinds e::Expr
 {
   top.pp = "LetPar ([" ++ bs.pp ++ "], " ++ e.pp ++ ")";
 }
