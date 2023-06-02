@@ -42,7 +42,9 @@ aspect production program
 top::Program ::= h::String ds::Decls
 {
   local s :: String = exists ("s");
-  top.const = "{" ++ s ++ "} " ++ new_scope (s) ++  ", " ++ ds.const;
+
+  top.const = and ("{" ++ s ++ "} " ++ new_scope (s), 
+                ds.const);
   ds.s = s;
 }
 
@@ -52,7 +54,9 @@ aspect production decls_list
 top::Decls ::= d::Decl ds::Decls
 { 
   propagate s;
-  top.const = d.const ++ ", " ++ ds.const;
+
+  top.const = and (d.const, 
+                ds.const);
 }
 
 aspect production decls_empty
@@ -67,10 +71,12 @@ aspect production decl_module
 top::Decl ::= x::String ds::Decls
 {
   local s_mod :: String = exists ("s_mod");
-  top.const = new_scope_datum (s_mod, x, s_mod) ++
-              edge (top.s, "`MOD", s_mod) ++ ", " ++
-              edge (s_mod, "`LEX", top.s) ++ ", " ++
-              ds.const;
+
+  top.const = and (new_scope_datum (s_mod, x, s_mod),
+                and (edge (top.s, "`MOD", s_mod),
+                  and (edge (s_mod, "`LEX", top.s), 
+                    ds.const)));
+
   ds.s = s_mod;
 }
 
@@ -81,15 +87,17 @@ top::Decl ::= r::ModRef
   local p :: String = exists ("p");
   local x :: String = exists ("r");
   local s_mod :: String = exists ("s_mod");
-  top.const = r.const ++ ", " ++
-              datum (p, x, s_mod) ++ ", " ++
-              edge (top.s, "`IMP", s_mod);
+
+  top.const = and (r.const,
+                and (datum (p, x, s_mod), 
+                  edge (top.s, "`IMP", s_mod)));
 }
 
 aspect production decl_def
 top::Decl ::= b::ParBind
 {
   propagate s;
+
   top.const = b.const;
 }
 
@@ -98,10 +106,12 @@ top::Decl ::= x::String sup::Super ds::FldDecls
 {
   propagate s;
   local s_rec :: String = exists ("s_rec");
-  top.const = new_scope_datum (s_rec, x, "REC(" ++ s_rec ++ ")") ++ ", " ++
-              edge (top.s, "`REC", s_rec) ++ ", " ++
-              sup.const ++ ", " ++
-              ds.const;
+
+  top.const = and (new_scope_datum (s_rec, x, "REC(" ++ s_rec ++ ")"),
+                and (edge (top.s, "`REC", s_rec),
+                  and (sup.const,
+                    ds.const)));
+
   sup.s_rec = s_rec;
 }
 
@@ -120,9 +130,10 @@ top::Super ::= r::TypeRef
   local p :: String = exists ("p");
   local x :: String = exists ("x");
   local s_sup :: String = exists ("s_sup");
-  top.const = r.const ++ ", " ++
-              datum (p, x, "REC(" ++ s_sup ++ ")") ++ ", " ++
-              edge (top.s_rec, "`EXT", s_sup);
+
+  top.const = and (r.const,
+                and (datum (p, x, "REC(" ++ s_sup ++ ")"),
+                  edge (top.s_rec, "`EXT", s_sup)));
 }
 
 {- Seq_Binds -}
@@ -375,6 +386,12 @@ top::VarRef ::= r::ModRef x::String
 }
 
 {- Functions -}
+
+function and
+String ::= c::String cs::String
+{
+  return c ++ ", " ++ cs;
+}
 
 function new_scope
 String ::= name::String
