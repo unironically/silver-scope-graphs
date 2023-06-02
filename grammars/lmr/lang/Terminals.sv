@@ -1,6 +1,13 @@
 grammar lmr:lang;
 
-terminal Id_t /[a-zA-Z]+/
+terminal VarRef_t /[a-z][A-Z_]+/
+  submits to {
+    True_t, False_t, Module_t, Import_t, Record_t, Def_t, If_t, Then_t, Else_t,
+    Fun_t, Let_t, LetRec_t, LetPar_t, In_t, New_t, With_t, Do_t, IntType_t,
+    BoolType_t
+  };
+
+terminal TypeRef_t /[A-Z][a-zA-Z_]+/
   submits to {
     True_t, False_t, Module_t, Import_t, Record_t, Def_t, If_t, Then_t, Else_t,
     Fun_t, Let_t, LetRec_t, LetPar_t, In_t, New_t, With_t, Do_t, IntType_t,

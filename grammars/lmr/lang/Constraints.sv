@@ -127,12 +127,6 @@ top::Super ::= r::TypeRef
 
 {- Seq_Binds -}
 
-aspect production seq_binds_empty
-top::SeqBinds ::= 
-{
-
-}
-
 aspect production seq_binds_single
 top::SeqBinds ::= b::SeqBind
 {
@@ -364,7 +358,7 @@ top::TypeRef ::= x::String
 }
 
 aspect production type_ref_dot
-top::TypeRef ::= r::TypeRef x::String
+top::TypeRef ::= r::ModRef x::String
 {
 }
 
@@ -376,7 +370,7 @@ top::VarRef ::= x::String
 }
 
 aspect production var_ref_dot
-top::VarRef ::= r::VarRef x::String
+top::VarRef ::= r::ModRef x::String
 {
 }
 

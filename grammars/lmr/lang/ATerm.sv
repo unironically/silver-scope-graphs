@@ -95,12 +95,6 @@ top::Super ::= r::TypeRef
 
 {- Seq_Binds -}
 
-abstract production seq_binds_empty
-top::SeqBinds ::= 
-{
-  top.pp = "";
-}
-
 abstract production seq_binds_single
 top::SeqBinds ::= b::SeqBind
 {
@@ -381,7 +375,7 @@ top::TypeRef ::= x::String
 }
 
 abstract production type_ref_dot
-top::TypeRef ::= r::TypeRef x::String
+top::TypeRef ::= r::ModRef x::String
 {
   top.pp = "TypeQRef (" ++ r.pp ++ ", \"" ++ x ++ "\")";
 }
@@ -395,7 +389,7 @@ top::VarRef ::= x::String
 }
 
 abstract production var_ref_dot
-top::VarRef ::= r::VarRef x::String
+top::VarRef ::= r::ModRef x::String
 {
   top.pp = "VarQRef (" ++ r.pp ++ ", \"" ++ x ++ "\")";
 }

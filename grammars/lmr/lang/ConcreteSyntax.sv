@@ -46,7 +46,7 @@ top::Decls_c ::=
 {- Decl -}
 
 concrete production decl_module_c
-top::Decl_c ::= 'module' id::Id_t '{' ds::Decls_c '}'
+top::Decl_c ::= 'module' id::TypeRef_t '{' ds::Decls_c '}'
 {
   top.ast = decl_module (id.lexeme, ds.ast);
 }
@@ -64,7 +64,7 @@ top::Decl_c ::= 'def' b::ParBind_c
 }
 
 concrete production decl_rec_c
-top::Decl_c ::= 'record' id::Id_t sup::Super_c '{' ds::FldDecls_c '}'
+top::Decl_c ::= 'record' id::TypeRef_t sup::Super_c '{' ds::FldDecls_c '}'
 {
   top.ast = decl_rec (id.lexeme, sup.ast, ds.ast);
 }
@@ -84,11 +84,6 @@ top::Super_c ::= t::TypeRef_c
 }
 
 {- Seq_Binds -}
-concrete production seq_binds_empty_c
-top::SeqBinds_c ::=
-{
-  top.ast = seq_binds_empty ();
-}
 
 concrete production seq_binds_single_c
 top::SeqBinds_c ::= b::SeqBind_c
@@ -105,13 +100,13 @@ top::SeqBinds_c ::= b::SeqBind_c bs::SeqBinds_c
 {- Seq_Bind -}
 
 concrete production seq_defbind_c
-top::SeqBind_c ::= x::Id_t '=' e::Expr_c
+top::SeqBind_c ::= x::VarRef_t '=' e::Expr_c
 {
   top.ast = seq_defbind (x.lexeme, e.ast);
 }
 
 concrete production seq_defbind_typed_c
-top::SeqBind_c ::= x::Id_t ':' tyann::Type_c '=' e::Expr_c
+top::SeqBind_c ::= x::VarRef_t ':' tyann::Type_c '=' e::Expr_c
 {
   top.ast = seq_defbind_typed (x.lexeme, tyann.ast, e.ast);
 }
@@ -133,13 +128,13 @@ top::ParBinds_c ::=
 {- Par_Bind -}
 
 concrete production par_defbind_c
-top::ParBind_c ::= x::Id_t '=' e::Expr_c
+top::ParBind_c ::= x::VarRef_t '=' e::Expr_c
 {
   top.ast = par_defbind (x.lexeme, e.ast);
 }
 
 concrete production par_defbind_typed_c
-top::ParBind_c ::= x::Id_t ':' tyann::Type_c '=' e::Expr_c
+top::ParBind_c ::= x::VarRef_t ':' tyann::Type_c '=' e::Expr_c
 {
   top.ast = par_defbind_typed (x.lexeme, tyann.ast, e.ast);
 }
@@ -259,7 +254,7 @@ top::Expr_c ::= 'new' r::TypeRef_c '{' bs::FldBinds_c '}'
 }
 
 concrete production expr_fld_access_c
-top::Expr_c ::= e::Expr_c '.' x::Id_t
+top::Expr_c ::= e::Expr_c '.' x::VarRef_t
 {
   top.ast = expr_fld_access (e.ast, x.lexeme);
 }
@@ -293,7 +288,7 @@ top::FldBinds_c ::=
 {- Fld_Bind -}
 
 concrete production fld_bind_c
-top::FldBind_c ::= x::Id_t '=' e::Expr_c
+top::FldBind_c ::= x::VarRef_t '=' e::Expr_c
 {
   top.ast = fld_bind (x.lexeme, e.ast);
 }
@@ -315,7 +310,7 @@ top::FldDecls_c ::=
 {- Fld_Decl -}
 
 concrete production fld_decl_c
-top::FldDecl_c ::= x::Id_t ':' tyann::Type_c
+top::FldDecl_c ::= x::VarRef_t ':' tyann::Type_c
 {
   top.ast = fld_decl (x.lexeme, tyann.ast);
 }
@@ -323,7 +318,7 @@ top::FldDecl_c ::= x::Id_t ':' tyann::Type_c
 {- Arg_Decl -}
 
 concrete production arg_decl_c
-top::ArgDecl_c ::= x::Id_t ':' tyann::Type_c
+top::ArgDecl_c ::= x::VarRef_t ':' tyann::Type_c
 {
   top.ast = arg_decl (x.lexeme, tyann.ast);
 }
@@ -363,13 +358,13 @@ top::Type_c ::= '(' t::Type_c ')'
 {- Mod_Ref -}
 
 concrete production mod_ref_single_c
-top::ModRef_c ::= x::Id_t
+top::ModRef_c ::= x::TypeRef_t
 {
   top.ast = mod_ref_single (x.lexeme);
 }
 
 concrete production mod_ref_dot_c
-top::ModRef_c ::= r::ModRef_c '.' x::Id_t
+top::ModRef_c ::= r::ModRef_c '.' x::TypeRef_t
 {
   top.ast = mod_ref_dot (r.ast, x.lexeme);
 }
@@ -377,13 +372,13 @@ top::ModRef_c ::= r::ModRef_c '.' x::Id_t
 {- Type_Ref -}
 
 concrete production type_ref_single_c
-top::TypeRef_c ::= x::Id_t
+top::TypeRef_c ::= x::TypeRef_t
 {
   top.ast = type_ref_single (x.lexeme);
 }
 
 concrete production type_ref_dot_c
-top::TypeRef_c ::= r::TypeRef_c '.' x::Id_t
+top::TypeRef_c ::= r::ModRef_c '.' x::TypeRef_t
 {
   top.ast = type_ref_dot (r.ast, x.lexeme);
 }
@@ -391,13 +386,13 @@ top::TypeRef_c ::= r::TypeRef_c '.' x::Id_t
 {- Var_Ref -}
 
 concrete production var_ref_single_c
-top::VarRef_c ::= x::Id_t
+top::VarRef_c ::= x::VarRef_t
 {
   top.ast = var_ref_single (x.lexeme);
 }
 
 concrete production var_ref_dot_c
-top::VarRef_c ::= r::VarRef_c '.' x::Id_t
+top::VarRef_c ::= r::ModRef_c '.' x::VarRef_t
 {
   top.ast = var_ref_dot (r.ast, x.lexeme);
 }
