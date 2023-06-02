@@ -396,11 +396,8 @@ top::VarRef_c ::= x::Id_t
   top.ast = var_ref_single (x.lexeme);
 }
 
-{-
-For Eric
-
 concrete production var_ref_dot_c
 top::VarRef_c ::= r::VarRef_c '.' x::Id_t
 {
   top.ast = var_ref_dot (r.ast, x.lexeme);
-}-} 
+}
