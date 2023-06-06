@@ -85,16 +85,20 @@ top::Super_c ::= t::TypeRef_c
 
 {- Seq_Binds -}
 
-concrete production seq_binds_single_c
-top::SeqBinds_c ::= b::SeqBind_c
+concrete production seq_binds_empty_c
+top::SeqBinds_c ::=
 {
-  top.ast = seq_binds_single (b.ast);
+  top.ast = seq_binds_empty ();
 }
+
 
 concrete production seq_binds_list_c
 top::SeqBinds_c ::= b::SeqBind_c bs::SeqBinds_c
 {
-  top.ast = seq_binds_list (b.ast, bs.ast);
+  top.ast = case bs of
+            | seq_binds_list_c (_, _) -> seq_binds_list (b.ast, bs.ast)
+            | seq_binds_empty_c () -> seq_binds_single (b.ast)
+            end;
 }
 
 {- Seq_Bind -}

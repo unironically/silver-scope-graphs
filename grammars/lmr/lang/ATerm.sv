@@ -95,6 +95,12 @@ top::Super ::= r::TypeRef
 
 {- Seq_Binds -}
 
+abstract production seq_binds_empty
+top::SeqBinds ::=
+{
+  top.pp = "";
+}
+
 abstract production seq_binds_single
 top::SeqBinds ::= b::SeqBind
 {
