@@ -13,3 +13,14 @@ top::Edge ::= src::Scope label::Label dst::Scope
   top.label = label;
   top.dst = dst;
 }
+
+
+nonterminal Edges;
+
+abstract production edge_cons
+top::Edges ::= e::Edge es::Edges
+{}
+
+abstract production edge_single
+top::Edge ::= e::Edge
+{}
