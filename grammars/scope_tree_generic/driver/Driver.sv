@@ -11,11 +11,28 @@ IO<Integer> ::= largs::[String]
     
     print ("Test!\n");
 
-    let regex :: Regex = regex (star (single (lex_lab)));
+    let regex :: Regex = concatenate (single (mod_lab), single (mod_lab));
 
-    if accepts (regex.final_nfa, [])
-      then print ("Accepts!\n")
-      else print ("Rejects!\n");
+    if (regex.nfa.accepts ([]))
+      then print ("Accepts 1!\n")
+      else print ("Rejects 1!\n");
+
+    if (regex.nfa.accepts ([mod_lab]))
+      then print ("Accepts 2!\n")
+      else print ("Rejects 2!\n");
+
+    if (regex.nfa.accepts ([mod_lab, mod_lab]))
+      then print ("Accepts 3!\n")
+      else print ("Rejects 3!\n");
+
+    if (regex.nfa.accepts ([mod_lab, var_lab]))
+      then print ("Accepts 4!\n")
+      else print ("Rejects 4!\n");
+
+
+    if (regex.nfa.accepts ([var_lab]))
+      then print ("Accepts 5!\n")
+      else print ("Rejects 5!\n");
 
     return 0;
 
