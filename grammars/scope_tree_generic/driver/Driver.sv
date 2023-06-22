@@ -11,7 +11,9 @@ IO<Integer> ::= largs::[String]
     
     print ("Test!\n");
 
-    let regex :: Regex = concatenate (single (mod_lab), single (mod_lab));
+    --let regex :: Regex = star (single (mod_lab));
+    --let regex :: Regex = concatenate (single (mod_lab), single (mod_lab));
+    let regex :: Regex = star (concatenate (single (mod_lab), single (var_lab)));
 
     if (regex.nfa.accepts ([]))
       then print ("Accepts 1!\n")
