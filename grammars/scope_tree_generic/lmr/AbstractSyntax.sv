@@ -1,5 +1,7 @@
 grammar scope_tree_generic:lmr;
 
+imports scope_tree_generic:ast;
+
 {- Nonterminals -}
 
 nonterminal Program;
@@ -23,62 +25,94 @@ nonterminal VarRef;
 
 {- Attributes -}
 
-synthesized attribute pp :: String 
-  occurs on Program, Decls, Decl, Super, 
-    SeqBinds, SeqBind, ParBinds, ParBind, Expr, FldBinds, FldBind, 
-    FldDecls, FldDecl, ArgDecl, Type, ModRef, TypeRef, VarRef;
+inherited attribute scope :: Scope occurs on Decls, Decl, Super, TypeRef, SeqBinds, SeqBind;
+inherited attribute s_rec :: Scope occurs on Super;
+inherited attribute s_def :: Scope occurs on SeqBinds, SeqBind;
+
+synthesized attribute mod_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute var_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute rec_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute ext_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute imp_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute lex_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+
+synthesized attribute path :: Path occurs on ModRef, TypeRef, VarRef;
 
 {- Program -}
 
 abstract production program
 top::Program ::= h::String ds::Decls
 {
+  local s :: Scope = mk_scope (ds.mod_edges, ds.var_edges);
+  ds.scope = s;
 }
 
 {- Decls -}
 
 abstract production decls_list
 top::Decls ::= d::Decl ds::Decls
-{
-}
+{ propagate scope; }
 
 abstract production decls_empty
 top::Decls ::= 
-{
-}
+{}
 
 {- Decl -}
 
 abstract production decl_module
 top::Decl ::= x::String ds::Decls
 {
+  local s_mod :: Scope = 
+    mk_scope_datum (
+      (x, datum_scope (s_mod)), 
+      edges_cons (mod_edge, ds.mod_edges), 
+      ds.var_edges
+    );
+  local mod_edge :: Edge = mk_edge (mod_lab, s_mod);
+  local par_edge :: Edge = mk_edge (lex_lab, top.scope);
+  ds.scope = s_mod;
+  top.lex_edges = edges_single (par_edge);
 }
 
 abstract production decl_import
 top::Decl ::= r::ModRef
 {
+  propagate scope;
+  local imp_edge :: Edge = mk_edge (imp_lab, r.path.dst);
+  top.imp_edges = edges_single (imp_edge);
 }
 
 abstract production decl_def
 top::Decl ::= b::ParBind
-{
-}
+{ propagate scope; }
 
 abstract production decl_rec
 top::Decl ::= x::String sup::Super ds::FldDecls
 {
+  propagate scope;
+  local s_rec :: Scope = 
+    mk_scope_datum ((x, datum_type (rec_type (s_rec))), sup.mod_edges, sup.var_edges);
+  local rec_edge :: Edge = mk_edge (rec_lab, s_rec);
+  sup.s_rec = s_rec;
 }
 
 {- Super -}
 
 abstract production super_none
 top::Super ::=
-{
-}
+{}
 
 abstract production super_some
 top::Super ::= r::TypeRef
 {
+  propagate scope;
+  local ext_edge :: Edge = mk_edge (ext_lab, r.path.dst);
+  top.mod_edges = edges_none ();
+  top.var_edges = edges_none ();
+  top.rec_edges = edges_none ();
+  top.ext_edges = edges_single (ext_edge);
+  top.imp_edges = edges_none ();
+  top.lex_edges = edges_none ();
 }
 
 {- Seq_Binds -}
@@ -86,16 +120,29 @@ top::Super ::= r::TypeRef
 abstract production seq_binds_empty
 top::SeqBinds ::=
 {
+  local lex_edge :: Edge = mk_edge (lex_lab, top.scope);
+  top.lex_edges = edges_single (lex_edge);
 }
 
 abstract production seq_binds_single
 top::SeqBinds ::= b::SeqBind
-{
+{ 
+  propagate scope, s_def;
+  local lex_edge :: Edge = mk_edge (lex_lab, top.scope);
+  top.lex_edges = edges_single (lex_edge);
 }
 
 abstract production seq_binds_list
 top::SeqBinds ::= b::SeqBind bs::SeqBinds
 {
+  local s_def_prime :: Scope = 
+    mk_scope (b.mod_edges, b.var_edges);
+  local lex_edge :: Edge = -- todo: add to s_def_prime edges above
+    mk_edge (lex_lab, top.scope);
+  b.scope = top.scope;
+  b.s_def = s_def_prime;
+  bs.scope = s_def_prime;
+  bs.s_def = top.s_def;
 }
 
 {- Seq_Bind -}
@@ -103,6 +150,7 @@ top::SeqBinds ::= b::SeqBind bs::SeqBinds
 abstract production seq_defbind
 top::SeqBind ::= x::String e::Expr
 {
+  
 }
 
 abstract production seq_defbind_typed
@@ -224,7 +272,6 @@ top::Expr ::= r::TypeRef bs::FldBinds
 abstract production expr_fld_access
 top::Expr ::= e::Expr x::String
 {
-  top.pp = "FldAccess (" ++ e.pp ++ ", \"" ++ x ++ "\")";
 }
 
 abstract production expr_with
@@ -260,7 +307,6 @@ top::FldDecls ::= d::FldDecl ds::FldDecls
 abstract production fld_decls_empty
 top::FldDecls ::=
 {
-  top.pp = "";
 }
 
 {- Fld_Decl -}

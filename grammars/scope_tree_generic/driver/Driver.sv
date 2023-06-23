@@ -1,6 +1,7 @@
 grammar scope_tree_generic:driver;
 
 imports scope_tree_generic:ast;
+imports scope_tree_generic:lmr;
 
 function main
 IO<Integer> ::= largs::[String]

@@ -1,27 +1,21 @@
 grammar scope_tree_generic:ast;
 
-{- Scopes -}
+aspect production mk_scope_generic
+top::Scope ::= 
+  datum::Maybe<(Datum_Id, Datum)>
+  mod_edges :: Edges
+  var_edges :: Edges
+{}
 
--- No datum / ()
 aspect production mk_scope
 top::Scope ::= 
-  label::Integer
-  edges::Edges
+  mod_edges :: Edges
+  var_edges :: Edges
 {}
 
--- Identifier and datum
 aspect production mk_scope_datum
 top::Scope ::= 
-  label::Integer 
-  datum::(Identifier, Datum)
-  edges::Edges
-{}
-
-{- Edges -}
-
-aspect production mk_edge
-top::Edge ::= 
-  src::Scope 
-  label::Label 
-  dst::Scope
+  datum::(Datum_Id, Datum)
+  mod_edges :: Edges
+  var_edges :: Edges
 {}
