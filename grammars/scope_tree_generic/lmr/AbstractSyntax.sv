@@ -25,16 +25,25 @@ nonterminal VarRef;
 
 {- Attributes -}
 
-inherited attribute scope :: Scope occurs on Decls, Decl, Super, TypeRef, SeqBinds, SeqBind;
+inherited attribute scope :: Scope occurs on Decls, Decl, Super, TypeRef, 
+  SeqBinds, SeqBind, Expr, ArgDecl;
 inherited attribute s_rec :: Scope occurs on Super;
 inherited attribute s_def :: Scope occurs on SeqBinds, SeqBind;
 
-synthesized attribute mod_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
-synthesized attribute var_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
-synthesized attribute rec_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
-synthesized attribute ext_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
-synthesized attribute imp_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
-synthesized attribute lex_edges :: Edges occurs on Decls, Decl, Super, FldDecls, SeqBinds, SeqBind;
+synthesized attribute mod_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+synthesized attribute var_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+synthesized attribute rec_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+synthesized attribute ext_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+synthesized attribute imp_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+synthesized attribute lex_edges :: Edges occurs on Decls, Decl, Super, 
+  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
+
+synthesized attribute ty :: LMR_Type occurs on Expr, ArgDecl;
 
 synthesized attribute path :: Path occurs on ModRef, TypeRef, VarRef;
 
@@ -150,36 +159,62 @@ top::SeqBinds ::= b::SeqBind bs::SeqBinds
 abstract production seq_defbind
 top::SeqBind ::= x::String e::Expr
 {
-  
+  local s_var :: Scope = 
+    mk_scope_datum ((x, datum_type (e.ty)), edges_none (), edges_single (var_edge));
+  local var_edge :: Edge = mk_edge (var_lab, s_var);
+  top.mod_edges = e.mod_edges;
+  top.var_edges = edges_cons (var_edge, e.var_edges);
+  top.rec_edges = e.rec_edges;
+  top.ext_edges = e.ext_edges;
+  top.imp_edges = e.imp_edges;
+  top.lex_edges = e.lex_edges;
+  e.scope = top.scope;
 }
 
 abstract production seq_defbind_typed
 top::SeqBind ::= x::String tyann::Type e::Expr
 {
+  local s_var :: Scope = 
+    mk_scope_datum ((x, datum_type (e.ty)), edges_none (), edges_single (var_edge));
+  local var_edge :: Edge = mk_edge (var_lab, s_var);
+  -- type equality check between tyann and e.ty here --
+  top.mod_edges = e.mod_edges;
+  top.var_edges = edges_cons (var_edge, e.var_edges);
+  top.rec_edges = e.rec_edges;
+  top.ext_edges = e.ext_edges;
+  top.imp_edges = e.imp_edges;
+  top.lex_edges = e.lex_edges;
+  e.scope = top.scope;
 }
 
 {- Par_Binds -}
 
 abstract production par_binds_list
 top::ParBinds ::= b::ParBind bs::ParBinds
-{
-}
+{}
 
 abstract production par_binds_empty
 top::ParBinds ::=
-{
-}
+{ propagate scope; }
 
 {- Par_Bind -}
 
 abstract production par_defbind
 top::ParBind ::= x::String e::Expr
 {
+  local s_var :: Scope = 
+    mk_scope_datum ((x, datum_type (e.ty)), edges_none (), edges_none ());
+  local var_edge :: Edge = mk_edge (var_lab, s_var);
+  -- todo
 }
 
 abstract production par_defbind_typed
 top::ParBind ::= x::String tyann::Type e::Expr
 {
+  local s_var :: Scope = 
+    mk_scope_datum ((x, datum_type (e.ty)), edges_none (), edges_none ());
+  local var_edge :: Edge = mk_edge (var_lab, s_var);
+  -- todo
 }
 
 {- Expr -}
@@ -187,66 +222,95 @@ top::ParBind ::= x::String tyann::Type e::Expr
 abstract production expr_int
 top::Expr ::= i::Integer
 {
+  top.ty = int_type ();
 }
 
 abstract production expr_bool
 top::Expr ::= b::Boolean
 {
+  top.ty = bool_type ();
 }
 
 abstract production expr_var
 top::Expr ::= r::VarRef
 {
+  propagate scope;
+  -- datum (p, (x, ty))
 }
 
 abstract production expr_add
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = int
+  top.ty = int_type ();
 }
 
 abstract production expr_sub
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = int
+  top.ty = int_type ();
 }
 
 abstract production expr_mul
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = int
+  top.ty = int_type ();
 }
 
 abstract production expr_div
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = int
+  top.ty = int_type ();
 }
 
 abstract production expr_and
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = bool
+  top.ty = bool_type ();
 }
 
 abstract production expr_or
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = bool
+  top.ty = bool_type ();
 }
 
 abstract production expr_eq
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- e1.ty = e2.ty = t
+  top.ty = e1.ty;
 }
 
 abstract production expr_app
 top::Expr ::= e1::Expr e2::Expr
 {
+  -- todo
 }
 
 abstract production expr_if
 top::Expr ::= e1::Expr e2::Expr e3::Expr
 {
+  -- e1.ty = bool, e2.ty = e3.ty
+  top.ty = e2.ty;
+  -- what does the `true` constraint mean for this implementation?
 }
 
 abstract production expr_fun
 top::Expr ::= d::ArgDecl e::Expr
 {
+  local s_fun :: Scope = 
+    mk_scope (edges_concat (d.mod_edges, e.mod_edges), 
+              edges_concat (d.var_edges, e.var_edges));
+  local lex_edge :: Edge = mk_edge (lex_lab, top.scope); -- add this to lex edges of s_fun
+  d.scope = s_fun;
+  e.scope = s_fun;
+  top.ty = fun_type (d.ty, e.ty);
 }
 
 abstract production expr_let

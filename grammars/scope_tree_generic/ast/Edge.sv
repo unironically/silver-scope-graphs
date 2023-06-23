@@ -21,7 +21,7 @@ top::Edge ::=
 nonterminal Edges;
 
 abstract production edges_cons
-top::Edges ::= 
+top::Edges ::=  -- should i make this `Edges ::= Edges Edges` instead so that can use monoid attr?
   e::Edge 
   es::Edges
 {}
@@ -34,6 +34,18 @@ top::Edges ::=
 abstract production edges_none
 top::Edges ::= 
 {}
+
+abstract production edges_concat
+top::Edges ::=
+  e1::Edges
+  e2::Edges
+{
+  forwards to 
+    case e1 of 
+      edges_none () -> e2
+    | edges_cons (e, es) -> edges_cons (e, edges_concat (es, e2))
+    end;
+}
 
 
 nonterminal Path;
