@@ -78,9 +78,9 @@ top::Decl ::= x::String ds::Decls
       ds.var_edges
     );
   local mod_edge :: Edge = mk_edge (mod_lab, s_mod);
-  local par_edge :: Edge = mk_edge (lex_lab, top.scope);
+  local lex_edge :: Edge = mk_edge (lex_lab, top.scope);
   ds.scope = s_mod;
-  top.lex_edges = edges_single (par_edge);
+  top.lex_edges = edges_single (lex_edge);
 }
 
 abstract production decl_import

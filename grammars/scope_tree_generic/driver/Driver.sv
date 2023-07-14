@@ -14,28 +14,38 @@ IO<Integer> ::= largs::[String]
 
     --let regex :: Regex = star (single (mod_lab));
     --let regex :: Regex = concatenate (single (mod_lab), single (mod_lab));
-    let regex :: Regex = star (concatenate (single (mod_lab), single (var_lab)));
+    --let regex :: Regex = star (concatenate (single (mod_lab), single (var_lab)));
+    let regex :: Regex = star (alternate (single (var_lab), single (var_lab)));
+    --let nfa :: NFA = regex.nfa;
+    let dfa :: DFA = mk_dfa (regex.nfa);
 
-    if (regex.nfa.accepts ([]))
-      then print ("Accepts 1!\n")
-      else print ("Rejects 1!\n");
+    if (dfa.accepts ([]))
+      then print ("DFA Accepts 1!\n")
+      else print ("DFA Rejects 1!\n");
 
-    if (regex.nfa.accepts ([mod_lab]))
-      then print ("Accepts 2!\n")
-      else print ("Rejects 2!\n");
+    print ("--\n");
 
-    if (regex.nfa.accepts ([mod_lab, mod_lab]))
-      then print ("Accepts 3!\n")
-      else print ("Rejects 3!\n");
+    if (dfa.accepts ([mod_lab]))
+      then print ("DFA Accepts 2!\n")
+      else print ("DFA Rejects 2!\n");
 
-    if (regex.nfa.accepts ([mod_lab, var_lab]))
-      then print ("Accepts 4!\n")
-      else print ("Rejects 4!\n");
+    print ("--\n");
 
+    if (dfa.accepts ([mod_lab, mod_lab]))
+      then print ("DFA Accepts 3!\n")
+      else print ("DFA Rejects 3!\n");
 
-    if (regex.nfa.accepts ([var_lab]))
-      then print ("Accepts 5!\n")
-      else print ("Rejects 5!\n");
+    print ("--\n");
+
+    if (dfa.accepts ([mod_lab, var_lab]))
+      then print ("DFA Accepts 4!\n")
+      else print ("DFA Rejects 4!\n");
+    
+    print ("--\n");
+
+    if (dfa.accepts ([var_lab]))
+      then print ("DFA Accepts 5!\n")
+      else print ("DFA Rejects 5!\n");
 
     return 0;
 

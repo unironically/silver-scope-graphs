@@ -8,7 +8,7 @@ synthesized attribute dst::Scope occurs on Edge, Path;
 
 abstract production mk_edge
 top::Edge ::= 
-  --src::Scope 
+  --src::Scope -- already an attribute on a scope, redundant (?)
   label::Label 
   dst::Scope
 {
