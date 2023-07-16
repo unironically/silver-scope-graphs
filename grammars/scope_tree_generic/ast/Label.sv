@@ -61,19 +61,24 @@ top::Label ::= { top.lab_str = "REC"; }
 
 nonterminal Regex;
 synthesized attribute nfa :: NFA occurs on Regex;
+synthesized attribute dfa :: DFA occurs on Regex;
 
 abstract production concatenate
 top::Regex ::= r1::Regex r2::Regex
-{ top.nfa = nfa_concatenate (r1.nfa, r2.nfa); }
+{ top.nfa = nfa_concatenate (r1.nfa, r2.nfa); 
+  top.dfa = mk_dfa (top.nfa); }
 
 abstract production star
 top::Regex ::= r1::Regex
-{ top.nfa = nfa_star (r1.nfa); }
+{ top.nfa = nfa_star (r1.nfa); 
+  top.dfa = mk_dfa (top.nfa); }
 
 abstract production alternate
 top::Regex ::= r1::Regex r2::Regex
-{ top.nfa = nfa_alternate (r1.nfa, r2.nfa); }
+{ top.nfa = nfa_alternate (r1.nfa, r2.nfa); 
+  top.dfa = mk_dfa (top.nfa); }
 
 abstract production single
 top::Regex ::= label::Label
-{ top.nfa = nfa_single (label); }
+{ top.nfa = nfa_single (label); 
+  top.dfa = mk_dfa (top.nfa); }

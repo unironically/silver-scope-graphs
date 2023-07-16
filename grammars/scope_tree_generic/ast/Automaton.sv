@@ -67,19 +67,13 @@ top::DFA_State ::=
 
   top.next = \i :: Integer -> 
     let
-      has_edge :: (Boolean ::= Label) = 
-        (\l :: Label -> case l of 
-                          mod_prod () -> top.mod_trans_dfa.isJust
-                        | var_prod () -> top.var_trans_dfa.isJust
-                        | lex_prod () -> top.lex_trans_dfa.isJust
-                        | _ -> false {- Temporary -}
-                        end)
-    in let
-      next_labs :: [Label] = 
-        if i > length (label_ord) then [] else head (drop (i, label_ord))
+      available_labs :: [[Label]] = 
+        foldr (keep_available_labs (top, _, _), [], label_ord)
     in
-      filter (has_edge, next_labs)
-    end end;
+      if i < length (available_labs)
+        then head(drop (i, available_labs))
+        else []
+    end;
 
   top.step_dfa = \l :: Label ->
     case l of
@@ -92,6 +86,26 @@ top::DFA_State ::=
   top.accepting = 
     any (map ((\s :: NFA_State -> s.accepting), top.nfa_states));
 
+}
+
+function has_edge
+Boolean ::= s::DFA_State l::Label
+{
+  return case l of
+    mod_prod () -> s.mod_trans_dfa.isJust
+  | var_prod () -> s.var_trans_dfa.isJust
+  | lex_prod () -> s.lex_trans_dfa.isJust
+  | _ -> false {- temporary -}
+  end;
+}
+
+function keep_available_labs
+[[Label]] ::= s::DFA_State ls::[Label] acc::[[Label]]
+{
+  local filtered_labs :: [Label] = filter (has_edge (s, _), ls);
+  return if null (filtered_labs) 
+           then acc 
+           else filtered_labs :: acc;
 }
 
 function dfa_accepts

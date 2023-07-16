@@ -52,7 +52,7 @@ IO<Integer> ::= largs::[String]
     let regex2 :: Regex = concatenate (alternate (single (lex_lab), single (var_lab)), single (imp_lab));
     let dfa2 :: DFA = mk_dfa (regex2.nfa);
 
-    print ("[" ++ implode (", ", map ((\l :: Label -> l.lab_str), dfa2.start_dfa.next (1))) ++ "]\n");
+    print ("[" ++ implode (", ", map ((\l :: Label -> l.lab_str), dfa2.start_dfa.next (2))) ++ "]\n");
 
     return 0;
 
