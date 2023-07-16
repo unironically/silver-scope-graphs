@@ -1,61 +1,61 @@
 grammar scope_tree_generic:ast;
 
 {- Global label initialization -}
-global mod_lab :: Label = mod_prod ([]);
-global var_lab :: Label = var_prod ([]);
-global rec_lab :: Label = rec_prod ([]);
-global ext_lab :: Label = ext_prod ([mod_lab, var_lab, rec_lab]);
-global imp_lab :: Label = imp_prod ([mod_lab, var_lab, rec_lab]);
-global lex_lab :: Label = lex_prod ([mod_lab, var_lab, rec_lab, ext_lab, imp_lab]);
 
-{- Labels -}
+global mod_lab :: Label = mod_prod ();
+global var_lab :: Label = var_prod ();
+global rec_lab :: Label = rec_prod ();
+global ext_lab :: Label = ext_prod ();
+global imp_lab :: Label = imp_prod ();
+global lex_lab :: Label = lex_prod ();
 
-nonterminal Label;
+{- Global label order -}
 
-synthesized attribute is_lt :: (Boolean ::= Label) occurs on Label;
+global label_ord :: [[Label]] = [
+  [mod_lab, var_lab, rec_lab],
+  [ext_lab, imp_lab],
+  [lex_lab]
+];
 
-abstract production lex_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-abstract production ext_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-abstract production var_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-abstract production imp_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-abstract production mod_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-abstract production rec_prod
-top::Label ::= greater::[Label]
-{ top.is_lt = \x::Label -> label_is_lt (x, greater); }
-
-function label_is_lt
-Boolean ::= l1::Label lst::[Label]
-{ return ! containsBy (label_eq, l1, lst); }
+{- Label equality -}
 
 function label_eq
 Boolean ::= l1::Label l2::Label
 {
   return
     case (l1, l2) of
-      (lex_prod (_), lex_prod (_)) -> true
-    | (ext_prod (_), ext_prod (_)) -> true
-    | (var_prod (_), var_prod (_)) -> true
-    | (imp_prod (_), imp_prod (_)) -> true
-    | (mod_prod (_), mod_prod (_)) -> true
-    | (rec_prod (_), rec_prod (_)) -> true
+      (lex_prod (), lex_prod ()) -> true
+    | (ext_prod (), ext_prod ()) -> true
+    | (var_prod (), var_prod ()) -> true
+    | (imp_prod (), imp_prod ()) -> true
+    | (mod_prod (), mod_prod ()) -> true
+    | (rec_prod (), rec_prod ()) -> true
     | _                            -> false
     end;
 }
+
+{- Labels -}
+
+nonterminal Label;
+synthesized attribute lab_str :: String occurs on Label;
+
+abstract production lex_prod
+top::Label ::= { top.lab_str = "LEX"; }
+
+abstract production ext_prod
+top::Label ::= { top.lab_str = "EXT"; }
+
+abstract production var_prod
+top::Label ::= { top.lab_str = "VAR"; }
+
+abstract production imp_prod
+top::Label ::= { top.lab_str = "IMP"; }
+
+abstract production mod_prod
+top::Label ::= { top.lab_str = "MOD"; }
+
+abstract production rec_prod
+top::Label ::= { top.lab_str = "REC"; }
 
 {- Regular expressions -}
 
@@ -64,24 +64,16 @@ synthesized attribute nfa :: NFA occurs on Regex;
 
 abstract production concatenate
 top::Regex ::= r1::Regex r2::Regex
-{
-  top.nfa = nfa_concatenate (r1.nfa, r2.nfa);
-}
+{ top.nfa = nfa_concatenate (r1.nfa, r2.nfa); }
 
 abstract production star
 top::Regex ::= r1::Regex
-{
-  top.nfa = nfa_star (r1.nfa);
-}
+{ top.nfa = nfa_star (r1.nfa); }
 
 abstract production alternate
 top::Regex ::= r1::Regex r2::Regex
-{
-  top.nfa = nfa_alternate (r1.nfa, r2.nfa);
-}
+{ top.nfa = nfa_alternate (r1.nfa, r2.nfa); }
 
 abstract production single
 top::Regex ::= label::Label
-{
-  top.nfa = nfa_single (label);
-}
+{ top.nfa = nfa_single (label); }

@@ -47,6 +47,13 @@ IO<Integer> ::= largs::[String]
       then print ("DFA Accepts 5!\n")
       else print ("DFA Rejects 5!\n");
 
+    print ("--\n");
+
+    let regex2 :: Regex = concatenate (alternate (single (lex_lab), single (var_lab)), single (imp_lab));
+    let dfa2 :: DFA = mk_dfa (regex2.nfa);
+
+    print ("[" ++ implode (", ", map ((\l :: Label -> l.lab_str), dfa2.start_dfa.next (1))) ++ "]\n");
+
     return 0;
 
   };
