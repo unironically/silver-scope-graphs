@@ -22,9 +22,7 @@ synthesized attribute var_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute lex_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 {- Leaving the rest of the labels out for now -}
 synthesized attribute step_dfa :: (Maybe<DFA_State> ::= Label) occurs on DFA_State;
-
--- the next best label we can take. give to it the labels we've tried already.
-synthesized attribute next :: ([Label] ::= Integer) occurs on DFA_State;
+synthesized attribute ordered_edges :: [[Label]] occurs on DFA_State;
 
 abstract production mk_dfa_state
 top::DFA_State ::= 
@@ -64,16 +62,7 @@ top::DFA_State ::=
         else just (mk_dfa_state(lexs))
     end;
 
-
-  top.next = \i :: Integer -> 
-    let
-      available_labs :: [[Label]] = 
-        foldr (keep_available_labs (top, _, _), [], label_ord)
-    in
-      if i < length (available_labs)
-        then head(drop (i, available_labs))
-        else []
-    end;
+  top.ordered_edges = foldr (keep_available_labs (top, _, _), [], label_ord);
 
   top.step_dfa = \l :: Label ->
     case l of
