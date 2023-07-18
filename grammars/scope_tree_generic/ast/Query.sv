@@ -29,13 +29,38 @@ top::Query ::=
 }
 
 
-function query_step
-[DFA_State] ::= 
+{-function query_step
+Maybe<Path> ::= 
   state::DFA_State 
   scope::Scope 
 {
-  return [];
+  return nothing ();
 }
+
+function do_trans
+Maybe<Path> ::= states::[[DFA_State]]
+{
+  return case states of
+           [] -> nothing ()
+           h::t -> 
+         end;
+}-}
+
+function get_edges_lab
+[Edge] ::= s::Scope l::Label
+{
+  return case l of
+    mod_prod () -> s.mod_edges
+  | var_prod () -> s.var_edges
+  | lex_prod () -> s.lex_edges
+  | _ -> [] {- Temporary -}
+  end;
+}
+
+
+
+
+
 
 {- All states we can transition to, ordered from left to right -}
 function ordered_trans
