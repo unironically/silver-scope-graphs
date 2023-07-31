@@ -11,14 +11,22 @@ global lex_lab :: Label = lex_prod ();
 
 {- Global label order -}
 
+-- Equivalence classes of labels, in preference order
 global label_ord :: [[Label]] = [
   [mod_lab, var_lab, rec_lab],
   [ext_lab, imp_lab],
   [lex_lab]
 ];
 
-{- Label equality -}
+-- Label order relation
+global label_relation :: [(Label, Label)] = [
+  (mod_lab, lex_lab), (mod_lab, imp_lab), (mod_lab, ext_lab),
+  (rec_lab, lex_lab), (rec_lab, imp_lab), (rec_lab, ext_lab),
+  (var_lab, lex_lab), (var_lab, imp_lab), (var_lab, ext_lab),
+  (imp_lab, lex_lab), (ext_lab, lex_lab)
+];
 
+-- Label equality
 function label_eq
 Boolean ::= l1::Label l2::Label
 {

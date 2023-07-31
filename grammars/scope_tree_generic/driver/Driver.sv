@@ -47,6 +47,12 @@ IO<Integer> ::= largs::[String]
       then print ("DFA Accepts 5!\n")
       else print ("DFA Rejects 5!\n");
 
+    print ("--\n");
+
+    print ("MOD and LEX: " ++ toString (label_comp (mod_lab, lex_lab)) ++ "\n");
+    print ("LEX and REC: " ++ toString (label_comp (lex_lab, rec_lab)) ++ "\n");
+    print ("IMP and EXT: " ++ toString (label_comp (imp_lab, ext_lab)) ++ "\n");
+
     return 0;
 
   };
