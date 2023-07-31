@@ -41,14 +41,31 @@ function query_step
   return [];
 }
 
-function search_edges
+function search_edges_outer
 [Path] ::=
   ord_labs::[[Label]]
   d::DFA_State
   wf::WF_Predicate
   s::Scope
 {
-  return [];
+  return case ord_labs of
+           [] -> []
+         | ls::lss -> search_edges_inner (ls, d, wf, s)
+         end;
+}
+
+{- For a list of equally-weighted edges, continue the query on all scopes
+   we can get to by those edges, return all paths found.
+ - TODO: Maybe sorting at this point?
+ -}
+function search_edges_inner
+[Path] ::=
+  labs::[Label]
+  d::DFA_State
+  wf::WF_Predicate
+  s::Scope
+{
+  return concat (map (search_edge (_, d, wf, s), labs));
 }
 
 {- Recursively call the query step function with the new DFA state,
