@@ -1,22 +1,5 @@
 grammar scope_tree_generic:ast;
 
-{-
-
-TODO:
-
- - Resolve queries:
-   - What is the next label we can take at the current scope? 
-
- - Query process:
-
-   - Get available edges from current scope
-     - Branch off on all equal edges
-     - If none come back with results, get next available edges
-     - Otherwise, return "shortest" path with respect to path ordering
-  
-
--}
-
 type WF_Predicate = (Boolean ::= Datum);
 
 nonterminal Query;
@@ -27,10 +10,7 @@ top::Query ::=
   r::Regex
   s::Scope
   wf::WF_Predicate
-{
-  local query_dfa :: DFA = r.dfa;
-  top.results = query_step (query_dfa.start_dfa, wf, s);
-}
+{ top.results = filter_best (query_step (r.dfa.start_dfa, wf, s)); }
 
 {- Begin the query process. Start with a DFA state, a well-formedness predicate,
    and a scope. Check if the current DFA state is accepting - if so, and the 
@@ -78,7 +58,6 @@ function search_edges_outer
 
 {- For a list of equally-weighted edges, continue the query on all scopes
    we can get to by those edges, return all paths found.
- - TODO: Maybe sorting at this point?
  -}
 function search_edges_inner
 [Path] ::=
@@ -110,7 +89,8 @@ function search_edge
          end;
 }
 
-{- Get all edges of a certain label from a scope -}
+{- Get all edges of a certain label from a scope 
+ -}
 function scope_edges_lab
 [Scope] ::= l::Label s::Scope
 {
@@ -122,8 +102,12 @@ function scope_edges_lab
   end;
 }
 
-{- Filtering for best paths -}
+{--- Filtering for best paths ---}
 
+{- Keep all paths which have the equal best preference.
+ - Ideally, we will end up with a singleton list, but this depends on how the 
+   object language is implemented.
+ -}
 function filter_best
 [Path] ::= ps::[Path]
 {
@@ -133,6 +117,11 @@ function filter_best
          end;
 }
 
+{- Compare a path with a list of paths. The list of paths contains all paths of
+   equal preference which we have seen so far. We want to determine whether `p`
+   is better, worse than, or the same as each of the paths in `eqs`. We keep 
+   `p`, `eqs`, or both, depending on the result of path comparison.
+ -}
 function keep_eq_paths
 [Path] ::= eqs::[Path] p::Path
 {
