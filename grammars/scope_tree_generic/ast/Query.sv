@@ -122,52 +122,24 @@ function scope_edges_lab
   end;
 }
 
+{- Filtering for best paths -}
 
-
-
-
-
-{- All states we can transition to, ordered from left to right 
-function ordered_trans
-[[DFA_State]] ::= s::DFA_State
-{ return map (trans_eq (s, _), s.ordered_edges); }
-
-Transition on all edges that have equal weight 
-function trans_eq
-[DFA_State] ::= s::DFA_State es::[Label]
-{ return filterMap (s.step_dfa(_), es); }
-
-function query_step
-Maybe<Path> ::= 
-  state::DFA_State 
-  scope::Scope 
+function filter_best
+[Path] ::= ps::[Path]
 {
-  return nothing ();
-}
-
-function do_trans
-Maybe<Path> ::= states::[[DFA_State]]
-{
-  return case states of
-           [] -> nothing ()
-           h::t -> 
+  return case ps of
+           [] -> []
+         | h::t -> foldl (keep_eq_paths, [h], t)
          end;
 }
 
-function query_step_tries
-[DFA_State] ::= s::DFA_State
-{}
-
-function query_step_try
-[DFA_State] ::= s::DFA_State i::Integer
-{ 
-  local available_edges :: [Label] = s.next (i);
-  if null (available_edges) 
-    then []
-    else filterMap (transition (s, _), available_edges);
+function keep_eq_paths
+[Path] ::= eqs::[Path] p::Path
+{
+  return case path_comp(head (eqs), p) of
+           0  -> p :: eqs
+         | 1  -> eqs
+         | -1 -> [p]
+         | _  -> [] {- Impossible -}
+         end;
 }
-
-function transition
-Maybe<DFA_State> ::= s::DFA_State l::Label
-{ return s.step_dfa (l); }
--}
