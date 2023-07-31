@@ -1,67 +1,31 @@
 grammar scope_tree_generic:ast;
 
-nonterminal Edge;
+{- Scope edges -}
 
-synthesized attribute label::Label occurs on Edge;
-synthesized attribute src::Scope occurs on Edge, Path;
-synthesized attribute dst::Scope occurs on Edge, Path;
+synthesized attribute src::Scope occurs on Path;
+synthesized attribute dst::Scope occurs on Path;
+synthesized attribute word::[Label] occurs on Path;
 
-abstract production mk_edge
-top::Edge ::= 
-  --src::Scope -- already an attribute on a scope, redundant (?)
-  label::Label 
-  dst::Scope
-{
-  --top.src = src;
-  top.label = label;
-  top.dst = dst;
-}
-
-
-nonterminal Edges;
-
-abstract production edges_cons
-top::Edges ::=  -- should i make this `Edges ::= Edges Edges` instead so that can use monoid attr?
-  e::Edge 
-  es::Edges
-{}
-
-abstract production edges_single
-top::Edges ::=
-  e::Edge
-{ forwards to edges_cons (e, edges_none ()); }
-
-abstract production edges_none
-top::Edges ::= 
-{}
-
-abstract production edges_concat
-top::Edges ::=
-  e1::Edges
-  e2::Edges
-{
-  forwards to 
-    case e1 of 
-      edges_none () -> e2
-    | edges_cons (e, es) -> edges_cons (e, edges_concat (es, e2))
-    end;
-}
-
+{- Paths in query resolutions -}
 
 nonterminal Path;
 
 abstract production path_cons
 top::Path ::=
-  e::Edge
+  e::Scope
+  l::Label
   p::Path
 {
   top.dst = p.dst;
-  top.src = e.src;
+  top.src = e;
+  top.word = l :: p.word;
 }
 
 abstract production path_single
 top::Path ::=
-  e::Edge
+  e::Scope
+  l::Label
 {
-  top.dst = e.dst;
+  top.dst = e;
+  top.word = [l];
 }

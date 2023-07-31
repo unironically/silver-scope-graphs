@@ -25,27 +25,6 @@ nonterminal VarRef;
 
 {- Attributes -}
 
-inherited attribute scope :: Scope occurs on Decls, Decl, Super, TypeRef, 
-  SeqBinds, SeqBind, Expr, ArgDecl;
-inherited attribute s_rec :: Scope occurs on Super;
-inherited attribute s_def :: Scope occurs on SeqBinds, SeqBind;
-
-synthesized attribute mod_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-synthesized attribute var_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-synthesized attribute rec_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-synthesized attribute ext_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-synthesized attribute imp_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-synthesized attribute lex_edges :: Edges occurs on Decls, Decl, Super, 
-  FldDecls, SeqBinds, SeqBind, Expr, ArgDecl;
-
-synthesized attribute ty :: LMR_Type occurs on Expr, ArgDecl;
-
-synthesized attribute path :: Path occurs on ModRef, TypeRef, VarRef;
 
 {- Program -}
 
