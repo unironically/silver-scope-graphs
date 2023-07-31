@@ -97,8 +97,10 @@ function scope_edges_lab
   return case l of
     mod_prod () -> s.mod_edges
   | var_prod () -> s.var_edges
+  | rec_prod () -> s.var_edges
+  | ext_prod () -> s.var_edges
+  | imp_prod () -> s.var_edges
   | lex_prod () -> s.lex_edges
-  | _ -> [] {- Temporary -}
   end;
 }
 

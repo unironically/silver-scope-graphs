@@ -19,8 +19,10 @@ nonterminal DFA_State;
 synthesized attribute nfa_states :: [NFA_State] occurs on DFA_State;
 synthesized attribute mod_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute var_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
+synthesized attribute rec_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
+synthesized attribute ext_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
+synthesized attribute imp_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute lex_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
-{- Leaving the rest of the labels out for now -}
 synthesized attribute step_dfa :: (Maybe<DFA_State> ::= Label) occurs on DFA_State;
 synthesized attribute ordered_edges :: [[Label]] occurs on DFA_State;
 
@@ -52,6 +54,36 @@ top::DFA_State ::=
         else just (mk_dfa_state(vars))
     end;
 
+  top.rec_trans_dfa = 
+    let 
+      recs :: [NFA_State] =  
+        concat (map (((\s :: NFA_State -> s.rec_trans)), top.nfa_states))
+    in
+      if null (recs) 
+        then nothing () 
+        else just (mk_dfa_state(recs))
+    end;
+
+  top.ext_trans_dfa = 
+    let 
+      exts :: [NFA_State] =  
+        concat (map (((\s :: NFA_State -> s.ext_trans)), top.nfa_states))
+    in
+      if null (exts) 
+        then nothing () 
+        else just (mk_dfa_state(exts))
+    end;
+
+  top.imp_trans_dfa = 
+    let 
+      imps :: [NFA_State] =  
+        concat (map (((\s :: NFA_State -> s.imp_trans)), top.nfa_states))
+    in
+      if null (imps) 
+        then nothing () 
+        else just (mk_dfa_state(imps))
+    end;
+
   top.lex_trans_dfa = 
     let 
       lexs :: [NFA_State] =  
@@ -68,8 +100,10 @@ top::DFA_State ::=
     case l of
       mod_prod () -> top.mod_trans_dfa
     | var_prod () -> top.var_trans_dfa
+    | rec_prod () -> top.rec_trans_dfa
+    | ext_prod () -> top.ext_trans_dfa
+    | imp_prod () -> top.imp_trans_dfa
     | lex_prod () -> top.lex_trans_dfa
-    | _ -> nothing () {- temporary -}
     end;
 
   top.accepting = 
@@ -83,8 +117,10 @@ Boolean ::= s::DFA_State l::Label
   return case l of
     mod_prod () -> s.mod_trans_dfa.isJust
   | var_prod () -> s.var_trans_dfa.isJust
+  | rec_prod () -> s.rec_trans_dfa.isJust
+  | ext_prod () -> s.ext_trans_dfa.isJust
+  | imp_prod () -> s.imp_trans_dfa.isJust
   | lex_prod () -> s.lex_trans_dfa.isJust
-  | _ -> false {- temporary -}
   end;
 }
 
@@ -124,12 +160,14 @@ top::NFA ::= label::Label
 {
   local state1 :: NFA_State = 
     case label of
-      mod_prod () -> mk_state (false, [], [state2], [], [])
-    | var_prod () -> mk_state (false, [], [], [state2], [])
-    | lex_prod () -> mk_state (false, [], [], [], [state2])
-    | _ -> mk_state (false, [], [], [], []) {- temporary -}
+      mod_prod () -> mk_mod_state (false, [state2])
+    | var_prod () -> mk_var_state (false, [state2])
+    | rec_prod () -> mk_rec_state (false, [state2])
+    | ext_prod () -> mk_ext_state (false, [state2])
+    | imp_prod () -> mk_imp_state (false, [state2])
+    | lex_prod () -> mk_lex_state (false, [state2])
     end;
-  local state2 :: NFA_State = mk_state (true, [], [], [], []);
+  local state2 :: NFA_State = mk_empty_acc_state ();
   
   top.start = state1;
 }
@@ -143,8 +181,8 @@ top::NFA ::= n1::NFA n2::NFA
 abstract production nfa_star
 top::NFA ::= n1::NFA
 {
-  local state1 :: NFA_State = mk_state (false, [n1.start, state2], [], [], []);
-  local state2 :: NFA_State = mk_state (true, [], [], [], []);
+  local state1 :: NFA_State = mk_eps_state (false, [n1.start, state2]);
+  local state2 :: NFA_State = mk_empty_acc_state ();
 
   top.start = state1.join ([n1.start, state2]);
 }
@@ -152,8 +190,8 @@ top::NFA ::= n1::NFA
 abstract production nfa_alternate
 top::NFA ::= n1::NFA n2::NFA
 {
-  local state1 :: NFA_State = mk_state (false, [n1.start, n2.start], [], [], []);
-  local state2 :: NFA_State = mk_state (true, [], [], [], []);
+  local state1 :: NFA_State = mk_eps_state (false, [n1.start, n2.start]);
+  local state2 :: NFA_State = mk_empty_acc_state ();
   top.start = state1.join ([state2]);
 }
 
@@ -164,6 +202,9 @@ synthesized attribute join :: (NFA_State ::= [NFA_State]) occurs on NFA_State;
 synthesized attribute eps_closure :: [NFA_State] occurs on NFA_State;
 synthesized attribute mod_trans :: [NFA_State] occurs on NFA_State;
 synthesized attribute var_trans :: [NFA_State] occurs on NFA_State;
+synthesized attribute rec_trans :: [NFA_State] occurs on NFA_State;
+synthesized attribute ext_trans :: [NFA_State] occurs on NFA_State;
+synthesized attribute imp_trans :: [NFA_State] occurs on NFA_State;
 synthesized attribute lex_trans :: [NFA_State] occurs on NFA_State;
 
 abstract production mk_state
@@ -172,12 +213,18 @@ top::NFA_State ::=
   eps_trans :: [NFA_State]
   mod_trans :: [NFA_State]
   var_trans :: [NFA_State]
+  rec_trans :: [NFA_State]
+  ext_trans :: [NFA_State]
+  imp_trans :: [NFA_State]
   lex_trans :: [NFA_State]
   {- Leaving the rest of the labels out for now -}
 {
   top.accepting = accepting;
   top.mod_trans = mod_trans;
   top.var_trans = var_trans;
+  top.rec_trans = rec_trans;
+  top.ext_trans = ext_trans;
+  top.imp_trans = imp_trans;
   top.lex_trans = lex_trans;
 
   top.eps_closure =
@@ -194,5 +241,54 @@ top::NFA_State ::=
         else map ((\s :: NFA_State -> s.join (join_to)), eps_trans), 
       map ((\s :: NFA_State -> s.join (join_to)), mod_trans), 
       map ((\s :: NFA_State -> s.join (join_to)), var_trans),
+      map ((\s :: NFA_State -> s.join (join_to)), rec_trans),
+      map ((\s :: NFA_State -> s.join (join_to)), ext_trans),
+      map ((\s :: NFA_State -> s.join (join_to)), imp_trans),
       map ((\s :: NFA_State -> s.join (join_to)), lex_trans));
 }
+
+abstract production mk_eps_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, trans, [], [], [], [], [], []); }
+
+abstract production mk_mod_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], trans, [], [], [], [], []); }
+
+abstract production mk_var_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], trans, [], [], [], []); }
+
+abstract production mk_rec_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], [], trans, [], [], []); }
+
+abstract production mk_ext_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], [], [], trans, [], []); }
+
+abstract production mk_imp_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], [], [], [], trans, []); }
+
+abstract production mk_lex_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], [], [], [], [], trans); }
+
+abstract production mk_empty_acc_state
+top::NFA_State ::= 
+{ forwards to mk_state (true, [], [], [], [], [], [], []); }
