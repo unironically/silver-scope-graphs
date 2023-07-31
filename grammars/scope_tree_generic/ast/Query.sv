@@ -20,6 +20,7 @@ TODO:
 type WF_Predicate = (Boolean ::= Datum);
 
 nonterminal Query;
+synthesized attribute results::[Path] occurs on Query;
 
 abstract production mk_query
 top::Query ::=
@@ -28,10 +29,15 @@ top::Query ::=
   wf::WF_Predicate
 {
   local query_dfa :: DFA = r.dfa;
+  top.results = query_step (query_dfa.start_dfa, wf, s);
 }
 
-
-
+{- Begin the query process. Start with a DFA state, a well-formedness predicate,
+   and a scope. Check if the current DFA state is accepting - if so, and the 
+   current scope satisfies the data well-formedness predicate, then return the
+   singleton path (which must be the best). Otherwise, find other paths via 
+   edges from the current scope. 
+ -}
 function query_step
 [Path] ::=
   d::DFA_State
@@ -103,8 +109,6 @@ function search_edge
          | nothing () -> []
          end;
 }
-
-
 
 {- Get all edges of a certain label from a scope -}
 function scope_edges_lab
