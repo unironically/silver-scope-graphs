@@ -38,9 +38,19 @@ function query_step
   wf::WF_Predicate
   s::Scope
 {
-  return [];
+  local ord_labs::[[Label]] = d.ordered_edges;
+  local rec_result::[Path] = search_edges_outer (ord_labs, d, wf, s);
+  return case s.datum of
+           just (datum)   -> if d.accepting && wf (datum)
+                           then [path_single (s)]
+                           else rec_result
+         | nothing () -> rec_result
+         end;
 }
 
+{- Gives a list of paths to declarations found by following all of the equal
+   best labels from a scope.
+ -}
 function search_edges_outer
 [Path] ::=
   ord_labs::[[Label]]
@@ -49,8 +59,14 @@ function search_edges_outer
   s::Scope
 {
   return case ord_labs of
-           [] -> []
-         | ls::lss -> search_edges_inner (ls, d, wf, s)
+           []      -> []
+         | ls::lss -> let 
+                        result :: [Path] = search_edges_inner (ls, d, wf, s)
+                      in
+                        if null (result) 
+                          then search_edges_outer (lss, d, wf, s)
+                          else result
+                      end
          end;
 }
 
@@ -81,9 +97,10 @@ function search_edge
 {
   local available_scopes::[Scope] = scope_edges_lab (l, s);
   local next_dfa_state::Maybe<DFA_State> = d.step_dfa (l);
+  local result::[Path] = concat (map (query_step (d, wf, _), available_scopes));
   return case next_dfa_state of
-           nothing () -> []
-         | just (d) -> concat (map (query_step (d, wf, _), available_scopes))
+           just (d)   -> map (path_cons (s, l, _), result)
+         | nothing () -> []
          end;
 }
 

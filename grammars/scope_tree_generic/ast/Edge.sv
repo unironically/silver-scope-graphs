@@ -24,8 +24,7 @@ top::Path ::=
 abstract production path_single
 top::Path ::=
   e::Scope
-  l::Label
 {
   top.dst = e;
-  top.word = [l];
+  top.word = [];
 }

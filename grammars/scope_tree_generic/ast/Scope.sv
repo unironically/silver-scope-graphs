@@ -8,10 +8,11 @@ synthesized attribute id :: Integer occurs on Scope;
 synthesized attribute mod_edges :: [Scope] occurs on Scope;
 synthesized attribute var_edges :: [Scope] occurs on Scope;
 synthesized attribute lex_edges :: [Scope] occurs on Scope;
+synthesized attribute datum :: Maybe<Datum> occurs on Scope;
 
 abstract production mk_scope_generic
 top::Scope ::= 
-  datum::Maybe<(Datum_Id, Datum)>
+  datum::Maybe<Datum>
   mod_edges :: [Scope]
   var_edges :: [Scope]
   lex_edges :: [Scope]
@@ -20,6 +21,7 @@ top::Scope ::=
   top.mod_edges = mod_edges;
   top.var_edges = var_edges;
   top.lex_edges = lex_edges;
+  top.datum = datum;
 }
 
 abstract production mk_scope
@@ -31,7 +33,7 @@ top::Scope ::=
 
 abstract production mk_scope_datum
 top::Scope ::= 
-  datum::(Datum_Id, Datum)
+  datum::Datum
   mod_edges :: [Scope]
   var_edges :: [Scope]
   lex_edges :: [Scope]
@@ -42,11 +44,11 @@ nonterminal Datum;
 type Datum_Id = String;
 
 abstract production datum_scope
-top::Datum ::= s :: Scope
+top::Datum ::= str::Datum_Id s::Scope
 {}
 
 abstract production datum_type
-top::Datum ::= t :: LMR_Type
+top::Datum ::= str::Datum_Id t::LMR_Type
 {}
 
 {-
