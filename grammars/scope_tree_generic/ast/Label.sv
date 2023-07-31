@@ -42,6 +42,28 @@ Boolean ::= l1::Label l2::Label
     end;
 }
 
+{- Compares two labels.
+ - Returns 0 if equal, -1 if l2 is preferred, 1 if l1 is preferred.
+ -}
+function label_comp
+Integer ::=
+  l1::Label
+  l2::Label
+{
+  return foldl (
+   (\comp::Integer pair::(Label, Label) -> 
+     if label_eq(fst (pair), l1) && label_eq (snd (pair), l2)
+      then 1
+      else if label_eq(snd (pair), l1) && label_eq (fst (pair), l2)
+             then -1 
+             else comp
+       
+   ), 
+   0, 
+   label_relation
+  );
+}
+
 {- Labels -}
 
 nonterminal Label;
