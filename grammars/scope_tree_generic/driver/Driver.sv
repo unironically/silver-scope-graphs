@@ -36,16 +36,16 @@ IO<Integer> ::= largs::[String]
 
 
   -- T2
-  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]);
-  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]);
-  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []);
-  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);
-  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);
+  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]);    -- does not work from this scope
+  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]);    -- does not work from this scope
+  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []);    -- works from this scope
+  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);    -- works from this scope
+  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);  -- works from this scope
   local s2a11 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
   local s2a12 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
-  local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], []);  
-  local s2a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
-  local r20 :: Regex = concatenate (star (alternate (single (lex_lab), single (imp_lab))), single (var_lab)); -- (LEX|IMP)* VAR
+  local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], []);
+  local s2a2 :: Scope = mk_scope_datum (datum_type ("a", rec_type (mk_scope([],[],[],[],[],[]))), [], [], [], [], [], []);
+  local r20 :: Regex = concatenate (star (alternate (single (imp_lab), single(lex_lab))), single (var_lab)); -- (LEX|IMP)* VAR
   local p20 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of
                       datum_type (str, ty) -> str == "a"

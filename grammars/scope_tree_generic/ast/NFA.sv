@@ -31,10 +31,10 @@ top::NFA ::= n1::NFA n2::NFA
 abstract production nfa_star
 top::NFA ::= n1::NFA
 {
-  local state1 :: NFA_State = mk_eps_state (false, [n1.start, state2]);
+  local state1 :: NFA_State = mk_eps_state (false, [new_n1_start, state2]);
   local state2 :: NFA_State = mk_empty_acc_state ();
-
-  top.start = state1.join ([n1.start, state2]);
+  local new_n1_start :: NFA_State = n1.start.join ([new_n1_start, state2]);
+  top.start = state1;
 }
 
 abstract production nfa_alternate
@@ -86,7 +86,7 @@ top::NFA_State ::=
   top.join = \join_to :: [NFA_State] -> 
     mk_state (
       false, 
-      if top.accepting 
+      if top.accepting
         then join_to ++ map ((\s :: NFA_State -> s.join (join_to)), eps_trans) 
         else map ((\s :: NFA_State -> s.join (join_to)), eps_trans), 
       map ((\s :: NFA_State -> s.join (join_to)), mod_trans), 

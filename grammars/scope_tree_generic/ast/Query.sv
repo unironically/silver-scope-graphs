@@ -10,7 +10,7 @@ top::Query ::=
   r::Regex
   s::Scope
   wf::WF_Predicate
-{ top.results = filter_best(query_step (r.dfa.start_dfa, wf, s)); }
+{ top.results = filter_best (query_step (r.dfa.start_dfa, wf, s)); }
 
 {- Begin the query process. Start with a DFA state, a well-formedness predicate,
    and a scope. Check if the current DFA state is accepting - if so, and the 
