@@ -10,7 +10,7 @@ top::Query ::=
   r::Regex
   s::Scope
   wf::WF_Predicate
-{ top.results = filter_best (query_step (r.dfa.start_dfa, wf, s)); }
+{ top.results = query_step (r.dfa.start_dfa, wf, s); } -- put filter_best wrapper back
 
 {- Begin the query process. Start with a DFA state, a well-formedness predicate,
    and a scope. Check if the current DFA state is accepting - if so, and the 
@@ -27,9 +27,9 @@ function query_step
   local ord_labs::[[Label]] = d.ordered_edges;
   local rec_result::[Path] = search_edges_outer (ord_labs, d, wf, s);
   return case s.datum of
-           just (datum)   -> if d.accepting && wf (datum)
-                           then [path_single (s)]
-                           else rec_result
+           just (datum) -> if d.accepting && wf (datum)
+                             then [path_single (s)]
+                             else rec_result
          | nothing () -> rec_result
          end;
 }
@@ -82,11 +82,17 @@ function search_edge
 {
   local available_scopes::[Scope] = scope_edges_lab (l, s);
   local next_dfa_state::Maybe<DFA_State> = d.step_dfa (l);
-  local result::[Path] = concat (map (query_step (d, wf, _), available_scopes));
+
   return case next_dfa_state of
-           just (d)   -> map (path_cons (s, l, _), result)
+           just (d) -> let 
+                         cont :: [Path] = 
+                          concat (map (query_step (d, wf, _), available_scopes))
+                       in
+                          map (path_cons (s, l, _), cont)
+                       end
          | nothing () -> []
          end;
+
 }
 
 {- Get all edges of a certain label from a scope 
@@ -97,9 +103,9 @@ function scope_edges_lab
   return case l of
     mod_prod () -> s.mod_edges
   | var_prod () -> s.var_edges
-  | rec_prod () -> s.var_edges
-  | ext_prod () -> s.var_edges
-  | imp_prod () -> s.var_edges
+  | rec_prod () -> s.rec_edges
+  | ext_prod () -> s.ext_edges
+  | imp_prod () -> s.imp_edges
   | lex_prod () -> s.lex_edges
   end;
 }

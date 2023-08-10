@@ -7,11 +7,63 @@ function main
 IO<Integer> ::= largs::[String]
 {
 
+  -- T0
+  local s00 :: Scope  = mk_scope ([], [], [], [], [], [s01]);
+  local s01 :: Scope = mk_scope ([], [s0a, s0b], [], [], [], []);
+  local s0a :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
+  local s0b :: Scope = mk_scope_datum (datum_type ("b", int_type ()), [], [], [], [], [], []);
+  local r00 :: Regex = concatenate (star (single(lex_lab)), single (var_lab));
+  local p00 :: (Boolean ::= Datum) =
+    (\d :: Datum -> case d of
+                      datum_type (str, ty) -> str == "a"
+                    | _ -> false
+                    end);
+                   
+
+  -- T1
+  local s10 :: Scope  = mk_scope ([], [], [], [], [], [s11]);
+  local s11 :: Scope = mk_scope ([], [], [], [], [s12], [s13]);
+  local s12 :: Scope = mk_scope ([], [s1a1], [], [], [], []);
+  local s13 :: Scope = mk_scope ([], [s1a2], [], [], [], []);
+  local s1a1 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []); -- want
+  local s1a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
+  local r10 :: Regex = concatenate (star (single(lex_lab)), concatenate (star (single(var_lab)), single (var_lab)));
+  local p10 :: (Boolean ::= Datum) =
+    (\d :: Datum -> case d of
+                      datum_type (str, ty) -> str == "a"
+                    | _ -> false
+                    end);
+
 
   return do {
     
-    print ("Test!\n");
+    print ("Tests:\n");
 
+    let t0res :: [Path] = mk_query (r00, s00, p00).results;
+    print (
+      "T0 result - " ++
+      toString (length (t0res)) ++ 
+      " - " ++ 
+      case head(t0res).dst.datum of
+        just (datum_type (s, t)) -> t.str
+      | _ -> "other datum"
+      end ++
+      " - expect '1 - int'\n"
+    );
+
+    let t1res :: [Path] = mk_query (r10, s10, p10).results;
+    print (
+      "T1 result - " ++
+      toString (length (t1res)) ++ 
+      " - " ++ 
+      case head(t1res).dst.datum of
+        just (datum_type (s, t)) -> t.str
+      | _ -> "other datum"
+      end ++
+      " - expect '1 - bool'\n"
+    );
+
+    {-
     --let regex :: Regex = star (single (mod_lab));
     --let regex :: Regex = concatenate (single (mod_lab), single (mod_lab));
     --let regex :: Regex = star (concatenate (single (mod_lab), single (var_lab)));
@@ -52,6 +104,7 @@ IO<Integer> ::= largs::[String]
     print ("MOD and LEX: " ++ toString (label_comp (mod_lab, lex_lab)) ++ "\n");
     print ("LEX and REC: " ++ toString (label_comp (lex_lab, rec_lab)) ++ "\n");
     print ("IMP and EXT: " ++ toString (label_comp (imp_lab, ext_lab)) ++ "\n");
+    -}
 
     return 0;
 

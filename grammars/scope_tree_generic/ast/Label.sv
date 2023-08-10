@@ -112,3 +112,5 @@ abstract production single
 top::Regex ::= label::Label
 { top.nfa = nfa_single (label); 
   top.dfa = mk_dfa (top.nfa); }
+
+-- concatenate (star (lex_lab), single (var_lab))
