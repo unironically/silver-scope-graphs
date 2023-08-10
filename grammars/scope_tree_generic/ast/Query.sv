@@ -10,7 +10,7 @@ top::Query ::=
   r::Regex
   s::Scope
   wf::WF_Predicate
-{ top.results = query_step (r.dfa.start_dfa, wf, s); } -- put filter_best wrapper back
+{ top.results = filter_best(query_step (r.dfa.start_dfa, wf, s)); }
 
 {- Begin the query process. Start with a DFA state, a well-formedness predicate,
    and a scope. Check if the current DFA state is accepting - if so, and the 
@@ -84,9 +84,9 @@ function search_edge
   local next_dfa_state::Maybe<DFA_State> = d.step_dfa (l);
 
   return case next_dfa_state of
-           just (d) -> let 
+           just (next) -> let 
                          cont :: [Path] = 
-                          concat (map (query_step (d, wf, _), available_scopes))
+                          concat (map (query_step (next, wf, _), available_scopes))
                        in
                           map (path_cons (s, l, _), cont)
                        end

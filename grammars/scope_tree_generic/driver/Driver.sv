@@ -12,7 +12,7 @@ IO<Integer> ::= largs::[String]
   local s01 :: Scope = mk_scope ([], [s0a, s0b], [], [], [], []);
   local s0a :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
   local s0b :: Scope = mk_scope_datum (datum_type ("b", int_type ()), [], [], [], [], [], []);
-  local r00 :: Regex = concatenate (star (single(lex_lab)), single (var_lab));
+  local r00 :: Regex = concatenate (star (single(lex_lab)), single (var_lab)); -- LEX VAR
   local p00 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of
                       datum_type (str, ty) -> str == "a"
@@ -27,13 +27,30 @@ IO<Integer> ::= largs::[String]
   local s13 :: Scope = mk_scope ([], [s1a2], [], [], [], []);
   local s1a1 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []); -- want
   local s1a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
-  local r10 :: Regex = concatenate (star (single(lex_lab)), concatenate (star (single(var_lab)), single (var_lab)));
+  local r10 :: Regex = concatenate (star (single(lex_lab)), concatenate (star (single(var_lab)), single (var_lab))); -- LEX*IMP*VAR VAR
   local p10 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of
                       datum_type (str, ty) -> str == "a"
                     | _ -> false
                     end);
 
+
+  -- T2
+  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]);
+  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]);
+  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []);
+  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);
+  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);
+  local s2a11 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
+  local s2a12 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
+  local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], []);  
+  local s2a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
+  local r20 :: Regex = concatenate (star (alternate (single (lex_lab), single (imp_lab))), single (var_lab)); -- (LEX|IMP)* VAR
+  local p20 :: (Boolean ::= Datum) =
+    (\d :: Datum -> case d of
+                      datum_type (str, ty) -> str == "a"
+                    | _ -> false
+                    end);
 
   return do {
     
@@ -61,6 +78,18 @@ IO<Integer> ::= largs::[String]
       | _ -> "other datum"
       end ++
       " - expect '1 - bool'\n"
+    );
+
+    let t2res :: [Path] = mk_query (r20, s20, p20).results;
+    print (
+      "T2 result - " ++
+      toString (length (t2res)) ++ 
+      " - " ++ 
+      case head(t2res).dst.datum of
+        just (datum_type (s, t)) -> t.str
+      | _ -> "other datum"
+      end ++
+      " - expect '2 - int'\n"
     );
 
     {-
