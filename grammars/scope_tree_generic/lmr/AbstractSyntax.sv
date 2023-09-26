@@ -28,6 +28,7 @@ nonterminal VarRef;
 inherited attribute s::Scope;
 
 synthesized attribute p::Path;
+synthesized attribute ty::LMR_Type;
 
 {- Program -}
 
@@ -247,24 +248,35 @@ top::ArgDecl ::= x::String tyann::Type
 
 {- Type -}
 
+attribute s occurs on Type;
+attribute ty occurs on Type;
+
 abstract production type_int
 top::Type ::= 
 {
+  top.ty = int_type ();
 }
 
 abstract production type_bool
 top::Type ::=
 {
+  top.ty = bool_type ();
 }
 
 abstract production type_arrow
 top::Type ::= tyann1::Type tyann2::Type
 {
+  top.ty = fun_type (tyann1.ty, tyann2.ty);
 }
 
 abstract production type_rec
 top::Type ::= r::TypeRef
 {
+  r.s = top.s;
+  top.ty = case r.p.tgt.datum of
+             just(datum_type (s, t)) -> t
+           | _ -> err_ty ()
+           end;
 }
 
 {- Mod_Ref -}

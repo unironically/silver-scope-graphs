@@ -19,3 +19,7 @@ top::LMR_Type ::=
   t1 :: LMR_Type
   t2 :: LMR_Type
 { top.str = "fun"; }
+
+abstract production err_ty
+top::LMR_Type ::=
+{ top.str = "err"; }
