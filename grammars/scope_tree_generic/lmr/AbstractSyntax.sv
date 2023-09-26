@@ -27,11 +27,12 @@ nonterminal VarRef;
 
 inherited attribute s::Scope;
 inherited attribute s_rec::Scope;
+inherited attribute s_def::Scope;
 
 synthesized attribute p::Path;
 synthesized attribute ty::LMR_Type;
 
-monoid attribute var_edges::[Scope] with [],++;
+monoid attribute var_edges::[Scope] with [], ++;
 
 {- Program -}
 
@@ -79,9 +80,16 @@ top::Super ::= r::TypeRef
 
 {- Seq_Binds -}
 
+attribute s occurs on SeqBinds;
+attribute s_def occurs on SeqBinds;
+attribute lex_edges occurs on SeqBinds;
+attribute var_edges occurs on SeqBinds;
+
 abstract production seq_binds_empty
 top::SeqBinds ::=
-{}
+{
+
+}
 
 abstract production seq_binds_single
 top::SeqBinds ::= b::SeqBind
@@ -93,37 +101,66 @@ top::SeqBinds ::= b::SeqBind bs::SeqBinds
 
 {- Seq_Bind -}
 
+attribute s occurs on SeqBind;
+attribute s_def occurs on SeqBind;
+attribute var_edges occurs on SeqBind;
+
 abstract production seq_defbind
 top::SeqBind ::= x::String e::Expr
-{}
+{
+
+}
 
 abstract production seq_defbind_typed
 top::SeqBind ::= x::String tyann::Type e::Expr
-{}
+{
+
+}
 
 {- Par_Binds -}
 
+attribute s occurs on ParBinds;
+attribute s_def occurs on ParBinds;
+attribute s_var_edges occurs on ParBinds;
+attribute var_edges occurs on ParBinds;
+
 abstract production par_binds_list
 top::ParBinds ::= b::ParBind bs::ParBinds
-{}
+{ propagate s, s_def, s_var_edges, var_edges; }
 
 abstract production par_binds_empty
 top::ParBinds ::=
-{}
+{ propagate s, s_def, s_var_edges, var_edges; }
 
 {- Par_Bind -}
 
+attribute s occurs on ParBind;
+attribute s_def occurs on ParBind;
+monoid attribute s_var_edges::[Scope] with [],++ occurs on ParBind;
+attribute var_edges occurs on ParBind;
+
 abstract production par_defbind
 top::ParBind ::= x::String e::Expr
-{}
+{ propagate var_edges;
+  local s_var::Scope = mk_scope_decl (datum_type (x, e.ty));
+  top.s_var_edges := [s_var];
+  e.s = top.s;
+}
 
 abstract production par_defbind_typed
 top::ParBind ::= x::String tyann::Type e::Expr
-{}
+{ propagate var_edges;
+  local s_var::Scope = mk_scope_decl (datum_type (x, e.ty));
+  top.s_var_edges := [s_var];
+  e.s = top.s;
+  {- TODO: error checking that e.ty = tyann.ty -}
+}
 
 {- Expr -}
 
 attribute s occurs on Expr;
+attribute ty occurs on Expr;
+attribute var_edges occurs on Expr;
 
 abstract production expr_int
 top::Expr ::= i::Integer
@@ -180,55 +217,115 @@ top::Expr ::= d::ArgDecl e::Expr
 abstract production expr_let
 top::Expr ::= bs::SeqBinds e::Expr
 {
+  local s_let::Scope = mk_scope ([], [], [], [], [], [], []);
+  bs.s = top.s;
+  bs.s_def = s_let;
+  e.s = s_let;
+  top.ty = e.ty;
+  top.var_edges <- bs.var_edges;
 }
 
 abstract production expr_letrec
 top::Expr ::= bs::ParBinds e::Expr
 {
+  local s_let::Scope = mk_scope (e.var_edges, bs.s_var_edges, [], [], [], [top.s], []);
+  bs.s = s_let;
+  bs.s_def = s_let;
+  e.s = s_let;
+  top.ty = e.ty;
+  top.var_edges := [];
 }
 
 abstract production expr_letpar
 top::Expr ::= bs::ParBinds e::Expr
 {
+  local s_let::Scope = mk_scope (e.var_edges, bs.s_var_edges, [], [], [], [top.s], []);
+  bs.s = top.s;
+  bs.s_def = s_let;
+  e.s = s_let;
+  top.ty = e.ty;
+  top.var_edges <- bs.var_edges;
 }
 
 abstract production expr_new
 top::Expr ::= r::TypeRef bs::FldBinds
 {
+  r.s = top.s;
+  local p::Path = r.p;
+  local s_rec::Scope = case p.tgt.datum of 
+                         just(datum_scope (id, s_rec)) -> s_rec
+                       | _ -> mk_scope ([], [], [], [], [], [], []) {- TODO: error checking -}
+                       end;
+  bs.s = top.s;
+  bs.s_rec = s_rec;
+
+  top.ty = rec_type (s_rec);
+  top.var_edges <- bs.var_edges;
 }
 
 abstract production expr_fld_access
 top::Expr ::= e::Expr x::String
 {
+  e.s = top.s;
+  local s_rec::Scope = case e.ty of
+                         rec_type (s_rec) -> s_rec
+                       | _ -> mk_scope ([], [], [], [], [], [], []) {- TODO: error checking -}
+                       end;
+  local q::Query = mk_query (concatenate (
+                               star (single (ext_lab)),
+                               single (fld_lab)
+                             ),
+                             s_rec,
+                             same_id_check (x, _));
+
+  local p::Path = head(q.results);
+  top.ty = case p.tgt.datum of 
+             just(datum_type (s, t)) -> t
+           | _ -> err_ty ()
+           end;
+
+  top.var_edges <- e.var_edges;
 }
 
 abstract production expr_with
 top::Expr ::= e1::Expr e2::Expr
 {
+  e1.s = top.s;
+  local s_rec::Scope = case e1.ty of
+                         rec_type (s_rec) -> s_rec
+                       | _ -> mk_scope ([], [], [], [], [], [], []) {- TODO: error checking -}
+                       end;
+  local s_with::Scope = mk_scope ([], [], [], [s_rec], [], [], []); {- TODO: when know what edges Expr can synth -}
+
+  e2.s = s_with;
+  top.ty = e2.ty;
+  top.var_edges <- e2.var_edges;
 }
 
 {- Fld_Binds -}
 
-attribute s occurs on FldBind;
-attribute s_rec occurs on FldBind;
+attribute s occurs on FldBinds;
+attribute s_rec occurs on FldBinds;
+attribute var_edges occurs on FldBinds;
 
 abstract production fld_binds_list
 top::FldBinds ::= b::FldBind bs::FldBinds
-{ propagate s, s_rec; }
+{ propagate s, s_rec, var_edges; }
 
 abstract production fld_binds_empty
 top::FldBinds ::=
-{ propagate s, s_rec; }
+{ propagate s, s_rec, var_edges; }
 
 {- FldBind -}
 
 attribute s occurs on FldBind;
 attribute s_rec occurs on FldBind;
+attribute var_edges occurs on FldBind;
 
 abstract production fld_bind
 top::FldBind ::= x::String e::Expr
 {
-
+  propagate var_edges;
   e.s = top.s;
   local q::Query = mk_query (concatenate (
                                star (single (ext_lab)),
@@ -237,7 +334,6 @@ top::FldBind ::= x::String e::Expr
                              top.s_rec,
                              same_id_check (x, _));
   {- Check here that e.ty == q.results.tgt.datum's ty -}
-
 }
 
 {- Fld_Decls -}
