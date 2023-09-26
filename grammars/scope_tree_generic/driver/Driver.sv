@@ -8,10 +8,10 @@ IO<Integer> ::= largs::[String]
 {
 
   -- T0
-  local s00 :: Scope  = mk_scope ([], [], [], [], [], [s01]);
-  local s01 :: Scope = mk_scope ([], [s0a, s0b], [], [], [], []);
-  local s0a :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
-  local s0b :: Scope = mk_scope_datum (datum_type ("b", int_type ()), [], [], [], [], [], []);
+  local s00 :: Scope  = mk_scope ([], [], [], [], [], [s01], []);
+  local s01 :: Scope = mk_scope ([], [s0a, s0b], [], [], [], [], []);
+  local s0a :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], [], []);
+  local s0b :: Scope = mk_scope_datum (datum_type ("b", int_type ()), [], [], [], [], [], [], []);
   local r00 :: Regex = concatenate (star (single(lex_lab)), single (var_lab)); -- LEX VAR
   local p00 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of
@@ -21,12 +21,12 @@ IO<Integer> ::= largs::[String]
                    
 
   -- T1
-  local s10 :: Scope  = mk_scope ([], [], [], [], [], [s11]);
-  local s11 :: Scope = mk_scope ([], [], [], [], [s12], [s13]);
-  local s12 :: Scope = mk_scope ([], [s1a1], [], [], [], []);
-  local s13 :: Scope = mk_scope ([], [s1a2], [], [], [], []);
-  local s1a1 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []); -- want
-  local s1a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
+  local s10 :: Scope  = mk_scope ([], [], [], [], [], [s11], []);
+  local s11 :: Scope = mk_scope ([], [], [], [], [s12], [s13], []);
+  local s12 :: Scope = mk_scope ([], [s1a1], [], [], [], [], []);
+  local s13 :: Scope = mk_scope ([], [s1a2], [], [], [], [], []);
+  local s1a1 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], [], []); -- want
+  local s1a2 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], [], []);
   local r10 :: Regex = concatenate (star (single(lex_lab)), concatenate (star (single(var_lab)), single (var_lab))); -- LEX*IMP*VAR VAR
   local p10 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of
@@ -36,15 +36,15 @@ IO<Integer> ::= largs::[String]
 
 
   -- T2
-  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]); 
-  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]); 
-  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []); 
-  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);
-  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);
-  local s2a11 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
-  local s2a12 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
-  local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], []);
-  local s2a2 :: Scope = mk_scope_datum (datum_type ("a", rec_type (mk_scope([],[],[],[],[],[]))), [], [], [], [], [], []);
+  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25], []); 
+  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22], []); 
+  local s22 :: Scope = mk_scope ([], [], [], [], [s23], [], []); 
+  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24], []);
+  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], [], []);
+  local s2a11 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], [], []);
+  local s2a12 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], [], []);
+  local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], [], []);
+  local s2a2 :: Scope = mk_scope_datum (datum_type ("a", rec_type (mk_scope([],[],[],[],[],[], []))), [], [], [], [], [], [], []);
   local r20 :: Regex = concatenate (star (alternate (single (imp_lab), single(lex_lab))), single (var_lab)); -- (LEX|IMP)* VAR
   local p20 :: (Boolean ::= Datum) =
     (\d :: Datum -> case d of

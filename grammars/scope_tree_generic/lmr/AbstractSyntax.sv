@@ -26,9 +26,12 @@ nonterminal VarRef;
 {- Attributes -}
 
 inherited attribute s::Scope;
+inherited attribute s_rec::Scope;
 
 synthesized attribute p::Path;
 synthesized attribute ty::LMR_Type;
+
+monoid attribute var_edges::[Scope] with [],++;
 
 {- Program -}
 
@@ -120,6 +123,8 @@ top::ParBind ::= x::String tyann::Type e::Expr
 
 {- Expr -}
 
+attribute s occurs on Expr;
+
 abstract production expr_int
 top::Expr ::= i::Integer
 {}
@@ -204,46 +209,76 @@ top::Expr ::= e1::Expr e2::Expr
 
 {- Fld_Binds -}
 
+attribute s occurs on FldBind;
+attribute s_rec occurs on FldBind;
+
 abstract production fld_binds_list
 top::FldBinds ::= b::FldBind bs::FldBinds
-{
-}
+{ propagate s, s_rec; }
 
 abstract production fld_binds_empty
 top::FldBinds ::=
-{
-}
-{- Fld_Bind -}
+{ propagate s, s_rec; }
+
+{- FldBind -}
+
+attribute s occurs on FldBind;
+attribute s_rec occurs on FldBind;
 
 abstract production fld_bind
 top::FldBind ::= x::String e::Expr
 {
+
+  e.s = top.s;
+  local q::Query = mk_query (concatenate (
+                               star (single (ext_lab)),
+                               single (fld_lab)
+                             ),
+                             top.s_rec,
+                             same_id_check (x, _));
+  {- Check here that e.ty == q.results.tgt.datum's ty -}
+
 }
 
 {- Fld_Decls -}
 
+attribute s occurs on FldDecls;
+attribute var_edges occurs on FldDecls;
+
 abstract production fld_decls_list
 top::FldDecls ::= d::FldDecl ds::FldDecls
-{
-}
+{ propagate s, var_edges; }
 
 abstract production fld_decls_empty
 top::FldDecls ::=
-{
-}
+{ propagate s, var_edges; }
 
-{- Fld_Decl -}
+{- FldDecl -}
+
+attribute s occurs on FldDecl;
+attribute var_edges occurs on FldDecl;
 
 abstract production fld_decl
 top::FldDecl ::= x::String tyann::Type
 {
+  tyann.s = top.s;
+  local s_var::Scope = mk_scope_decl (datum_type (x, tyann.ty));
+  top.var_edges := [s_var];
 }
 
 {- Arg_Decl -}
 
+attribute s occurs on ArgDecl;
+attribute ty occurs on ArgDecl;
+attribute var_edges occurs on ArgDecl;
+
 abstract production arg_decl
 top::ArgDecl ::= x::String tyann::Type
 {
+  tyann.s = top.s;
+  top.ty = tyann.ty;
+  local s_var::Scope = mk_scope_decl (datum_type (x, top.ty));
+  top.var_edges := [s_var];
 }
 
 {- Type -}
@@ -357,17 +392,13 @@ attribute p occurs on VarRef;
 abstract production var_ref_single
 top::VarRef ::= x::String
 {
-  local q :: Query = mk_query (
-                                concatenate (
+  local q :: Query = mk_query (concatenate (
                                   star (single(lex_lab)),
                                   alternate (
                                     star (single(ext_lab)),
-                                    maybe (single(imp_lab))
-                                  )
-                                ),
-                                top.s,
-                                same_id_check (x, _)
-                              );
+                                    maybe (single(imp_lab)))),
+                               top.s,
+                               same_id_check (x, _));
   top.p = head(q.results);
 }
 

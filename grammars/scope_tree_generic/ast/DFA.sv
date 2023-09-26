@@ -23,6 +23,7 @@ synthesized attribute rec_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute ext_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute imp_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute lex_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
+synthesized attribute fld_trans_dfa :: Maybe<DFA_State> occurs on DFA_State;
 synthesized attribute step_dfa :: (Maybe<DFA_State> ::= Label) occurs on DFA_State;
 synthesized attribute ordered_edges :: [[Label]] occurs on DFA_State;
 
@@ -94,6 +95,16 @@ top::DFA_State ::=
         else just (mk_dfa_state(lexs))
     end;
 
+  top.fld_trans_dfa = 
+    let 
+      flds :: [NFA_State] =  
+        concat (map (((\s :: NFA_State -> s.fld_trans)), top.nfa_states))
+    in
+      if null (flds) 
+        then nothing () 
+        else just (mk_dfa_state(flds))
+    end;
+
   top.ordered_edges = foldr (keep_available_labs (top, _, _), [], label_ord);
 
   top.step_dfa = \l :: Label ->
@@ -104,6 +115,7 @@ top::DFA_State ::=
     | ext_prod () -> top.ext_trans_dfa
     | imp_prod () -> top.imp_trans_dfa
     | lex_prod () -> top.lex_trans_dfa
+    | fld_prod () -> top.fld_trans_dfa
     end;
 
   top.accepting = 
@@ -121,6 +133,7 @@ Boolean ::= s::DFA_State l::Label
   | ext_prod () -> s.ext_trans_dfa.isJust
   | imp_prod () -> s.imp_trans_dfa.isJust
   | lex_prod () -> s.lex_trans_dfa.isJust
+  | fld_prod () -> s.fld_trans_dfa.isJust
   end;
 }
 

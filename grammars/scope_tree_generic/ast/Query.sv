@@ -107,6 +107,7 @@ function scope_edges_lab
   | ext_prod () -> s.ext_edges
   | imp_prod () -> s.imp_edges
   | lex_prod () -> s.lex_edges
+  | fld_prod () -> s.fld_edges
   end;
 }
 

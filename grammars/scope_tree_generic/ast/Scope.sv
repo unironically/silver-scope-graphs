@@ -11,6 +11,7 @@ synthesized attribute rec_edges :: [Scope] occurs on Scope;
 synthesized attribute ext_edges :: [Scope] occurs on Scope;
 synthesized attribute imp_edges :: [Scope] occurs on Scope;
 synthesized attribute lex_edges :: [Scope] occurs on Scope;
+synthesized attribute fld_edges :: [Scope] occurs on Scope;
 synthesized attribute datum :: Maybe<Datum> occurs on Scope;
 
 abstract production mk_scope_generic
@@ -22,6 +23,7 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 {
   top.id = genInt ();
   top.mod_edges = mod_edges;
@@ -30,6 +32,7 @@ top::Scope ::=
   top.ext_edges = ext_edges;
   top.imp_edges = imp_edges;
   top.lex_edges = lex_edges;
+  top.fld_edges = fld_edges;
   top.datum = datum;
 }
 
@@ -41,8 +44,9 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 { forwards to mk_scope_generic (nothing(), mod_edges, var_edges, rec_edges, 
-                                ext_edges, imp_edges, lex_edges); }
+                                ext_edges, imp_edges, lex_edges, fld_edges); }
 
 abstract production mk_scope_datum
 top::Scope ::= 
@@ -53,8 +57,14 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 { forwards to mk_scope_generic (just (datum), mod_edges, var_edges, rec_edges, 
-                                ext_edges, imp_edges, lex_edges); }
+                                ext_edges, imp_edges, lex_edges, fld_edges); }
+
+abstract production mk_scope_decl
+top::Scope ::=
+  datum::Datum
+{ forwards to mk_scope_generic (just (datum), [], [], [], [], [], [], []); }
 
 nonterminal Datum;
 type Datum_Id = String;

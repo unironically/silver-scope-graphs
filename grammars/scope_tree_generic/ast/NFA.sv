@@ -16,6 +16,7 @@ top::NFA ::= label::Label
     | ext_prod () -> mk_ext_state (false, [state2])
     | imp_prod () -> mk_imp_state (false, [state2])
     | lex_prod () -> mk_lex_state (false, [state2])
+    | fld_prod () -> mk_fld_state (false, [state2])
     end;
   local state2 :: NFA_State = mk_empty_acc_state ();
   
@@ -66,6 +67,7 @@ synthesized attribute rec_trans :: [NFA_State] occurs on NFA_State;
 synthesized attribute ext_trans :: [NFA_State] occurs on NFA_State;
 synthesized attribute imp_trans :: [NFA_State] occurs on NFA_State;
 synthesized attribute lex_trans :: [NFA_State] occurs on NFA_State;
+synthesized attribute fld_trans :: [NFA_State] occurs on NFA_State;
 
 abstract production mk_state
 top::NFA_State ::= 
@@ -77,6 +79,7 @@ top::NFA_State ::=
   ext_trans :: [NFA_State]
   imp_trans :: [NFA_State]
   lex_trans :: [NFA_State]
+  fld_trans :: [NFA_State]
   {- Leaving the rest of the labels out for now -}
 {
   top.accepting = accepting;
@@ -86,6 +89,7 @@ top::NFA_State ::=
   top.ext_trans = ext_trans;
   top.imp_trans = imp_trans;
   top.lex_trans = lex_trans;
+  top.fld_trans = fld_trans;
 
   top.eps_closure =
     if null (eps_trans)
@@ -104,51 +108,58 @@ top::NFA_State ::=
       map ((\s :: NFA_State -> s.join (join_to)), rec_trans),
       map ((\s :: NFA_State -> s.join (join_to)), ext_trans),
       map ((\s :: NFA_State -> s.join (join_to)), imp_trans),
-      map ((\s :: NFA_State -> s.join (join_to)), lex_trans));
+      map ((\s :: NFA_State -> s.join (join_to)), lex_trans),
+      map ((\s :: NFA_State -> s.join (join_to)), fld_trans));
 }
 
 abstract production mk_eps_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, trans, [], [], [], [], [], []); }
+{ forwards to mk_state (accepting, trans, [], [], [], [], [], [], []); }
 
 abstract production mk_mod_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], trans, [], [], [], [], []); }
+{ forwards to mk_state (accepting, [], trans, [], [], [], [], [], []); }
 
 abstract production mk_var_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], [], trans, [], [], [], []); }
+{ forwards to mk_state (accepting, [], [], trans, [], [], [], [], []); }
 
 abstract production mk_rec_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], [], [], trans, [], [], []); }
+{ forwards to mk_state (accepting, [], [], [], trans, [], [], [], []); }
 
 abstract production mk_ext_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], [], [], [], trans, [], []); }
+{ forwards to mk_state (accepting, [], [], [], [], trans, [], [], []); }
 
 abstract production mk_imp_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], [], [], [], [], trans, []); }
+{ forwards to mk_state (accepting, [], [], [], [], [], trans, [], []); }
 
 abstract production mk_lex_state
 top::NFA_State ::= 
   accepting :: Boolean
   trans :: [NFA_State]
-{ forwards to mk_state (accepting, [], [], [], [], [], [], trans); }
+{ forwards to mk_state (accepting, [], [], [], [], [], [], trans, []); }
+
+abstract production mk_fld_state
+top::NFA_State ::= 
+  accepting :: Boolean
+  trans :: [NFA_State]
+{ forwards to mk_state (accepting, [], [], [], [], [], [], [], trans); }
 
 abstract production mk_empty_acc_state
 top::NFA_State ::= 
-{ forwards to mk_state (true, [], [], [], [], [], [], []); }
+{ forwards to mk_state (true, [], [], [], [], [], [], [], []); }

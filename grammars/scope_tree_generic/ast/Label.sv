@@ -8,12 +8,13 @@ global rec_lab :: Label = rec_prod ();
 global ext_lab :: Label = ext_prod ();
 global imp_lab :: Label = imp_prod ();
 global lex_lab :: Label = lex_prod ();
+global fld_lab :: Label = fld_prod ();
 
 {- Global label order -}
 
 -- Equivalence classes of labels, in preference order
 global label_ord :: [[Label]] = [
-  [mod_lab, var_lab, rec_lab],
+  [mod_lab, var_lab, rec_lab, fld_lab],
   [ext_lab, imp_lab],
   [lex_lab]
 ];
@@ -86,6 +87,9 @@ top::Label ::= { top.lab_str = "MOD"; }
 
 abstract production rec_prod
 top::Label ::= { top.lab_str = "REC"; }
+
+abstract production fld_prod
+top::Label ::= { top.lab_str = "FLD"; }
 
 {- Regular expressions -}
 

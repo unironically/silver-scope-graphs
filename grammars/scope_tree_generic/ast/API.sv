@@ -9,6 +9,7 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 {}
 
 aspect production mk_scope
@@ -19,6 +20,7 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 {}
 
 aspect production mk_scope_datum
@@ -30,4 +32,5 @@ top::Scope ::=
   ext_edges :: [Scope]
   imp_edges :: [Scope]
   lex_edges :: [Scope]
+  fld_edges :: [Scope]
 {}
