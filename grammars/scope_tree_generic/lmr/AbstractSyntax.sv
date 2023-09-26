@@ -25,6 +25,9 @@ nonterminal VarRef;
 
 {- Attributes -}
 
+inherited attribute s::Scope;
+
+synthesized attribute p::Path;
 
 {- Program -}
 
@@ -290,12 +293,31 @@ top::TypeRef ::= r::ModRef x::String
 
 {- Var_Ref -}
 
+attribute s occurs on VarRef;
+attribute p occurs on VarRef;
+
 abstract production var_ref_single
 top::VarRef ::= x::String
 {
+  local q :: Query = mk_query (
+                                concatenate (
+                                  star (single(lex_lab)),
+                                  alternate (
+                                    star (single(ext_lab)),
+                                    maybe (single(imp_lab))
+                                  )
+                                ),
+                                top.s,
+                                (\d::Datum -> case d of
+                                                datum_type (s, t) -> s == x
+                                              | _ -> false
+                                              end)
+                              );
+  top.p = head(q.results);
 }
 
 abstract production var_ref_dot
 top::VarRef ::= r::ModRef x::String
 {
+
 }

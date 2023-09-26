@@ -113,4 +113,9 @@ top::Regex ::= label::Label
 { top.nfa = nfa_single (label); 
   top.dfa = mk_dfa (top.nfa); }
 
+abstract production maybe
+top::Regex ::= r1::Regex
+{ top.nfa = nfa_maybe (r1.nfa);
+  top.dfa = mk_dfa (top.nfa);}
+
 -- concatenate (star (lex_lab), single (var_lab))

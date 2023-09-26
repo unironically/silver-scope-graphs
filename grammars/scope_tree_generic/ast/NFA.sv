@@ -22,6 +22,16 @@ top::NFA ::= label::Label
   top.start = state1;
 }
 
+abstract production nfa_maybe
+top::NFA ::= n1::NFA
+{
+  local state1 :: NFA_State = mk_eps_state (false, [new_sing_start, state3]);
+  local new_sing_start :: NFA_State = n1.start.join ([state3]);
+  local state3 :: NFA_State = mk_empty_acc_state ();
+
+  top.start = state1;
+}
+
 abstract production nfa_concatenate
 top::NFA ::= n1::NFA n2::NFA
 {

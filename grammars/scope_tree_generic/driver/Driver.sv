@@ -36,11 +36,11 @@ IO<Integer> ::= largs::[String]
 
 
   -- T2
-  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]);    -- does not work from this scope
-  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]);    -- does not work from this scope
-  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []);    -- works from this scope
-  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);    -- works from this scope
-  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);  -- works from this scope
+  local s20 :: Scope = mk_scope ([], [], [], [], [s21], [s25]); 
+  local s21 :: Scope = mk_scope ([], [], [], [], [], [s22]); 
+  local s22 :: Scope = mk_scope ([], [], [], [], [s23], []); 
+  local s23 :: Scope = mk_scope ([], [], [], [], [], [s24]);
+  local s24 :: Scope = mk_scope ([], [s2a11, s2a12], [], [], [], []);
   local s2a11 :: Scope = mk_scope_datum (datum_type ("a", int_type ()), [], [], [], [], [], []);
   local s2a12 :: Scope = mk_scope_datum (datum_type ("a", bool_type ()), [], [], [], [], [], []);
   local s25 :: Scope = mk_scope ([], [s2a2], [], [], [], []);
