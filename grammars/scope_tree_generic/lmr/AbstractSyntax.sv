@@ -275,23 +275,66 @@ attribute p occurs on ModRef;
 abstract production mod_ref_single
 top::ModRef ::= x::String
 {
+  local q :: Query = mk_query ( 
+                                concatenate (
+                                  star (single (lex_lab)),
+                                  concatenate (
+                                   maybe (single (imp_lab)),
+                                   single (mod_lab)
+                                  )
+                                ),
+                                top.s,
+                                same_id_check (x, _)
+                              );
+  top.p = head(q.results);
 }
 
 abstract production mod_ref_dot
 top::ModRef ::= r::ModRef x::String
 {
+  r.s = top.s;
+  local p_mod :: Path = r.p;
+  local s_mod :: Scope = p_mod.tgt;
+  local q :: Query = mk_query (single(mod_lab),
+                               s_mod,
+                               same_id_check (x, _)
+                              );
+  top.p = head(q.results);
 }
 
 {- Type_Ref -}
 
+attribute s occurs on TypeRef;
+attribute p occurs on TypeRef;
+
 abstract production type_ref_single
 top::TypeRef ::= x::String
 {
+  local q :: Query = mk_query ( 
+                                concatenate (
+                                  star (single (lex_lab)),
+                                  concatenate (
+                                   maybe (single (imp_lab)),
+                                   single (rec_lab)
+                                  )
+                                ),
+                                top.s,
+                                same_id_check (x, _)
+                              );
+  top.p = head(q.results);
 }
 
 abstract production type_ref_dot
 top::TypeRef ::= r::ModRef x::String
 {
+  r.s = top.s;
+  local p_mod :: Path = r.p;
+  local s_mod :: Scope = p_mod.tgt;
+  local q :: Query = mk_query (single(rec_lab),
+                               s_mod,
+                               same_id_check (x, _)
+                              );
+  top.p = head(q.results);
 }
 
 {- Var_Ref -}
@@ -322,10 +365,9 @@ top::VarRef ::= r::ModRef x::String
   r.s = top.s;
   local p_mod :: Path = r.p;
   local s_mod :: Scope = p_mod.tgt;
-  local q :: Query = mk_query (
-                                single(var_lab),
-                                s_mod,
-                                same_id_check (x, _)
+  local q :: Query = mk_query (single(var_lab),
+                               s_mod,
+                               same_id_check (x, _)
                               );
   top.p = head(q.results);
 }
