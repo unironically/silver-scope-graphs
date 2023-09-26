@@ -61,7 +61,7 @@ IO<Integer> ::= largs::[String]
       "T0 result - " ++
       toString (length (t0res)) ++ 
       " - " ++ 
-      case head(t0res).dst.datum of
+      case head(t0res).tgt.datum of
         just (datum_type (s, t)) -> t.str
       | _ -> "other datum"
       end ++
@@ -73,7 +73,7 @@ IO<Integer> ::= largs::[String]
       "T1 result - " ++
       toString (length (t1res)) ++ 
       " - " ++ 
-      case head(t1res).dst.datum of
+      case head(t1res).tgt.datum of
         just (datum_type (s, t)) -> t.str
       | _ -> "other datum"
       end ++
@@ -85,7 +85,7 @@ IO<Integer> ::= largs::[String]
       "T2 result - " ++
       toString (length (t2res)) ++ 
       " - " ++ 
-      case head(t2res).dst.datum of
+      case head(t2res).tgt.datum of
         just (datum_type (s, t)) -> t.str
       | _ -> "other datum"
       end ++

@@ -67,17 +67,15 @@ abstract production datum_type
 top::Datum ::= str::Datum_Id t::LMR_Type
 {}
 
-{-
+function same_id_check
+Boolean ::= x1::String d::Datum {
+  return case d of
+           datum_type (x2, t) -> x1 == x2
+         | _ -> false
+         end;
+}
 
+{-
 The productions for Datum should be defined in the object language.
-
--}
-
-
-
-
-{-
-
 The productions for Identifier should be defined in the object language.
-
 -}

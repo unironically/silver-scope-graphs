@@ -3,7 +3,7 @@ grammar scope_tree_generic:ast;
 {- Scope edges -}
 
 synthesized attribute src::Scope occurs on Path;
-synthesized attribute dst::Scope occurs on Path;
+synthesized attribute tgt::Scope occurs on Path;
 synthesized attribute word::[Label] occurs on Path;
 synthesized attribute len::Integer occurs on Path;
 
@@ -17,7 +17,7 @@ top::Path ::=
   l::Label
   p::Path
 {
-  top.dst = p.dst;
+  top.tgt = p.tgt;
   top.src = e;
   top.word = l :: p.word;
   top.len = 1 + p.len;
@@ -27,7 +27,7 @@ abstract production path_single
 top::Path ::=
   e::Scope
 {
-  top.dst = e;
+  top.tgt = e;
   top.word = [];
   top.len = 0;
 }

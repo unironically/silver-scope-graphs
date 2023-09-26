@@ -269,6 +269,9 @@ top::Type ::= r::TypeRef
 
 {- Mod_Ref -}
 
+attribute s occurs on ModRef;
+attribute p occurs on ModRef;
+
 abstract production mod_ref_single
 top::ModRef ::= x::String
 {
@@ -308,10 +311,7 @@ top::VarRef ::= x::String
                                   )
                                 ),
                                 top.s,
-                                (\d::Datum -> case d of
-                                                datum_type (s, t) -> s == x
-                                              | _ -> false
-                                              end)
+                                same_id_check (x, _)
                               );
   top.p = head(q.results);
 }
@@ -319,5 +319,13 @@ top::VarRef ::= x::String
 abstract production var_ref_dot
 top::VarRef ::= r::ModRef x::String
 {
-
+  r.s = top.s;
+  local p_mod :: Path = r.p;
+  local s_mod :: Scope = p_mod.tgt;
+  local q :: Query = mk_query (
+                                single(var_lab),
+                                s_mod,
+                                same_id_check (x, _)
+                              );
+  top.p = head(q.results);
 }
