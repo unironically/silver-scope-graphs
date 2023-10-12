@@ -1,0 +1,71 @@
+main(p) :- p match
+  { Expr(e):[] -> {ty}
+      expr(e, ty)
+  }.
+
+expr(e, ty) :- e match
+  { 
+    
+    Not(e1) ->
+      expr (e1, BOOL ()),
+      ty == BOOL ()
+  | And (e1, e2) ->
+      expr (e1, BOOL ()),
+      expr (e2, BOOL ())
+  | Or (e1, e2) ->
+      expr (e1, BOOL ()),
+      expr (e2, BOOL ())
+
+  | Lt (e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == BOOL()
+  | Gt (e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == BOOL ()
+  | Leq (e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == BOOL ()
+  | Geq (e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == BOOL()
+
+  | Eq (e1, e2) -> {ty}
+      expr(e1, ty),
+      expr(e2, ty),
+      ty == BOOL ()
+  | Neq (e1, e2) -> {ty}
+      expr(e1, ty),
+      expr(e2, ty),
+      ty == BOOL ()
+
+  | Mul(e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == INT()
+  | Div(e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == INT()
+  | Add(e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == INT()
+  | Sub(e1, e2) ->
+      expr (e1, INT ()),
+      expr (e2, INT ()),
+      ty == INT ()
+  | Neg (e1) ->
+      expr (e1, INT ()),
+      ty == INT ()
+      
+  | Int(_) ->
+      ty == INT()
+  | True() ->
+      ty == BOOL()
+  | False() ->
+      ty == BOOL()
+  }.

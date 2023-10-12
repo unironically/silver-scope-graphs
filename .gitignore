@@ -6,3 +6,6 @@ bin/
 *.jar
 
 *~
+
+mstx.sh
+.statix

@@ -1,8 +1,17 @@
 grammar simple;
 
-nonterminal Expr_c;
+synthesized attribute ast<a>::a;
 
-synthesized attribute ast::Expr occurs on Expr_c;
+nonterminal Prog_c with ast<Prog>;
+nonterminal Expr_c with ast<Expr>;
+
+{- Program -}
+
+concrete production prog_c
+top::Prog_c ::= e::Expr_c
+{
+  top.ast = prog(e.ast);
+}
 
 {- Boolean arith -}
 
@@ -109,11 +118,11 @@ top::Expr_c ::= i::Int_t
 concrete production trueLit_c
 top::Expr_c ::= b::True_t
 {
-  top.ast = boolLit(true);
+  top.ast = trueLit();
 }
 
 concrete production falseLit_c
 top::Expr_c ::= b::False_t
 {
-  top.ast = boolLit(false);
+  top.ast = falseLit();
 }
