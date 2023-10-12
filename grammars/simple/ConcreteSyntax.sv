@@ -62,13 +62,13 @@ top::Expr_c ::= e1::Expr_c '>=' e2::Expr_c
 concrete production eq_c
 top::Expr_c ::= e1::Expr_c '==' e2::Expr_c
 {
-  top.ast = eq(e1.ast, e2.ast);
+  top.ast = equal(e1.ast, e2.ast);
 }
 
 concrete production neq_c
 top::Expr_c ::= e1::Expr_c '!=' e2::Expr_c
 {
-  top.ast = neq(e1.ast, e2.ast);
+  top.ast = notequal(e1.ast, e2.ast);
 }
 
 {- Integer arith -}

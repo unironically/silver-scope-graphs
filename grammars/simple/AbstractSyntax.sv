@@ -153,17 +153,12 @@ top::Expr ::= e1::Expr e2::Expr
   top.aterm = "Geq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
 
-abstract production eq
+abstract production equal
 top::Expr ::= e1::Expr e2::Expr
 {
-  local e1Ty::Type = e1.ty;
-  local e2Ty::Type = e2.ty;
-
-  top.ty = case (e1Ty, e2Ty) of
-             (int(), int()) -> bool()
-           | (bool(), bool()) -> bool()
-           | _ -> bottom()
-           end;
+  top.ty = if e1.ty == e2.ty
+             then bool ()
+             else bottom ();
   
   top.res = case (top.ty, e1.ty) of
               (bottom(), _) -> right(0)
@@ -174,17 +169,12 @@ top::Expr ::= e1::Expr e2::Expr
   top.aterm = "Eq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
 
-abstract production neq
+abstract production notequal
 top::Expr ::= e1::Expr e2::Expr
 {
-  local e1Ty::Type = e1.ty;
-  local e2Ty::Type = e2.ty;
-
-  top.ty = case (e1Ty, e2Ty) of
-             (int(), int()) -> bool()
-           | (bool(), bool()) -> bool()
-           | _ -> bottom()
-           end;
+  top.ty = if e1.ty == e2.ty
+             then bool ()
+             else bottom ();
   
   top.res = case (top.ty, e1.ty) of
               (bottom(), _) -> right(0)
@@ -205,7 +195,7 @@ top::Expr ::= e1::Expr e2::Expr
 
   top.ty = case (e1Ty, e2Ty) of
              (int(), int()) -> int()
-           | _ -> bottom()
+           | _ -> error("Tried to use mul with a non-integer type!")
            end;
 
   top.res = case top.ty of
@@ -243,7 +233,7 @@ top::Expr ::= e1::Expr e2::Expr
 
   top.ty = case (e1Ty, e2Ty) of
              (int(), int()) -> int()
-           | _ -> bottom()
+           | _ -> error("Tried to use add with a non-integer type!")
            end;
 
   top.res = case top.ty of

@@ -5,7 +5,6 @@ main(p) :- p match
 
 expr(e, ty) :- e match
   { 
-    
     Not(e1) ->
       expr (e1, BOOL ()),
       ty == BOOL ()
@@ -33,13 +32,13 @@ expr(e, ty) :- e match
       expr (e2, INT ()),
       ty == BOOL()
 
-  | Eq (e1, e2) -> {ty}
-      expr(e1, ty),
-      expr(e2, ty),
+  | Eq (e1, e2) -> {ty'}
+      expr(e1, ty'),
+      expr(e2, ty'),
       ty == BOOL ()
-  | Neq (e1, e2) -> {ty}
-      expr(e1, ty),
-      expr(e2, ty),
+  | Neq (e1, e2) -> {ty'}
+      expr(e1, ty'),
+      expr(e2, ty'),
       ty == BOOL ()
 
   | Mul(e1, e2) ->
@@ -69,3 +68,12 @@ expr(e, ty) :- e match
   | False() ->
       ty == BOOL()
   }.
+
+
+
+
+or(e1, e2) :- true
+.
+
+not(b) :- b != b
+.
