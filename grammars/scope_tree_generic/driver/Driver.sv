@@ -6,7 +6,7 @@ imports scope_tree_generic:lmr;
 function main
 IO<Integer> ::= largs::[String]
 {
-
+{-}
   -- T0
   local s00 :: Scope  = mk_scope ([], [], [], [], [], [s01], []);
   local s01 :: Scope = mk_scope ([], [s0a, s0b], [], [], [], [], []);
@@ -51,9 +51,9 @@ IO<Integer> ::= largs::[String]
                       datum_type (str, ty) -> str == "a"
                     | _ -> false
                     end);
-
+-}
   return do {
-    
+    {-}
     print ("Tests:\n");
 
     let t0res :: [Path] = mk_query (r00, s00, p00).results;
@@ -134,6 +134,13 @@ IO<Integer> ::= largs::[String]
     print ("LEX and REC: " ++ toString (label_comp (lex_lab, rec_lab)) ++ "\n");
     print ("IMP and EXT: " ++ toString (label_comp (imp_lab, ext_lab)) ++ "\n");
     -}
+
+    let mapped :: [Integer] = map ((\x -> x + 1), [1, 2, 3, 4]);
+    let thing :: (Boolean ::= String String) = \ _::String _::String -> true;
+
+    print (toString(head(mapped)) ++ "\n");
+
+    print (if thing ("a", "b") then toString(10) else toString(20));
 
     return 0;
 

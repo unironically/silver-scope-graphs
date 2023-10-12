@@ -228,7 +228,7 @@ top::Expr ::= bs::SeqBinds e::Expr
 abstract production expr_letrec
 top::Expr ::= bs::ParBinds e::Expr
 {
-  local s_let::Scope = mk_scope (e.var_edges, bs.s_var_edges, [], [], [], [top.s], []);
+  local s_let::Scope = mk_scope (e.var_edges ++ bs.s_var_edges, [], [], [], [], [top.s], []);
   bs.s = s_let;
   bs.s_def = s_let;
   e.s = s_let;
@@ -239,12 +239,12 @@ top::Expr ::= bs::ParBinds e::Expr
 abstract production expr_letpar
 top::Expr ::= bs::ParBinds e::Expr
 {
-  local s_let::Scope = mk_scope (e.var_edges, bs.s_var_edges, [], [], [], [top.s], []);
-  bs.s = top.s;
-  bs.s_def = s_let;
-  e.s = s_let;
-  top.ty = e.ty;
-  top.var_edges <- bs.var_edges;
+  --local s_let::Scope = mk_scope (e.var_edges ++ bs.s_def_var_edges, [], [], [], [], [top.s], []);
+  --bs.s = top.s;
+  --bs.s_def = s_let;
+  --e.s = s_let;
+  --top.ty = e.ty;
+  --top.var_edges <- bs.s_var_edges;
 }
 
 abstract production expr_new
