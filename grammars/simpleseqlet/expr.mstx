@@ -66,10 +66,18 @@ expr(s, e, ty) :- e match
       expr (s, e1, INT ()),
       ty == INT ()
 
+
   | Let (bs, e) -> {s_let}
       new s_let,
       seq-binds(s, bs, s_let),
       expr(s_let, e, ty)
+
+  | LetRec (bs, e) -> {s_let}
+      new s_let,
+      s_let -[ `LEX ]-> s,
+      rec-binds(s_let, bs),
+      expr(s_let, e, ty)
+
 
   | Ref (x) -> {p, vars, xvars, xvars'}
       query s `LEX* `VAR as vars,
@@ -85,6 +93,8 @@ expr(s, e, ty) :- e match
   | False() ->
       ty == BOOL()
   }.
+
+
 
 seq-binds(s, bs, s_def) :- bs match
   { []   ->
@@ -105,6 +115,21 @@ seq-bind(s, b, s_def) :- b match
       s_def -[ `VAR ]-> s_var,
       expr(s, e, ty)
   }.
+
+
+
+rec-binds(s, bs) :- bs match
+  { []   -> true
+  | b:bs -> rec-bind(s, b), rec-binds(s, bs)
+  }.
+
+rec-bind(s, b) :- b match
+  { DefBind(x, e) -> {s_var, ty}
+      new s_var -> (x, ty),
+      s -[ `VAR ]-> s_var,
+      expr(s, e, ty)
+  }.
+
 
 
 // label ordering

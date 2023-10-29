@@ -23,7 +23,7 @@ top::Expr_c ::= 'letseq' bl::BindListSeq_c 'in' e2::Expr_c 'end'
   top.ast = letseq(bl.ast, e2.ast);
 }
 
-{- Binding list for let -}
+{- Binding list for sequential let -}
 
 nonterminal BindListSeq_c with ast<BindListSeq>;
 
@@ -41,28 +41,28 @@ top::BindListSeq_c ::= id::Id_t '=' e::Expr_c
 
 {------------------}
 
-{- Sequential let -}
+{- Recursive let -}
 
-concrete production letseq_c
-top::Expr_c ::= 'letseq' bl::BindListSeq_c 'in' e2::Expr_c 'end'
+concrete production letrec_c
+top::Expr_c ::= 'letrec' bl::BindListRec_c 'in' e2::Expr_c 'end'
 {
-  top.ast = letseq(bl.ast, e2.ast);
+  top.ast = letrec(bl.ast, e2.ast);
 }
 
-{- Binding list for let -}
+{- Binding list for recursive let -}
 
-nonterminal BindListSeq_c with ast<BindListSeq>;
+nonterminal BindListRec_c with ast<BindListRec>;
 
-concrete production bindlistseq_cons_c
-top::BindListSeq_c ::= id::Id_t '=' e::Expr_c ',' bl::BindListSeq_c
+concrete production bindlistrec_cons_c
+top::BindListRec_c ::= id::Id_t '=' e::Expr_c ',' bl::BindListRec_c
 {
-  top.ast = bindlistseq_cons (id.lexeme, e.ast, bl.ast);
+  top.ast = bindlistrec_cons (id.lexeme, e.ast, bl.ast);
 }
 
-concrete production bindlistseq_one_c
-top::BindListSeq_c ::= id::Id_t '=' e::Expr_c
+concrete production bindlistrec_one_c
+top::BindListRec_c ::= id::Id_t '=' e::Expr_c
 {
-  top.ast = bindlistseq_one (id.lexeme, e.ast);
+  top.ast = bindlistrec_one (id.lexeme, e.ast);
 }
 
 {- Boolean arith -}

@@ -10,7 +10,7 @@ synthesized attribute ty::Type occurs on Prog, Expr;
 synthesized attribute aterm::String occurs on Prog, Expr;
 
 inherited attribute scope::Scope occurs on Expr;
-propagate scope on Expr excluding letseq;
+propagate scope on Expr excluding letseq, letrec;
 
 {- Program -}
 
@@ -24,6 +24,13 @@ top::Prog ::= e::Expr
   local top_scope::Scope = mk_scope ([], [], [], [], [], [], []);
   e.scope = top_scope;
 }
+
+
+
+
+
+
+{------------------}
 
 {- Sequential let -}
 
@@ -76,6 +83,60 @@ Scope ::= id::String e::Expr e_scope::Scope
 
   return let_scope;
 }
+
+
+
+
+
+
+{------------------}
+
+{- Recursive let -}
+
+abstract production letrec
+top::Expr ::= bl::BindListRec e2::Expr
+{
+  local let_scope::Scope = mk_scope ([], bl.var_scopes, [], [], [], [top.scope], []);
+  bl.scope = let_scope;
+  e2.scope = let_scope;
+
+  top.res = e2.res;
+  top.ty = e2.ty;
+
+  top.aterm = "LetRec ([" ++ bl.aterm ++ "], " ++ e2.aterm ++ ")";
+}
+
+{- Binding list for let -}
+
+synthesized attribute var_scopes::[Scope];
+
+nonterminal BindListRec with scope, aterm, var_scopes;
+
+abstract production bindlistrec_cons
+top::BindListRec ::= id::String e::Expr bl::BindListRec
+{
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  top.var_scopes = var_scope :: bl.var_scopes;
+  e.scope = top.scope;
+  bl.scope = top.scope;
+
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+}
+
+abstract production bindlistrec_one
+top::BindListRec ::= id::String e::Expr
+{
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  top.var_scopes = [var_scope];
+  e.scope = top.scope;
+
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+}
+
+
+
+
+
 
 {- ref -}
 
