@@ -1,0 +1,5 @@
+#!/bin/sh
+
+silver -I .. --onejar --mwda $@ simpleseqlet
+
+rm build.xml > /dev/null 2>&1

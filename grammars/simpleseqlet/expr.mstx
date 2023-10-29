@@ -66,14 +66,10 @@ expr(s, e, ty) :- e match
       expr (s, e1, INT ()),
       ty == INT ()
 
-  | Let (id, e1, e2) -> {s_let, s_var, ty', ty''}
+  | Let (bs, e) -> {s_let}
       new s_let,
-      new s_var -> (id, ty'),
-      s_let -[ `VAR ]-> s_var,
-      s_let -[ `LEX ]-> s,
-      expr (s, e1, ty'),
-      expr (s_let, e2, ty''),
-      ty == ty''
+      seq-binds(s, bs, s_let),
+      expr(s_let, e, ty)
 
   | Ref (x) -> {p, vars, xvars, xvars'}
       query s `LEX* `VAR as vars,
@@ -90,6 +86,25 @@ expr(s, e, ty) :- e match
       ty == BOOL()
   }.
 
+seq-binds(s, bs, s_def) :- bs match
+  { []   ->
+      s_def -[ `LEX ]-> s
+  | b:[] ->
+      s_def -[ `LEX ]-> s,
+      seq-bind(s, b, s_def)
+  | b:bs -> {s_def'}
+      new s_def',
+      s_def' -[ `LEX ]-> s,
+      seq-bind(s, b, s_def'),
+      seq-binds(s_def', bs, s_def)
+  }.
+
+seq-bind(s, b, s_def) :- b match
+  { DefBind(x, e) -> {s_var, ty}
+      new s_var -> (x, ty),
+      s_def -[ `VAR ]-> s_var,
+      expr(s, e, ty)
+  }.
 
 
 // label ordering

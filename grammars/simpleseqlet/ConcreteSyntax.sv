@@ -1,4 +1,4 @@
-grammar simple;
+grammar simpleseqlet;
 
 synthesized attribute ast<a>::a;
 
@@ -13,12 +13,56 @@ top::Prog_c ::= e::Expr_c
   top.ast = prog(e.ast);
 }
 
+{------------------}
+
 {- Sequential let -}
 
 concrete production letseq_c
-top::Expr_c ::= 'let' id::Id_t '=' e1::Expr_c 'in' e2::Expr_c 'end'
+top::Expr_c ::= 'letseq' bl::BindListSeq_c 'in' e2::Expr_c 'end'
 {
-  top.ast = letseq(id.lexeme, e1.ast, e2.ast);
+  top.ast = letseq(bl.ast, e2.ast);
+}
+
+{- Binding list for let -}
+
+nonterminal BindListSeq_c with ast<BindListSeq>;
+
+concrete production bindlistseq_cons_c
+top::BindListSeq_c ::= id::Id_t '=' e::Expr_c ',' bl::BindListSeq_c
+{
+  top.ast = bindlistseq_cons (id.lexeme, e.ast, bl.ast);
+}
+
+concrete production bindlistseq_one_c
+top::BindListSeq_c ::= id::Id_t '=' e::Expr_c
+{
+  top.ast = bindlistseq_one (id.lexeme, e.ast);
+}
+
+{------------------}
+
+{- Sequential let -}
+
+concrete production letseq_c
+top::Expr_c ::= 'letseq' bl::BindListSeq_c 'in' e2::Expr_c 'end'
+{
+  top.ast = letseq(bl.ast, e2.ast);
+}
+
+{- Binding list for let -}
+
+nonterminal BindListSeq_c with ast<BindListSeq>;
+
+concrete production bindlistseq_cons_c
+top::BindListSeq_c ::= id::Id_t '=' e::Expr_c ',' bl::BindListSeq_c
+{
+  top.ast = bindlistseq_cons (id.lexeme, e.ast, bl.ast);
+}
+
+concrete production bindlistseq_one_c
+top::BindListSeq_c ::= id::Id_t '=' e::Expr_c
+{
+  top.ast = bindlistseq_one (id.lexeme, e.ast);
 }
 
 {- Boolean arith -}

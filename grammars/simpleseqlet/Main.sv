@@ -1,7 +1,7 @@
-grammar simple;
+grammar simpleseqlet;
 
 parser parse :: Prog_c {
-  simple;
+  simpleseqlet;
 }
 
 function main
@@ -34,7 +34,7 @@ fun output_and_test IO<Integer> ::= resString::String ast::Prog =
   do {print ( "----------Silver out:----------\n" ++
               "- Result: " ++ resString ++ 
               "\n- Aterm: " ++ ast.aterm ++ 
-              "\n- Running aterm Ministatix...\n" ++
+              "\n- Running aterm with Ministatix...\n" ++
               "----------Statix out:----------\n"); 
       writeFile ("expr.aterm", ast.aterm);
       system ("./mstx.sh expr.aterm");

@@ -1,11 +1,12 @@
-grammar simple;
+grammar simpleseqlet;
 
 lexer class Keyword;
 
 terminal True_t 'true' lexer classes {Keyword};
 terminal False_t 'false' lexer classes {Keyword};
 
-terminal Let_t 'let' lexer classes {Keyword};
+terminal Let_t 'letseq' lexer classes {Keyword};
+terminal Comma_t ',';
 terminal In_t 'in' lexer classes {Keyword};
 terminal End_t 'end' lexer classes {Keyword};
 

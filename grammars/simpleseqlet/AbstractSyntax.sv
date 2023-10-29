@@ -1,6 +1,6 @@
-grammar simple;
+grammar simpleseqlet;
 
-imports simple:scopegraphs;
+imports simpleseqlet:scopegraphs;
 
 nonterminal Prog;
 nonterminal Expr;
@@ -28,17 +28,53 @@ top::Prog ::= e::Expr
 {- Sequential let -}
 
 abstract production letseq
-top::Expr ::= id::String e1::Expr e2::Expr
+top::Expr ::= bl::BindListSeq e2::Expr
 {
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e1.ty, e1.res));
-  local let_scope::Scope = mk_scope ([], [var_scope], [], [], [], [top.scope], []);
+  local let_scope::Scope = bl.last_scope;
 
-  e1.scope = top.scope;
+  bl.scope = top.scope;
   e2.scope = let_scope;
 
-  top.aterm = "Let (" ++ "\"" ++ id ++ "\", " ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
+  top.aterm = "Let ([" ++ bl.aterm ++ "], " ++ e2.aterm ++ ")";
+
   top.ty = e2.ty;
   top.res = e2.res;
+}
+
+{- Binding list for let -}
+
+synthesized attribute last_scope::Scope;
+
+nonterminal BindListSeq with scope, aterm, last_scope;
+
+abstract production bindlistseq_cons
+top::BindListSeq ::= id::String e::Expr bl::BindListSeq
+{
+  local let_scope :: Scope = seqlet_scope (id, e, top.scope);
+  bl.scope = let_scope;
+  top.last_scope = bl.last_scope;
+
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+}
+
+abstract production bindlistseq_one
+top::BindListSeq ::= id::String e::Expr
+{
+  local let_scope :: Scope = seqlet_scope (id, e, top.scope);
+  top.last_scope = let_scope;
+  e.scope = top.scope;
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+}
+
+function seqlet_scope
+Scope ::= id::String e::Expr e_scope::Scope
+{
+  e.scope = e_scope;
+
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local let_scope::Scope = mk_scope ([], [var_scope], [], [], [], [e_scope], []);
+
+  return let_scope;
 }
 
 {- ref -}
