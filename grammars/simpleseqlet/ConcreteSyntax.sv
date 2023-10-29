@@ -65,6 +65,34 @@ top::BindListRec_c ::= id::Id_t '=' e::Expr_c
   top.ast = bindlistrec_one (id.lexeme, e.ast);
 }
 
+{------------------}
+
+{- Parallel let -}
+
+concrete production letpar_c
+top::Expr_c ::= 'letpar' bl::BindListPar_c 'in' e2::Expr_c 'end'
+{
+  top.ast = letpar(bl.ast, e2.ast);
+}
+
+{- Binding list for recursive let -}
+
+nonterminal BindListPar_c with ast<BindListPar>;
+
+concrete production bindlistpar_cons_c
+top::BindListPar_c ::= id::Id_t '=' e::Expr_c ',' bl::BindListPar_c
+{
+  top.ast = bindlistpar_cons (id.lexeme, e.ast, bl.ast);
+}
+
+concrete production bindlistpar_one_c
+top::BindListPar_c ::= id::Id_t '=' e::Expr_c
+{
+  top.ast = bindlistpar_one (id.lexeme, e.ast);
+}
+
+{------------------}
+
 {- Boolean arith -}
 
 concrete production not_c

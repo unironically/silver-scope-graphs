@@ -78,6 +78,12 @@ expr(s, e, ty) :- e match
       rec-binds(s_let, bs),
       expr(s_let, e, ty)
 
+  | LetPar (bs, e) -> {s_let}
+      new s_let,
+      s_let -[ `LEX ]-> s,
+      par-binds(s, bs, s_let),
+      expr(s_let, e, ty)
+
 
   | Ref (x) -> {p, vars, xvars, xvars'}
       query s `LEX* `VAR as vars,
@@ -127,6 +133,20 @@ rec-bind(s, b) :- b match
   { DefBind(x, e) -> {s_var, ty}
       new s_var -> (x, ty),
       s -[ `VAR ]-> s_var,
+      expr(s, e, ty)
+  }.
+
+
+
+par-binds(s, bs, s_def) :- bs match
+  { []   -> true
+  | b:bs -> par-bind(s, b, s_def), par-binds(s, bs, s_def)
+  }.
+
+par-bind(s, b, s_def) :- b match
+  { DefBind(x, e) -> {s_var, ty}
+      new s_var -> (x, ty),
+      s_def -[ `VAR ]-> s_var,
       expr(s, e, ty)
   }.
 

@@ -10,7 +10,7 @@ synthesized attribute ty::Type occurs on Prog, Expr;
 synthesized attribute aterm::String occurs on Prog, Expr;
 
 inherited attribute scope::Scope occurs on Expr;
-propagate scope on Expr excluding letseq, letrec;
+propagate scope on Expr excluding letseq, letrec, letpar;
 
 {- Program -}
 
@@ -35,17 +35,17 @@ top::Prog ::= e::Expr
 {- Sequential let -}
 
 abstract production letseq
-top::Expr ::= bl::BindListSeq e2::Expr
+top::Expr ::= bl::BindListSeq e::Expr
 {
   local let_scope::Scope = bl.last_scope;
 
   bl.scope = top.scope;
-  e2.scope = let_scope;
+  e.scope = let_scope;
 
-  top.aterm = "Let ([" ++ bl.aterm ++ "], " ++ e2.aterm ++ ")";
+  top.aterm = "Let ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
 
-  top.ty = e2.ty;
-  top.res = e2.res;
+  top.ty = e.ty;
+  top.res = e.res;
 }
 
 {- Binding list for let -}
@@ -94,16 +94,16 @@ Scope ::= id::String e::Expr e_scope::Scope
 {- Recursive let -}
 
 abstract production letrec
-top::Expr ::= bl::BindListRec e2::Expr
+top::Expr ::= bl::BindListRec e::Expr
 {
   local let_scope::Scope = mk_scope ([], bl.var_scopes, [], [], [], [top.scope], []);
   bl.scope = let_scope;
-  e2.scope = let_scope;
+  e.scope = let_scope;
 
-  top.res = e2.res;
-  top.ty = e2.ty;
+  top.res = e.res;
+  top.ty = e.ty;
 
-  top.aterm = "LetRec ([" ++ bl.aterm ++ "], " ++ e2.aterm ++ ")";
+  top.aterm = "LetRec ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
 }
 
 {- Binding list for let -}
@@ -130,6 +130,55 @@ top::BindListRec ::= id::String e::Expr
   top.var_scopes = [var_scope];
   e.scope = top.scope;
 
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+}
+
+
+
+
+
+
+{------------------}
+
+{- Parallel let -}
+
+abstract production letpar
+top::Expr ::= bl::BindListPar e::Expr
+{
+  local let_scope::Scope = mk_scope ([], bl.var_scopes, [], [], [], [top.scope], []);
+
+  bl.scope = top.scope;
+  e.scope = let_scope;
+
+  top.res = e.res;
+  top.ty = e.ty;
+  top.aterm = "LetPar ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
+}
+
+{- Binding list for let -}
+
+nonterminal BindListPar with scope, var_scopes, aterm;
+
+abstract production bindlistpar_cons
+top::BindListPar ::= id::String e::Expr bl::BindListPar
+{
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  
+  bl.scope = top.scope;
+  e.scope = top.scope;
+
+  top.var_scopes = var_scope :: bl.var_scopes;
+  top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+}
+
+abstract production bindlistpar_one
+top::BindListPar ::= id::String e::Expr
+{
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+
+  e.scope = top.scope;
+
+  top.var_scopes = [var_scope];
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
 }
 
