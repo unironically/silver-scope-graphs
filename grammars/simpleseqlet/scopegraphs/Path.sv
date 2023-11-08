@@ -2,8 +2,8 @@ grammar simpleseqlet:scopegraphs;
 
 {- Scope edges -}
 
-synthesized attribute src::Scope occurs on Path;
-synthesized attribute tgt::Scope occurs on Path;
+synthesized attribute src::Decorated Scope occurs on Path;
+synthesized attribute tgt::Decorated Scope occurs on Path;
 synthesized attribute word::[Label] occurs on Path;
 synthesized attribute len::Integer occurs on Path;
 
@@ -13,7 +13,7 @@ nonterminal Path;
 
 abstract production path_cons
 top::Path ::=
-  e::Scope
+  e::Decorated Scope
   l::Label
   p::Path
 {
@@ -25,7 +25,7 @@ top::Path ::=
 
 abstract production path_single
 top::Path ::=
-  e::Scope
+  e::Decorated Scope
 {
   top.tgt = e;
   top.word = [];

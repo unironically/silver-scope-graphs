@@ -5,30 +5,34 @@ imports simpleseqlet:scopegraphs;
 nonterminal Prog;
 nonterminal Expr;
 
-synthesized attribute res::Either<Boolean Integer> occurs on Prog, Expr;
 synthesized attribute ty::Type occurs on Prog, Expr;
 synthesized attribute aterm::String occurs on Prog, Expr;
 
-inherited attribute scope::Scope occurs on Expr;
+attribute simpleseqlet:scopegraphs:string occurs on Prog;
+
+inherited attribute scope::Decorated Scope occurs on Expr;
 propagate scope on Expr excluding letseq, letrec, letpar;
+
+monoid attribute all_scopes::[Decorated Scope] with [], ++ occurs on Prog, Expr, BindListPar, BindListSeq, BindListRec;
+propagate all_scopes on Expr, BindListPar, BindListSeq, BindListRec;
 
 {- Program -}
 
 abstract production prog
 top::Prog ::= e::Expr
 {
+  propagate all_scopes;
+  
   top.aterm = "Expr (" ++ e.aterm ++ ")";
   top.ty = e.ty;
-  top.res = e.res;
 
-  local top_scope::Scope = mk_scope ([], [], [], [], [], [], []);
+  top.string = "digraph {" ++ implode (" ", map ((.string), top.all_scopes)) ++ "}";
+
+  production attribute top_scope::Scope = mk_scope ([], [], [], [], [], [], []);
   e.scope = top_scope;
+
+  top.all_scopes <- [top_scope];
 }
-
-
-
-
-
 
 {------------------}
 
@@ -37,7 +41,7 @@ top::Prog ::= e::Expr
 abstract production letseq
 top::Expr ::= bl::BindListSeq e::Expr
 {
-  local let_scope::Scope = bl.last_scope;
+  local let_scope::Decorated Scope = bl.last_scope;
 
   bl.scope = top.scope;
   e.scope = let_scope;
@@ -45,43 +49,55 @@ top::Expr ::= bl::BindListSeq e::Expr
   top.aterm = "Let ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
 
   top.ty = e.ty;
-  top.res = e.res;
 }
 
 {- Binding list for let -}
 
-synthesized attribute last_scope::Scope;
+synthesized attribute last_scope::Decorated Scope;
 
 nonterminal BindListSeq with scope, aterm, last_scope;
 
 abstract production bindlistseq_cons
 top::BindListSeq ::= id::String e::Expr bl::BindListSeq
 {
-  local let_scope :: Scope = seqlet_scope (id, e, top.scope);
+  local scopes::(Decorated Scope, Decorated Scope) = seqlet_scope (id, e, top.scope);
+
+  local let_scope :: Decorated Scope = fst(scopes);
+  local var_scope :: Decorated Scope = snd(scopes);
+
   bl.scope = let_scope;
   top.last_scope = bl.last_scope;
+  e.scope = top.scope;
 
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+
+  top.all_scopes <- [let_scope, var_scope];
 }
 
 abstract production bindlistseq_one
 top::BindListSeq ::= id::String e::Expr
 {
-  local let_scope :: Scope = seqlet_scope (id, e, top.scope);
+  local scopes::(Decorated Scope, Decorated Scope) = seqlet_scope (id, e, top.scope);
+
+  local let_scope :: Decorated Scope = fst(scopes);
+  local var_scope :: Decorated Scope = snd(scopes);
+
   top.last_scope = let_scope;
   e.scope = top.scope;
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+
+  top.all_scopes <- [let_scope, var_scope];
 }
 
 function seqlet_scope
-Scope ::= id::String e::Expr e_scope::Scope
+(Decorated Scope, Decorated Scope) ::= id::String e::Expr e_scope::Decorated Scope
 {
   e.scope = e_scope;
 
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty));
   local let_scope::Scope = mk_scope ([], [var_scope], [], [], [], [e_scope], []);
 
-  return let_scope;
+  return (let_scope, var_scope);
 }
 
 
@@ -100,37 +116,42 @@ top::Expr ::= bl::BindListRec e::Expr
   bl.scope = let_scope;
   e.scope = let_scope;
 
-  top.res = e.res;
   top.ty = e.ty;
 
   top.aterm = "LetRec ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
+
+  top.all_scopes <- [let_scope];
 }
 
 {- Binding list for let -}
 
-synthesized attribute var_scopes::[Scope];
+synthesized attribute var_scopes::[Decorated Scope];
 
 nonterminal BindListRec with scope, aterm, var_scopes;
 
 abstract production bindlistrec_cons
 top::BindListRec ::= id::String e::Expr bl::BindListRec
 {
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty));
   top.var_scopes = var_scope :: bl.var_scopes;
   e.scope = top.scope;
   bl.scope = top.scope;
 
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+
+  top.all_scopes <- [var_scope];
 }
 
 abstract production bindlistrec_one
 top::BindListRec ::= id::String e::Expr
 {
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty));
   top.var_scopes = [var_scope];
   e.scope = top.scope;
 
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+
+  top.all_scopes <- [var_scope];
 }
 
 
@@ -150,9 +171,10 @@ top::Expr ::= bl::BindListPar e::Expr
   bl.scope = top.scope;
   e.scope = let_scope;
 
-  top.res = e.res;
   top.ty = e.ty;
   top.aterm = "LetPar ([" ++ bl.aterm ++ "], " ++ e.aterm ++ ")";
+
+  top.all_scopes <- [let_scope];
 }
 
 {- Binding list for let -}
@@ -162,24 +184,28 @@ nonterminal BindListPar with scope, var_scopes, aterm;
 abstract production bindlistpar_cons
 top::BindListPar ::= id::String e::Expr bl::BindListPar
 {
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty));
   
   bl.scope = top.scope;
   e.scope = top.scope;
 
   top.var_scopes = var_scope :: bl.var_scopes;
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ "), " ++ bl.aterm;
+
+  top.all_scopes <- [var_scope];
 }
 
 abstract production bindlistpar_one
 top::BindListPar ::= id::String e::Expr
 {
-  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty, e.res));
+  local var_scope::Scope = mk_scope_decl (datum_type(id, e.ty));
 
   e.scope = top.scope;
 
   top.var_scopes = [var_scope];
   top.aterm = "DefBind(\"" ++ id ++ "\", " ++ e.aterm ++ ")";
+
+  top.all_scopes <- [var_scope];
 }
 
 
@@ -199,12 +225,7 @@ top::Expr ::= id::String
                                same_id_check (id, _));
 
   top.ty = case head(q.results).tgt.datum of
-             just(datum_type(s, t, r)) -> t
-           | _ -> error("oh no!")
-           end;
-
-  top.res = case head(q.results).tgt.datum of
-             just(datum_type(s, t, r)) -> r
+             just(datum_type(s, t)) -> t
            | _ -> error("oh no!")
            end;
 
@@ -222,11 +243,6 @@ top::Expr ::= e1::Expr
              bool() -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(!e1.res.fromLeft)
-            end;
 
   top.aterm = "Not (" ++ e1.aterm ++ ")";
 }
@@ -241,11 +257,6 @@ top::Expr ::= e1::Expr e2::Expr
              (bool(), bool()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromLeft && e2.res.fromLeft)
-            end;
 
   top.aterm = "And (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -260,11 +271,6 @@ top::Expr ::= e1::Expr e2::Expr
              (bool(), bool()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromLeft || e2.res.fromLeft)
-            end;
 
   top.aterm = "Or (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -281,11 +287,6 @@ top::Expr ::= e1::Expr e2::Expr
              (int(), int()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromRight < e2.res.fromRight)
-            end;
 
   top.aterm = "Lt (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -300,11 +301,6 @@ top::Expr ::= e1::Expr e2::Expr
              (int(), int()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromRight > e2.res.fromRight)
-            end;
 
   top.aterm = "Gt (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -319,11 +315,6 @@ top::Expr ::= e1::Expr e2::Expr
              (int(), int()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromRight <= e2.res.fromRight)
-            end;
 
   top.aterm = "Leq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -338,11 +329,6 @@ top::Expr ::= e1::Expr e2::Expr
              (int(), int()) -> bool()
            | _ -> bottom()
            end;
-  
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> left(e1.res.fromRight >= e2.res.fromRight)
-            end;
 
   top.aterm = "Geq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -353,12 +339,6 @@ top::Expr ::= e1::Expr e2::Expr
   top.ty = if e1.ty == e2.ty
              then bool ()
              else bottom ();
-  
-  top.res = case (top.ty, e1.ty) of
-              (bottom(), _) -> right(0)
-            | (_, int()) -> left(e1.res.fromRight == e2.res.fromRight)
-            | (_, bool()) -> left(e1.res.fromLeft == e2.res.fromLeft)
-            end;
 
   top.aterm = "Eq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -369,12 +349,6 @@ top::Expr ::= e1::Expr e2::Expr
   top.ty = if e1.ty == e2.ty
              then bool ()
              else bottom ();
-  
-  top.res = case (top.ty, e1.ty) of
-              (bottom(), _) -> right(0)
-            | (_, int()) -> left(e1.res.fromRight != e2.res.fromRight)
-            | (_, bool()) -> left(e1.res.fromLeft != e2.res.fromLeft)
-            end;
 
   top.aterm = "Neq (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -392,11 +366,6 @@ top::Expr ::= e1::Expr e2::Expr
            | _ -> bottom()
            end;
 
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> right(e1.res.fromRight * e2.res.fromRight)
-            end;
-
   top.aterm = "Mul (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
 
@@ -410,11 +379,6 @@ top::Expr ::= e1::Expr e2::Expr
              (int(), int()) -> int()
            | _ -> bottom()
            end;
-
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> right(e1.res.fromRight / e2.res.fromRight)
-            end;
   
   top.aterm = "Div (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
@@ -430,11 +394,6 @@ top::Expr ::= e1::Expr e2::Expr
            | _ -> bottom()
            end;
 
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> right(e1.res.fromRight + e2.res.fromRight)
-            end;
-
   top.aterm = "Add (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
 
@@ -449,11 +408,6 @@ top::Expr ::= e1::Expr e2::Expr
            | _ -> bottom()
            end;
 
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> right(e1.res.fromRight - e2.res.fromRight)
-            end;
-
   top.aterm = "Sub (" ++ e1.aterm ++ ", " ++ e2.aterm ++ ")";
 }
 
@@ -467,11 +421,6 @@ top::Expr ::= e1::Expr
            | _ -> bottom()
            end;
 
-  top.res = case top.ty of
-              bottom() -> right(0)
-            | _ -> right(0 - e1.res.fromRight)
-            end;
-
   top.aterm = "Neg (" ++ e1.aterm ++ ")";
 }
 
@@ -481,7 +430,6 @@ abstract production intLit
 top::Expr ::= i::Integer
 {
   top.ty = int();
-  top.res = right(i);
   top.aterm = "Int (\"" ++ toString(i) ++ "\")";
 }
 
@@ -489,7 +437,6 @@ abstract production trueLit
 top::Expr ::=
 {
   top.ty = bool();
-  top.res = left(true);
   top.aterm = "True ()";
 }
 
@@ -497,6 +444,5 @@ abstract production falseLit
 top::Expr ::=
 {
   top.ty = bool();
-  top.res = left(false);
   top.aterm = "False ()";
 }

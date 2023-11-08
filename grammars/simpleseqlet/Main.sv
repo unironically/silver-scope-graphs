@@ -1,5 +1,7 @@
 grammar simpleseqlet;
 
+imports statixgraph hiding Keyword;
+
 parser parse :: Prog_c {
   simpleseqlet;
 }
@@ -13,7 +15,6 @@ IO<Integer> ::= largs::[String]
     let ast::Prog = result.parseTree.ast;
 
     let ty::Type = ast.ty;
-    let res::Either<Boolean Integer> = ast.res;
 
     if result.parseSuccess
       then
@@ -21,18 +22,17 @@ IO<Integer> ::= largs::[String]
             bottom() -> 
               err_out ("Ill-typed input program")
           | int() -> 
-              output_and_test(toString(res.fromRight), ast)
+              output_and_test(ast)
           | bool() -> 
-              output_and_test(toString(res.fromLeft), ast)
+              output_and_test(ast)
           end
       else 
         err_out ("Input unparsable");
   };
 }
 
-fun output_and_test IO<Integer> ::= resString::String ast::Prog =
+fun output_and_test IO<Integer> ::= ast::Prog =
   do {print ( "----------Silver out:----------\n" ++
-              "- Result: " ++ resString ++ 
               "\n- Aterm: " ++ ast.aterm ++ 
               "\n- Running aterm with Ministatix...\n" ++
               "----------Statix out:----------\n"); 
@@ -40,6 +40,25 @@ fun output_and_test IO<Integer> ::= resString::String ast::Prog =
       system ("./mstx.sh expr.aterm");
       print ("-------------------------------\n");
       deleteFile("expr.aterm");
+
+      {- Statix graph to graphviz drawing: -}
+
+      system ("sed '0,/^Graph:$/d' mstx.out > graph.out");
+
+      let filePath :: String = "graph.out";
+      file :: String <- readFile("graph.out");
+
+      let result::ParseResult<Graph_c> = statixgraph:parse(file, filePath);
+      let graph::Graph = result.parseTree.ast;
+
+      let outFileName :: String = "sg_statix.svg";
+      system ("echo '" ++ graph.string ++ "' | dot -Tsvg > " ++ outFileName);
+
+      {- Silver graph to graphviz drawing: -}
+
+      let outFileName :: String = "sg_silver.svg";
+      system ("echo '" ++ ast.string ++ "' | dot -Tsvg > " ++ outFileName);
+
       return 0;};
 
 fun err_out IO<Integer> ::= errString::String =

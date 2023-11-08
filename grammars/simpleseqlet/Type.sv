@@ -1,18 +1,24 @@
 grammar simpleseqlet;
 
-nonterminal Type;
+nonterminal Type with simpleseqlet:scopegraphs:string;
 
 abstract production int
 top::Type ::=
-{}
+{
+  top.string = "INT";
+}
 
 abstract production bool
 top::Type ::=
-{}
+{
+  top.string = "BOOL";
+}
 
 abstract production bottom
 top::Type ::=
-{}
+{
+  top.string = "BOTTOM";
+}
 
 instance Eq Type {
   eq = tyEq;

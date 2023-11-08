@@ -8,7 +8,7 @@ synthesized attribute results::[Path] occurs on Query;
 abstract production mk_query
 top::Query ::=
   r::Regex
-  s::Scope
+  s::Decorated Scope
   wf::WF_Predicate
 { top.results = filter_best (query_step (r.dfa.start_dfa, wf, s)); }
 
@@ -22,7 +22,7 @@ function query_step
 [Path] ::=
   d::DFA_State
   wf::WF_Predicate
-  s::Scope
+  s::Decorated Scope
 {
   local ord_labs::[[Label]] = d.ordered_edges;
   local rec_result::[Path] = search_edges_outer (ord_labs, d, wf, s);
@@ -42,7 +42,7 @@ function search_edges_outer
   ord_labs::[[Label]]
   d::DFA_State
   wf::WF_Predicate
-  s::Scope
+  s::Decorated Scope
 {
   return case ord_labs of
            []      -> []
@@ -64,7 +64,7 @@ function search_edges_inner
   labs::[Label]
   d::DFA_State
   wf::WF_Predicate
-  s::Scope
+  s::Decorated Scope
 {
   return concat (map (search_edge (_, d, wf, s), labs));
 }
@@ -78,9 +78,9 @@ function search_edge
   l::Label
   d::DFA_State
   wf::WF_Predicate
-  s::Scope
+  s::Decorated Scope
 {
-  local available_scopes::[Scope] = scope_edges_lab (l, s);
+  local available_scopes::[Decorated Scope] = scope_edges_lab (l, s);
   local next_dfa_state::Maybe<DFA_State> = d.step_dfa (l);
 
   return case next_dfa_state of
@@ -98,7 +98,7 @@ function search_edge
 {- Get all edges of a certain label from a scope 
  -}
 function scope_edges_lab
-[Scope] ::= l::Label s::Scope
+[Decorated Scope] ::= l::Label s::Decorated Scope
 {
   return case l of
     mod_prod () -> s.mod_edges
